@@ -37,21 +37,18 @@ export default function Header({active}) {
             <AppBar position="static" color="default" elevation={0} className={classes.appBar}>
                 <Toolbar className={classes.toolbar}>
                     <Typography variant="h6" color="inherit" noWrap className={classes.toolbarTitle}>
-                        다나와
+                        서비스 운영관리
                     </Typography>
                     <nav>
-                        <Link variant="button" color="textPrimary" href="/" className={classes.link}>
+                        <Link variant="button" color="textPrimary" href="#" className={classes.link}>
                             홈
                         </Link>
-                        <Link variant="button" color="textPrimary" href="/server" className={classes.link}>
-                            서버
+                        <Link variant="button" color="textPrimary" href="#" className={classes.link}>
+                            그룹
                         </Link>
-                        <Link variant="button" color="textPrimary" href="/server" className={classes.link}>
-                            프로세스
+                        <Link variant="button" color="textPrimary" href="#" className={classes.link}>
+                            설정
                         </Link>
-                        {/*<Link variant="button" color="textPrimary" href="#" className={classes.link}>*/}
-                        {/*    서비스*/}
-                        {/*</Link>*/}
                     </nav>
                     {/*<Button href="#" color="primary" variant="outlined" className={classes.link}>*/}
                     {/*  Login*/}
