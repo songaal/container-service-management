@@ -8,13 +8,18 @@ import CssBaseline from "@material-ui/core/CssBaseline";
 function Index() {
 
   const urls = [
+    {name: "홈", uri: "/"},
     {name: "로그인", uri: "/sign-in"},
     {name: "회원가입", uri: "/sign-up"},
+    {name: "개인정보", uri: "/my"},
     {name: "그룹목록", uri: "/groups"},
     {name: "그룹상세", uri: "/groups/1"},
     {name: "서비스 추가", uri: "/services"},
     {name: "서비스 상세", uri: "/services/1"},
-    {name: "홈", uri: "/home"},
+    {name: "서버 상세", uri: "/server/1"},
+    {name: "설정 목록", uri: "/settings"},
+    {name: "설정(서버)", uri: "/settings/server/1"},
+
   ]
 
 

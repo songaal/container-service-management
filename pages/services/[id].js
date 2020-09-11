@@ -76,7 +76,7 @@ function ServicesDetail() {
     return (
         <Box className={classes.root}>
             <CssBaseline />
-            <Header />
+            <Header  active={1} />
 
             <Container maxWidth={"xl"}>
                 <Box my={2}>

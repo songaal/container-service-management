@@ -19,9 +19,9 @@ import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import Service from "./service";
-import Authentication from "./authentication";
-import Server from "./server";
+import Service from "../../components/service";
+import Authentication from "../../components/authentication";
+import Server from "../../components/server";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -68,7 +68,7 @@ function GroupDetail() {
     return (
         <Box className={classes.root}>
             <CssBaseline />
-            <Header />
+            <Header  active={1} />
             <Container maxWidth={"xl"} >
                 <br/>
                 <Grid container>
