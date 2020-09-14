@@ -60,7 +60,7 @@ export default function Header({active}) {
                                 운영관리
                             </Typography>
                             <nav style={{display: "inline", marginLeft: '20px'}}>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="/" className={ active === 0 ? classes.active : classes.link}>
+                                <Link underline={'none'} variant="button" color="textPrimary" href="/home" className={ active === 0 ? classes.active : classes.link}>
                                     홈
                                 </Link>
                                 <Link underline={'none'} variant="button" color="textPrimary" href="/groups" className={ active === 1 ? classes.active : classes.link}>

@@ -1,9 +1,6 @@
 import React from 'react';
 import Container from '@material-ui/core/Container';
-import Link from '@material-ui/core/Link';
-import Grid from '@material-ui/core/Grid';
 import Box from '@material-ui/core/Grid';
-import Header from "../components/Header";
 import {makeStyles} from "@material-ui/core/styles";
 import CssBaseline from "@material-ui/core/CssBaseline";
 
@@ -22,20 +19,44 @@ const useStyles = makeStyles( theme => ({
     }
 }));
 
-function Home() {
+function Index() {
 
     const classes = useStyles();
     return (
         <Box className={classes.root}>
             <CssBaseline />
-            <Header  active={0} />
 
             <Container maxWidth={"xl"} >
-
-                HOME
+                INDEX
             </Container>
         </Box>
     );
 }
+Index.getInitialProps = async  (ctx) => {
+    const { Users } = require("../models")
 
-export default Home
+    // const {Sample} = require('../models');
+
+    // user_id: DataTypes.STRING,
+    //     name: DataTypes.STRING,
+    //     password: DataTypes.STRING,
+    //     admin: DataTypes.BOOLEAN,
+    //     create_date: DataTypes.DATE
+
+    const user = {name: "aaa", admin: true, password: "pass"};
+    // console.log('1>>>', body, Sample)
+    //
+    const newUser = await Users.create(user);
+    console.log('newUser >>>', newUser)
+    //
+    // let s = await Sample.findOne({where: {key: body['key']}});
+    // console.log('>>>', s)
+    //
+    // await s.destroy();
+
+    return {}
+}
+
+
+
+export default Index;

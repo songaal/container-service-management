@@ -34,9 +34,12 @@
     "clsx": "latest",
     "css-vendor": "2.0.7",
     "date-fns": "2.10.0",
+    "fs": "0.0.1-security",
     "google-map-react": "1.1.6",
     "jss": "10.0.4",
+    "mysql2": "^2.1.0",
     "next": "latest",
+    "pg-hstore": "^2.3.3",
     "polished": "3.4.4",
     "prop-types": "15.7.2",
     "react": "16.13.0",
@@ -53,6 +56,11 @@
     "react-router-dom": "5.1.2",
     "react-scripts": "3.4.0",
     "redux": "4.0.5",
+    "sequelize": "^6.3.5",
+    "sequelize-cli": "^6.2.0",
+    "sqlite": "^4.0.14",
+    "sqlite3": "^5.0.0",
     "styled-components": "5.0.1"
-  }
+  },
+  "devDependencies": {}
 }
