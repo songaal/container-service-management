@@ -2,3 +2,7 @@ node_modules
 .idea
 .next
 package-lock.json
+.env
+.env.development
+.env.development
+*.sqlite

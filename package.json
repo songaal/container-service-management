@@ -30,6 +30,8 @@
     "@material-ui/pickers": "3.2.10",
     "@material-ui/styles": "4.9.0",
     "@material-ui/system": "4.9.3",
+    "axios": "^0.20.0",
+    "bcryptjs": "^2.4.3",
     "chart.js": "2.9.3",
     "clsx": "latest",
     "css-vendor": "2.0.7",
@@ -39,6 +41,8 @@
     "jss": "10.0.4",
     "mysql2": "^2.1.0",
     "next": "latest",
+    "nodemailer": "^6.4.11",
+    "notistack": "^1.0.0",
     "pg-hstore": "^2.3.3",
     "polished": "3.4.4",
     "prop-types": "15.7.2",
@@ -60,7 +64,9 @@
     "sequelize-cli": "^6.2.0",
     "sqlite": "^4.0.14",
     "sqlite3": "^5.0.0",
-    "styled-components": "5.0.1"
+    "ssh2": "^0.8.9",
+    "styled-components": "5.0.1",
+    "uuid": "^8.3.0"
   },
   "devDependencies": {}
 }

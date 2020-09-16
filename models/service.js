@@ -14,12 +14,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   service.init({
-    group_id: DataTypes.STRING,
-    server_id: DataTypes.STRING,
+    groupId: DataTypes.STRING,
+    serverId: DataTypes.STRING,
     name: DataTypes.STRING,
-    pid_cmd: DataTypes.STRING,
-    start_script: DataTypes.STRING,
-    stop_script: DataTypes.STRING,
+    pidCmd: DataTypes.STRING,
+    startScript: DataTypes.STRING,
+    stopScript: DataTypes.STRING,
     yaml: DataTypes.STRING
   }, {
     sequelize,

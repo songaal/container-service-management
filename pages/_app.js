@@ -5,6 +5,7 @@ import { ThemeProvider } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import theme from '../components/theme';
 // const sequelize = require('../models/index').sequelize;
+import { SnackbarProvider } from 'notistack';
 
 export default function MyApp(props) {
   const { Component, pageProps } = props;
@@ -21,15 +22,17 @@ export default function MyApp(props) {
 
   return (
     <React.Fragment>
-      <Head>
-        <title>서비스 운영플랫폼</title>
-        <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
-      </Head>
-      <ThemeProvider theme={theme}>
-        {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
-        <CssBaseline />
-        <Component {...pageProps} />
-      </ThemeProvider>
+        <SnackbarProvider anchorOrigin={{ horizontal: "right", vertical: "top" }} autoHideDuration={3000}>
+            <Head>
+                <title>서비스 운영플랫폼</title>
+                <meta name="viewport" content="minimum-scale=1, initial-scale=1, width=device-width" />
+            </Head>
+            <ThemeProvider theme={theme}>
+                {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
+                <CssBaseline />
+                <Component {...pageProps} />
+            </ThemeProvider>
+        </SnackbarProvider>
     </React.Fragment>
   );
 }

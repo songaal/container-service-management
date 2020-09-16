@@ -32,27 +32,8 @@ function Index() {
         </Box>
     );
 }
-Index.getInitialProps = async  (ctx) => {
-    const { Users } = require("../models")
+Index.getInitialProps = async (ctx) => {
 
-    // const {Sample} = require('../models');
-
-    // user_id: DataTypes.STRING,
-    //     name: DataTypes.STRING,
-    //     password: DataTypes.STRING,
-    //     admin: DataTypes.BOOLEAN,
-    //     create_date: DataTypes.DATE
-
-    const user = {name: "aaa", admin: true, password: "pass"};
-    // console.log('1>>>', body, Sample)
-    //
-    const newUser = await Users.create(user);
-    console.log('newUser >>>', newUser)
-    //
-    // let s = await Sample.findOne({where: {key: body['key']}});
-    // console.log('>>>', s)
-    //
-    // await s.destroy();
 
     return {}
 }

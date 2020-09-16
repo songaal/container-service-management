@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     user: DataTypes.STRING,
     password: DataTypes.STRING,
     ip: DataTypes.STRING,
-    port: DataTypes.NUMBER
+    port: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'server',

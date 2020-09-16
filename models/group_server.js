@@ -14,8 +14,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   group_server.init({
-    server_id: DataTypes.STRING,
-    group_id: DataTypes.STRING
+    serverId: DataTypes.STRING,
+    groupId: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'group_server',

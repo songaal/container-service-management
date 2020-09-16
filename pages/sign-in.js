@@ -16,6 +16,8 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useTheme } from '@material-ui/core/styles';
+import {useSnackbar} from "notistack";
+import Router from "next/router";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -50,17 +52,51 @@ const useStyles = makeStyles((theme) => ({
 
 function SignIn() {
     const classes = useStyles();
-    const [open, setOpen] = React.useState(false);
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
-
-    const handleClickOpen = () => {
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const [open, setOpen] = React.useState(false);
+    const [resetEmail, setResetEmail] = React.useState("");
+    const [invalid, setInvalid] = React.useState({});
+    const [disabled, setDisabled] = React.useState({});
+    function handleClickOpen() {
+        setInvalid({})
+        setResetEmail("")
         setOpen(true);
-    };
+    }
 
-    const handleClose = () => {
+    function handleClose() {
+        setInvalid({})
+        setResetEmail("")
         setOpen(false);
-    };
+    }
+
+    async function processRestPassword() {
+        let check = {}
+        if (!/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/gi.test(resetEmail)) {
+            // enqueueSnackbar('아이디는 이메일 형싱입니다.', { variant: "warning" });
+            check['resetPassword'] = "이메일 형식으로 입력하세요.";
+        }
+        if (Object.keys(check).length > 0) {
+            setInvalid(check)
+            return false
+        }
+        setDisabled['resetPassword'] = true;
+        try {
+            const res = await fetch(`/api/users/${resetEmail}/action?type=resetPassword`, {
+                method: "PUT"
+            })
+            if(res.ok) {
+                enqueueSnackbar('이메일을 확인하세요.', { variant: "info" });
+                handleClose()
+            } else {
+                enqueueSnackbar('이메일 전송을 실패하였습니다. ', { variant: "error" });
+            }
+        } catch (err) {
+            enqueueSnackbar('비밀번호 초기화 실패하였습니다.', { variant: "error" });
+        }
+        delete setDisabled['resetPassword'];
+    }
 
     return (
         <Grid container component="main" className={classes.root}>
@@ -112,7 +148,7 @@ function SignIn() {
                         <Grid container>
                             <Grid item xs>
                                 <Link href="#" onClick={handleClickOpen} variant="body2">
-                                    비밀번호 찾기
+                                    비밀번호 초기화
                                 </Link>
                             </Grid>
                             <Grid item>
@@ -135,13 +171,16 @@ function SignIn() {
                 onClose={handleClose}
             >
                 <DialogTitle>
-                    비밀번호 찾기
+                    비밀번호 초기화
                 </DialogTitle>
                 <DialogContent>
                     <TextField fullWidth={true}
                                label={"Email"}
                                required={true}
-
+                               value={resetEmail}
+                               onChange={event => setResetEmail(event.target.value)}
+                               error={invalid['resetPassword']}
+                               helperText={invalid['resetPassword']}
                     />
                     <Box mt={2}>
                         <Typography variant={"body2"} color={"textPrimary"} >
@@ -150,8 +189,13 @@ function SignIn() {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button autoFocus variant={"outlined"} onClick={handleClose} color="primary">
-                        찾기
+                    <Button autoFocus
+                            variant={"outlined"}
+                            onClick={processRestPassword}
+                            color="primary"
+                            disabled={disabled['resetPassword']}
+                    >
+                        초기화
                     </Button>
                     <Button variant={"outlined"} onClick={handleClose} color="default">
                         닫기
