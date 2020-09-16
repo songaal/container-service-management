@@ -25,6 +25,8 @@ import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import {makeStyles} from "@material-ui/core/styles";
+import fetch from "isomorphic-unfetch"
+import { SnackbarProvider, useSnackbar } from 'notistack';
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -37,17 +39,69 @@ const useStyles = makeStyles( theme => ({
 
 function Groups() {
     const classes = useStyles();
-    const [open, setOpen] = React.useState(false);
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const [open, setOpen] = React.useState(false);
+    const [name, setName] = React.useState("");
+    const [description, setDescription] = React.useState("");
+    const [invalid, setInvalid] = React.useState({})
+    const [groups, setGroups] = React.useState([])
+    const [searchKeyword, setSearchKeyword] = React.useState("")
+    const [inputSearchKeyword, setInputSearchKeyword] = React.useState("")
+
+    React.useEffect(() => {
+        fetchGroups()
+    }, [])
 
     const handleClickOpen = () => {
+        setName("")
+        setDescription("")
+        setInvalid({})
         setOpen(true);
     };
 
     const handleClose = () => {
+        setName("")
+        setDescription("")
+        setInvalid({})
         setOpen(false);
     };
+
+    const fetchGroups = () => {
+        /// 그룹 전체 조회.
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(body => setGroups(body))
+    }
+
+    const processNewGroup = async () => {
+        let check = {}
+        if (name.trim().length === 0) {
+            check['name'] = "그룹명을 입력하세요.";
+        }
+
+        if (Object.keys(check).length > 0) {
+            setInvalid(check);
+            return false;
+        }
+
+
+        const res = await fetch('/api/groups', {
+            method: "POST",
+            body: JSON.stringify({name, description})
+        })
+        const body = await res.json();
+        if (body['status'] === 'success') {
+            handleClose();
+            fetchGroups()
+            enqueueSnackbar("그룹을 생성하였습니다.", {variant: "success"})
+        } else {
+            enqueueSnackbar(body['message'], {variant: "warning"})
+        }
+    }
+
+    const list = groups.filter(group => searchKeyword.trim().length === 0 ? true : group['name'].includes(searchKeyword))
 
     return (
         <div className={classes.root}>
@@ -67,8 +121,15 @@ function Groups() {
                                    color={"primary"}
                                    size={"small"}
                                    placeholder="검색"
+                                   value={inputSearchKeyword}
+                                   onChange={event => setInputSearchKeyword(event.target.value)}
+                                   onKeyUp={event => event.key === "Enter" ? setSearchKeyword(inputSearchKeyword): null}
                         />
-                        <Button style={{height: '40px'}} variant={"outlined"} color={"default"}>검색</Button>
+                        <Button style={{height: '40px'}}
+                                variant={"outlined"}
+                                color={"default"}
+                                onClick={() => setSearchKeyword(inputSearchKeyword)}
+                        >검색</Button>
                     </Grid>
                     <Grid item xs={6}>
                         <Box align={"right"}>
@@ -92,31 +153,28 @@ function Groups() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            <TableRow>
-                                <TableCell>1</TableCell>
-                                <TableCell><Link href={"#"}>DSearch 그룹</Link></TableCell>
-                                <TableCell>2</TableCell>
-                                <TableCell>10</TableCell>
-                                <TableCell>20 명</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>2</TableCell>
-                                <TableCell><Link href={"#"}>ES검색</Link></TableCell>
-                                <TableCell>4</TableCell>
-                                <TableCell>22</TableCell>
-                                <TableCell>2 명</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>3</TableCell>
-                                <TableCell><Link href={"#"}>K8S 그룹</Link></TableCell>
-                                <TableCell>8</TableCell>
-                                <TableCell>33</TableCell>
-                                <TableCell>80 명</TableCell>
-                            </TableRow>
+                            {
+                                list.length === 0 ?
+                                    (
+                                        <TableRow>
+                                            <TableCell colSpan={5} align={"center"}>결과없음.</TableCell>
+                                        </TableRow>
+                                    )
+                                    :
+                                    list.map((group, index) => {
+                                        return (
+                                            <TableRow key={group['name']}>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell><Link href={`/groups/${group['id']}`}>{group['name']}</Link></TableCell>
+                                                <TableCell>[개발예정]</TableCell>
+                                                <TableCell>[개발예정]</TableCell>
+                                                <TableCell>[개발예정]</TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                         </TableBody>
                     </Table>
                 </Box>
-
 
                 <Dialog
                     fullWidth={true}
@@ -137,6 +195,10 @@ function Groups() {
                                     <TextField fullWidth={true}
                                                label={""}
                                                required={true}
+                                               value={name}
+                                               onChange={event => setName(event.target.value)}
+                                               error={Boolean(invalid['name'])}
+                                               helperText={invalid['name']}
                                     />
                                 </Grid>
                             </Grid>
@@ -147,13 +209,16 @@ function Groups() {
                                     설명
                                 </Grid>
                                 <Grid item xs={8}>
-                                    <TextareaAutosize style={{width: '100%', minHeight: "50px"}} />
+                                    <TextareaAutosize style={{width: '100%', minHeight: "50px"}}
+                                                      value={description}
+                                                      onChange={event => setDescription(event.target.value)}
+                                    />
                                 </Grid>
                             </Grid>
                         </Box>
                     </DialogContent>
                     <DialogActions>
-                        <Button autoFocus variant={"outlined"} onClick={handleClose} color="primary">
+                        <Button autoFocus variant={"outlined"} onClick={processNewGroup} color="primary">
                             생성
                         </Button>
                         <Button variant={"outlined"} onClick={handleClose} color="default">

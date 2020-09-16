@@ -6,6 +6,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import theme from '../components/theme';
 // const sequelize = require('../models/index').sequelize;
 import { SnackbarProvider } from 'notistack';
+import fetch from "isomorphic-unfetch";
 
 export default function MyApp(props) {
   const { Component, pageProps } = props;
@@ -16,8 +17,6 @@ export default function MyApp(props) {
     if (jssStyles) {
       jssStyles.parentElement.removeChild(jssStyles);
     }
-
-     // sequelize.sync();
   }, []);
 
   return (

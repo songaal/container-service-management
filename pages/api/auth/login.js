@@ -1,17 +1,29 @@
 import React from 'react';
+import fetch from "isomorphic-unfetch";
+import { withSession } from 'next-session';
+import AuthService from "../../../services/AuthService";
+import JsonUtil from "../../../utils/JsonUtil";
 
-export default async (req, res) => {
-    if (req.method === 'POST') {
-        const result = await get(req, res);
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json')
-        res.end(JSON.stringify({ name: 'John Doe', msg: result }))
-    } else {
-        res.statusCode = 404;
+async function login(req, res) {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json')
+
+    if (req.method !== "POST") {
+        res.statusCode = 405;
         res.end()
+    }
+    try {
+        let requestLogin = JsonUtil.parse(req.body);
+        const auth = await AuthService.login(requestLogin['userId'], requestLogin['password']);
+
+        if(auth['status'] === 'success') {
+            req.session.auth = auth;
+        }
+        res.send(auth);
+    } catch (error) {
+        console.error(error)
+        res.send(error)
     }
 }
 
-async function post(req, res) {
-
-}
+export default withSession(login)

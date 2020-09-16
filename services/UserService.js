@@ -16,7 +16,8 @@ export default {
             }
 
             let registerUser = await Users.create(Object.assign(user, {
-                password: (await crypt.hash(user['password'], 12))
+                password: (await crypt.hash(user['password'], 12)),
+                admin: false
             }));
 
             return {
@@ -33,12 +34,6 @@ export default {
             }
         }
     },
-    removeUser: async (userId) => {
-        const user = await this.findByUserId(userId);
-        if (user) {
-            user.destroy()
-        }
-    },
     resetPassword: async (userId) => {
         let registerUser = await Users.findOne({where: {userId: userId}})
         if (registerUser) {
@@ -50,7 +45,12 @@ export default {
                 text: "임시비밀번호: " + tempPassword
             })
         }
+    },
+    findByUserId: async (userId) => {
+        return await Users.findOne({where: {userId: userId}})
+
     }
+
 }
 
 

@@ -22,6 +22,8 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import Service from "../../components/service";
 import Authentication from "../../components/authentication";
 import Server from "../../components/server";
+import fetch from "isomorphic-unfetch"
+import { SnackbarProvider, useSnackbar } from 'notistack';
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -59,11 +61,27 @@ function a11yProps(index) {
 
 function GroupDetail() {
     const classes = useStyles();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const theme = useTheme();
     const [tabIndex, setTabIndex] = React.useState(0);
     const [editOpen, setEditOpen] = React.useState(false);
-    const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const [anchorEl, setAnchorEl] = React.useState(null);
+    const [group, setGroup] = React.useState({})
+
+    React.useEffect(() => {
+        location.pathname
+        fetch("/api" + location.pathname)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroup(body['group'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
+                }
+            })
+    }, [])
+
 
     return (
         <Box className={classes.root}>
@@ -75,7 +93,7 @@ function GroupDetail() {
                     <Grid item xs={8}>
                         <Box>
                             <Typography variant="h4" gutterBottom>
-                                sample
+                                {group['name'] || ""}
                             </Typography>
                         </Box>
                     </Grid>
@@ -97,10 +115,10 @@ function GroupDetail() {
                         </Box>
                     </Grid>
                     <Grid item xs={12}>
-                        <Box >
-                            <Typography variant="h6" gutterBottom>
-                                설명 도커와 서버기반 하이브리드 PC 웹서버입니다.
-                            </Typography>
+                        <Box style={{maxHeight: "200px", overflow: "auto"}}>
+                            <pre style={{fontSize: "1.1em"}}>
+                                {group['description'] || ""}
+                            </pre>
                         </Box>
                     </Grid>
                 </Grid>

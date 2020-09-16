@@ -4,7 +4,7 @@
   "description": "",
   "private": true,
   "scripts": {
-    "dev": "next",
+    "dev": "npx sequelize-cli db:migrate && next",
     "build": "next build",
     "start": "next start"
   },
@@ -38,9 +38,14 @@
     "date-fns": "2.10.0",
     "fs": "0.0.1-security",
     "google-map-react": "1.1.6",
+    "isomorphic-unfetch": "^3.0.0",
+    "js-cookie": "^2.2.1",
     "jss": "10.0.4",
+    "micro": "^9.3.4",
     "mysql2": "^2.1.0",
     "next": "latest",
+    "next-cookies": "^2.0.3",
+    "next-session": "^3.3.2",
     "nodemailer": "^6.4.11",
     "notistack": "^1.0.0",
     "pg-hstore": "^2.3.3",

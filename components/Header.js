@@ -10,6 +10,8 @@ import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
+import fetch from "isomorphic-unfetch";
+import Router from "next/router";
 
 const useStyles = makeStyles((theme) => ({
     appBar: {
@@ -41,6 +43,23 @@ const useStyles = makeStyles((theme) => ({
 export default function Header({active}) {
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = React.useState(null);
+    const [user, setUser] = React.useState({});
+
+    React.useEffect(function() {
+        fetch(`/api/auth/validate`)
+            .then(res => res.json())
+            .then(body => {
+                if (body.status !== 'success') {
+                    Router.push("/sign-in")
+                } else {
+                    setUser(body['user'])
+                    if ((!body['user']['admin']) && location.pathname.startsWith("/settings")) {
+                        // 관리자 아닐겨우
+                        Router.push("/home")
+                    }
+                }
+            })
+    }, [])
 
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -49,6 +68,14 @@ export default function Header({active}) {
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    const logout = async () => {
+        await fetch(`/api/auth/logout`)
+        await Router.replace("/sign-in")
+    }
+
+    const display = user['admin'] === true ? 'inline' : 'none'
+
     return (
         <React.Fragment>
             <CssBaseline/>
@@ -66,7 +93,7 @@ export default function Header({active}) {
                                 <Link underline={'none'} variant="button" color="textPrimary" href="/groups" className={ active === 1 ? classes.active : classes.link}>
                                     그룹
                                 </Link>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="/settings" className={ active === 2 ? classes.active : classes.link}>
+                                <Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="/settings" className={ active === 2 ? classes.active : classes.link}>
                                     설정
                                 </Link>
                             </nav>
@@ -74,7 +101,7 @@ export default function Header({active}) {
                         <Grid item  xs={3}>
                             <Box align="right">
                                 <Button onClick={handleClick}>
-                                    홍길동
+                                    {user['name']||""}
                                 </Button>
                                 <Menu
                                     anchorEl={anchorEl}
@@ -83,7 +110,7 @@ export default function Header({active}) {
                                     onClose={handleClose}
                                 >
                                     <MenuItem  onClick={() => {location.href="/my"}}>개인정보</MenuItem>
-                                    <MenuItem onClick={() => {location.href="/sign-in"}}>로그아웃</MenuItem>
+                                    <MenuItem onClick={logout}>로그아웃</MenuItem>
                                 </Menu>
                             </Box>
                         </Grid>

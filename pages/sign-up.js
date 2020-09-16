@@ -14,6 +14,7 @@ import Container from '@material-ui/core/Container';
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { SnackbarProvider, useSnackbar } from 'notistack';
+import fetch from "isomorphic-unfetch";
 
 const useStyles = makeStyles((theme) => ({
     paper: {
@@ -39,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-function SignUp() {
+function Page() {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
@@ -48,7 +49,19 @@ function SignUp() {
     const [password, setPassword] = useState("")
     const [passwordConfirm, setPasswordConfirm] = useState("")
     const [invalid,setInvalid] = useState({})
+    const [loginCheck, setLoginCheck] = React.useState(false);
 
+    React.useEffect(() => {
+        fetch(`/api/auth/validate`)
+            .then(res => res.json())
+            .then(body => {
+                if(body['status'] === "success") {
+                    Router.replace("/home")
+                } else {
+                    setLoginCheck(true)
+                }
+            })
+    }, [])
 
     async function handleUserAdd() {
         let check = {}
@@ -88,6 +101,10 @@ function SignUp() {
             enqueueSnackbar('회원가입 실패하였습니다.', { variant: "error" });
         }
         setOpen(false)
+    }
+
+    if (!loginCheck) {
+        return null;
     }
 
     return (
@@ -190,7 +207,7 @@ function SignUp() {
     );
 }
 
-SignUp.getInitialProps = async (ctx) => {
+Page.getInitialProps = async (ctx) => {
     // const res = await fetch('https://api.github.com/repos/vercel/next.js')
     // const json = await res.json()
     // return { stars: json.stargazers_count }
@@ -200,4 +217,4 @@ SignUp.getInitialProps = async (ctx) => {
 }
 
 
-export default SignUp
+export default Page

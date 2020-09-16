@@ -16,4 +16,3 @@ sequelize model:create --name group_server --attributes serverId:string,groupId:
 
 sequelize model:create --name group_auth --attributes userId:string,groupId:string
 
-npx sequelize-cli db:migrate

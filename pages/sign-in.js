@@ -17,7 +17,9 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useTheme } from '@material-ui/core/styles';
 import {useSnackbar} from "notistack";
+import fetch from "isomorphic-unfetch";
 import Router from "next/router";
+
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -50,7 +52,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-function SignIn() {
+function Page() {
     const classes = useStyles();
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
@@ -59,6 +61,23 @@ function SignIn() {
     const [resetEmail, setResetEmail] = React.useState("");
     const [invalid, setInvalid] = React.useState({});
     const [disabled, setDisabled] = React.useState({});
+    const [userId, setUserId] = React.useState("admin@example.com");
+    const [password, setPassword] = React.useState("admin");
+    const [loginCheck, setLoginCheck] = React.useState(false);
+
+    React.useEffect(() => {
+        fetch(`/api/auth/validate`)
+            .then(res => res.json())
+            .then(body => {
+                if(body.status === "success") {
+                    Router.replace("/home")
+                } else {
+                    setLoginCheck(true)
+                }
+            })
+    }, [])
+
+
     function handleClickOpen() {
         setInvalid({})
         setResetEmail("")
@@ -94,8 +113,46 @@ function SignIn() {
             }
         } catch (err) {
             enqueueSnackbar('비밀번호 초기화 실패하였습니다.', { variant: "error" });
+        } finally {
+            delete setDisabled['resetPassword'];
         }
-        delete setDisabled['resetPassword'];
+    }
+
+    async function processLogin() {
+        setInvalid({})
+        let check = {}
+        if (!/^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/gi.test(userId)) {
+            check['userId'] = "이메일 형식으로 입력하세요.";
+        }
+        if (password.length < 4) {
+            check['password'] = "비밀번호가 잘못되었습니다.";
+        }
+        if (Object.keys(check).length > 0) {
+            setInvalid(check)
+            return false
+        }
+
+        setDisabled['login'] = true;
+        try {
+            const res = await fetch(`/api/auth/login`, {
+                method: "POST",
+                body: JSON.stringify({userId, password})
+            })
+            const body = await res.json()
+            if(res.ok && body['status'] === 'success') {
+                await Router.replace("/home")
+            } else {
+                enqueueSnackbar('등록된 사용자가 없습니다.', { variant: "error" });
+            }
+        } catch (err) {
+            enqueueSnackbar('로그인 요청이 실패 하였습니다.', { variant: "error" });
+        } finally {
+            setDisabled['login'] = false;
+        }
+    }
+
+    if (!loginCheck) {
+        return null;
     }
 
     return (
@@ -110,37 +167,43 @@ function SignIn() {
                     <Typography component="h1" variant="h5">
                         서비스 운영플랫폼
                     </Typography>
-                    <form className={classes.form} noValidate>
+                    <form className={classes.form}>
                         <TextField
                             variant="outlined"
                             margin="normal"
                             required
                             fullWidth
-                            id="email"
-                            label="Email"
-                            name="email"
+                            label="아이디"
                             autoComplete="email"
+                            value={userId}
+                            onChange={event => setUserId(event.target.value)}
                             autoFocus
+                            error={invalid['userId']}
+                            helperText={invalid['userId']}
+                            onKeyUp={event => event.key === "Enter" ? processLogin() : null}
                         />
                         <TextField
                             variant="outlined"
                             margin="normal"
                             required
                             fullWidth
-                            name="password"
-                            label="Password"
+                            label="비밀번호"
                             type="password"
-                            id="password"
                             autoComplete="current-password"
+                            value={password}
+                            onChange={event => setPassword(event.target.value)}
+                            error={invalid['password']}
+                            helperText={invalid['password']}
+                            onKeyUp={event => event.key === "Enter" ? processLogin() : null}
                         />
 
                         <Button
-                            type="submit"
                             fullWidth
                             variant="contained"
                             color="primary"
                             className={classes.submit}
-                            href={"/home"}
+                            onClick={processLogin}
+                            disabled={disabled['login']}
                         >
                             로그인
                         </Button>
@@ -207,14 +270,11 @@ function SignIn() {
     );
 }
 
-SignIn.getInitialProps = async (ctx) => {
-    // const res = await fetch('https://api.github.com/repos/vercel/next.js')
-    // const json = await res.json()
-    // return { stars: json.stargazers_count }
-    return {
-        test: "123123"
-    }
-}
+// Page.getInitialProps = async (ctx) => {
+//     return {
+//         test: "123123"
+//     }
+// }
 
 
-export default SignIn
+export default Page

@@ -1,0 +1,44 @@
+#image: dcr.danawa.io/alpine-k8s
+#
+#stages:
+#  - install
+#  - build
+#  - deploy
+#
+#cache:
+#  paths:
+#    - node_modules/
+#
+#before_script:
+#  - export IMAGE="${REGISTRY}/${CI_PROJECT_TITLE}"
+#
+#module install:
+#  stage: install
+#  when: manual
+#  script:
+#    - yum install git -y
+#    - rm -rf yarn.lock
+#    - rm -rf package-lock.json
+#    - rm -rf node_modules
+#    - npm cache clean -f
+#    - npm install
+#
+#
+#build:
+#  stage: build
+#  script:
+#    - export VERSION="$(cat package.json | grep version | head -1 | awk -F= "{ print $2 }" | sed -E 's/(version)|[:,\",]//g' | tr -d '[[:space:]]')"
+#    -
+#    - docker build -t ${IMAGE}:latest .
+#    - docker tag ${IMAGE}:latest ${IMAGE}:${VERSION}
+#    - docker push ${IMAGE}:latest
+#    - docker push ${IMAGE}:${VERSION}
+#
+#deploy:
+#  stage: deploy
+#  cache: {}
+#  script:
+#    - kubectl patch deployment  -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}},\"spec\":{\"containers\":[{\"name\":\"fastcatx-console\",\"image\":\"${IMAGE}:latest\"}]}}}}"
+#    - sleep 5
+#    - kubectl get pod -n fastcatx -o wide
+#
