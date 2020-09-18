@@ -1,4 +1,4 @@
-FROM node:14
+FROM dcr.danawa.io/node:14
 
 ENV NODE_ENV=production
 
