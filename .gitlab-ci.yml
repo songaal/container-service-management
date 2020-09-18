@@ -21,7 +21,7 @@ build:
 deploy:
   stage: deploy
   script:
-    - kubectl patch deployment -n hybrid-process -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}},\"spec\":{\"containers\":[{\"name\":\"hybrid-process-management\",\"image\":\"${IMAGE}:latest\"}]}}}}"
+    - kubectl patch deployment -n hybrid-process hybrid-process-management -p "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"`date +'%s'`\"}},\"spec\":{\"containers\":[{\"name\":\"hybrid-process-management\",\"image\":\"${IMAGE}:latest\"}]}}}}"
     - sleep 5
     - kubectl get pod -n hybrid-process -o wide
 
