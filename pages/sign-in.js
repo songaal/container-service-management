@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
     },
     image: {
         // backgroundImage: 'url(https://source.unsplash.com/random)',
-        backgroundImage: 'url(https://source.unsplash.com/user/erondu)',
+        backgroundImage: 'url(https://images.unsplash.com/photo-1425321505542-00715f6a9c28?ixlib=rb-1.2.1&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&ixid=eyJhcHBfaWQiOjF9)',
         backgroundRepeat: 'no-repeat',
         backgroundColor:
             theme.palette.type === 'light' ? theme.palette.grey[50] : theme.palette.grey[900],
