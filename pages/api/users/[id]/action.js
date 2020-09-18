@@ -1,4 +1,5 @@
 import UserService from "../../../../services/UserService"
+import JsonUtil from "../../../../utils/JsonUtil";
 
 export default async (req, res) => {
     try {
@@ -7,8 +8,13 @@ export default async (req, res) => {
 
         if (req.method === 'PUT') {
             if (req.query['type'] && req.query['type'] === 'resetPassword') {
-                UserService.resetPassword(req.query['id']);
+                await UserService.resetPassword(req.query['id']);
                 res.end()
+            } else if (req.query['type'] && req.query['type'] === 'updatePassword') {
+
+                const body = JsonUtil.parse(req.body);
+                const result = await UserService.updatePassword(req.query['id'], body['password'], body['updatePassword']);
+                res.send(result)
             } else {
                 res.statusCode = 400;
             }

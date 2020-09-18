@@ -1,5 +1,6 @@
 const { Users } = require("../models")
 const crypt = require('bcryptjs')
+import GroupService from "../services/GroupService";
 
 function getExpireTime(nowTime = new Date().getTime()) {
     const timeout = process.env.session_timeout || 60
@@ -11,10 +12,10 @@ export default {
         let auth = {};
         try {
             let registerUser = await Users.findOne({where: {userId: userId}})
-
             if (registerUser && await crypt.compareSync(password, registerUser['password'])) {
-                const nowTime = new Date().getTime()
-                const expireTime = getExpireTime(nowTime)
+                const groups = await GroupService.findByUserId(registerUser['id']);
+                const nowTime = new Date().getTime();
+                const expireTime = getExpireTime(nowTime);
                 auth = {
                     status: "success",
                     user: {
@@ -23,7 +24,7 @@ export default {
                         userId: registerUser['userId'],
                         admin: registerUser['admin'] || false,
                     },
-                    groups: [], // TODO 소속된 그룹 포함 예정
+                    groups: groups,
                     loginTime: nowTime,
                     expireTime: expireTime
                 }
@@ -45,13 +46,14 @@ export default {
     validate: async (req, res) => {
         try {
             const auth = req.session.auth;
-            // let registerUser = await Users.findOne({where: {userId: auth['userId']}})
-
             const nowTime = new Date().getTime();
             if (auth && auth['expireTime'] && nowTime < auth['expireTime']) {
                 // 유효함.
-                const expireTime = getExpireTime(nowTime);
-                const tmpAuth = Object.assign(auth, { expireTime });
+                const groups = await GroupService.findByUserId(auth['user']['id']);
+                const tmpAuth = Object.assign(auth, {
+                    expireTime: getExpireTime(nowTime),
+                    groups: groups
+                });
                 req.session.auth = tmpAuth;
                 return tmpAuth;
             } else {

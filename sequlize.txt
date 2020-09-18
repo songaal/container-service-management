@@ -1,7 +1,11 @@
-add model
 
-sequelize model:create --name User --attributes name:string,surname:string,email:string,password:string
-sequelize migration:generate --name [name_of_your_migration]
+
+npx sequelize model:create --name User --attributes name:string,surname:string,email:string,password:string
+npx sequelize migration:generate --name [name_of_your_migration]
 npx sequelize-cli db:migrate
 npx sequelize-cli db:migrate:undo
 npx sequelize-cli db:migrate:undo:all
+npx sequelize seed:generate --name task
+npx sequelize db:seed:all
+
+#sequelize seed:generate --name fk

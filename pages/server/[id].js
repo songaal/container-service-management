@@ -22,6 +22,9 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import Link from "@material-ui/core/Link";
 import Divider from "@material-ui/core/Divider";
 import ButtonGroup from '@material-ui/core/ButtonGroup';
+import { SnackbarProvider, useSnackbar } from 'notistack';
+import fetch from "isomorphic-unfetch";
+import Router from "next/router";
 
 const useStyles = makeStyles( theme => ({
     root: {

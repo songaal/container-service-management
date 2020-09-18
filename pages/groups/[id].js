@@ -80,8 +80,11 @@ function GroupDetail() {
                     enqueueSnackbar(body['message'], {variant: "error"})
                 }
             })
-    }, [])
 
+        if (location.hash) {
+            setTabIndex(Number(location.hash.replace("#", "")))
+        }
+    }, [])
 
     return (
         <Box className={classes.root}>
@@ -127,7 +130,7 @@ function GroupDetail() {
                     <AppBar position="static" color="default">
                         <Tabs
                             value={tabIndex}
-                            onChange={(event, value) => setTabIndex(value)}
+                            onChange={(event, value) => {setTabIndex(value)}}
                             indicatorColor="primary"
                             textColor="primary"
                             variant="scrollable"

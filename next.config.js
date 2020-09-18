@@ -1,4 +1,5 @@
 module.exports = {
+    distDir: 'dist',
     webpack: (config, {
         isServer
     }) => {

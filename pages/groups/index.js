@@ -72,7 +72,13 @@ function Groups() {
         /// 그룹 전체 조회.
         fetch('/api/groups')
             .then(res => res.json())
-            .then(body => setGroups(body))
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
+                }
+            })
     }
 
     const processNewGroup = async () => {
@@ -166,9 +172,9 @@ function Groups() {
                                             <TableRow key={group['name']}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell><Link href={`/groups/${group['id']}`}>{group['name']}</Link></TableCell>
-                                                <TableCell>[개발예정]</TableCell>
-                                                <TableCell>[개발예정]</TableCell>
-                                                <TableCell>[개발예정]</TableCell>
+                                                <TableCell>{group['server_count']}</TableCell>
+                                                <TableCell>{group['service_count']}</TableCell>
+                                                <TableCell>{group['user_count']}</TableCell>
                                             </TableRow>
                                         )
                                     })}

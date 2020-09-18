@@ -11,6 +11,8 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      service.hasMany(models.Variable, {foreignKey: "serviceId", sourceKey: "id"})
+      service.belongsTo(models.Groups, {foreignKey: "groupId"})
     }
   };
   service.init({
@@ -25,5 +27,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'service',
   });
+
   return service;
 };

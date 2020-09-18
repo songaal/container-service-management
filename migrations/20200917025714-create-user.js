@@ -29,14 +29,6 @@ module.exports = {
         type: Sequelize.DATE
       }
     });
-
-    await queryInterface.bulkInsert('users', [
-      {
-        id: 1, createdAt: new Date(), updatedAt: new Date(),
-        userId: "admin@example.com", name: "관리자", admin: true,
-        password: "$2a$12$KFcxKcSBknVnI3PNkCpmke3ohpLLYHEK5pCFRnGu1nF0Jvp5M1jqa"
-      }
-    ]);
   },
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('users');

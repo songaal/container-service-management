@@ -48,25 +48,24 @@ function Server() {
                             <TableRow>
                                 <TableCell>1</TableCell>
                                 <TableCell>
-                                    <Link href={"#"}>elk1-dev</Link>
+                                    <Link href={"/server/1"}>elk1-dev</Link>
                                 </TableCell>
                                 <TableCell>119.205.194.121</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>2</TableCell>
                                 <TableCell>
-                                    <Link href={"#"}>elk2-dev</Link>
+                                    <Link href={"/server/1"}>elk2-dev</Link>
                                 </TableCell>
                                 <TableCell>119.205.194.122</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>3</TableCell>
                                 <TableCell>
-                                    <Link href={"#"}>kube1</Link>
+                                    <Link href={"/server/1"}>kube1</Link>
                                 </TableCell>
                                 <TableCell>
-                                    119.205.194.98 <br />
-                                    192.168.1.98
+                                    119.205.194.98
                                 </TableCell>
                             </TableRow>
                         </TableBody>

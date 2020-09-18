@@ -4,6 +4,9 @@ import Grid from '@material-ui/core/Grid';
 import {Box, Card, CardContent, Table, TableBody, TableCell, TableHead, TableRow, TextField} from "@material-ui/core";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
+import { SnackbarProvider, useSnackbar } from 'notistack';
+import fetch from "isomorphic-unfetch";
+import Router from "next/router";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -33,7 +36,7 @@ function Service() {
                             </Grid>
                             <Grid item xs={4}>
                                 <Box align={"right"}>
-                                    <Button size={"small"} variant={"outlined"} color={"primary"}>서비스 추가</Button>
+                                    <Button onClick={() => Router.push('/services')} size={"small"} variant={"outlined"} color={"primary"}>서비스 추가</Button>
                                 </Box>
                             </Grid>
                         </Grid>
@@ -54,7 +57,7 @@ function Service() {
                             <TableRow>
                                 <TableCell>1</TableCell>
                                 <TableCell>
-                                    <Link href={"#"}>ES 검색</Link>
+                                    <Link href={"/services/1"}>ES 검색</Link>
                                 </TableCell>
                                 <TableCell>elk1-dev</TableCell>
                                 <TableCell>프로세스</TableCell>
@@ -62,7 +65,7 @@ function Service() {
                             <TableRow>
                                 <TableCell>2</TableCell>
                                 <TableCell>
-                                    <Link href={"#"}>ES 검색</Link>
+                                    <Link href={"/services/1"}>ES 검색</Link>
                                 </TableCell>
                                 <TableCell>elk2-dev</TableCell>
                                 <TableCell>컨테이너</TableCell>
@@ -70,7 +73,7 @@ function Service() {
                             <TableRow>
                                 <TableCell>3</TableCell>
                                 <TableCell>
-                                    <Link href={"#"}>쿠버 테스트</Link>
+                                    <Link href={"/services/1"}>쿠버 테스트</Link>
                                 </TableCell>
                                 <TableCell>elk2-dev</TableCell>
                                 <TableCell>컨테이너</TableCell>

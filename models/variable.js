@@ -11,6 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      variable.belongsTo(models.Services, {foreignKey: "serviceId"})
     }
   };
   variable.init({
@@ -22,5 +23,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'variable',
   });
+
   return variable;
 };

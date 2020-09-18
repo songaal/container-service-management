@@ -11,6 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      group.hasMany(models.GroupAuth, {foreignKey: "groupId", sourceKey: "id"})
+      group.hasMany(models.GroupServer, {foreignKey: "groupId", sourceKey: "id"})
+      group.hasMany(models.Services, {foreignKey: "groupId", sourceKey: "id"})
     }
   };
   group.init({
@@ -20,5 +23,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'group',
   });
+
   return group;
 };

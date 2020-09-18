@@ -46,11 +46,33 @@ export default {
             })
         }
     },
+    updatePassword: async (id, password, updatePassword) => {
+        let registerUser = await Users.findOne({where: {id}})
+        if (registerUser) {
+            const isSame = await crypt.compareSync(password, registerUser['password'])
+            if (isSame) {
+                await registerUser.update({password: (await crypt.hash(updatePassword, 12))})
+                return {
+                    status: "success",
+                    message: ""
+                }
+            } else {
+                return {
+                    status: "fail",
+                    message: "기존 비밀번호가 일치하지 않습니다."
+                }
+            }
+        } else {
+            return {
+                status: "fail",
+                message: "사용자를 찾을 수 없습니다."
+            }
+        }
+    },
     findByUserId: async (userId) => {
         return await Users.findOne({where: {userId: userId}})
 
-    }
-
+    },
 }
 
 

@@ -239,7 +239,7 @@ function AdminGroup() {
                                 <TableRow>
                                     <TableCell>1</TableCell>
                                     <TableCell>
-                                        <Link href={"#"}>ES 검색</Link>
+                                        <Link href={"/groups/1"}>ES 검색</Link>
                                     </TableCell>
                                     <TableCell>3</TableCell>
                                     <TableCell>
@@ -249,7 +249,7 @@ function AdminGroup() {
                                 <TableRow>
                                     <TableCell>2</TableCell>
                                     <TableCell>
-                                        <Link href={"#"}>ES 검색</Link>
+                                        <Link href={"/groups/1"}>ES 검색</Link>
                                     </TableCell>
                                     <TableCell>2</TableCell>
                                     <TableCell>
@@ -259,7 +259,7 @@ function AdminGroup() {
                                 <TableRow>
                                     <TableCell>3</TableCell>
                                     <TableCell>
-                                        <Link href={"#"}>쿠버 테스트</Link>
+                                        <Link href={"/groups/1"}>쿠버 테스트</Link>
                                     </TableCell>
                                     <TableCell>9</TableCell>
                                     <TableCell>

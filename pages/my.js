@@ -7,8 +7,8 @@ import {
     Button,
     Card as MuiCard,
     CardContent,
-    Divider as MuiDivider,
-    Grid as MuiGrid,
+    Divider,
+    Grid,
     TextField,
     Typography,
     Table,
@@ -21,12 +21,12 @@ import Link from '@material-ui/core/Link';
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import {spacing} from "@material-ui/system";
-import GridList from '@material-ui/core/GridList';
-import GridListTile from '@material-ui/core/GridListTile';
+import fetch from "isomorphic-unfetch";
+import Router from "next/router";
+import {useSnackbar} from "notistack";
 
 const Card = styled(MuiCard)(spacing);
-const Divider = styled(MuiDivider)(spacing);
-const Grid = styled(MuiGrid)(spacing);
+// const Divider = styled(MuiDivider)(spacing);
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -54,17 +54,79 @@ const useStyles = makeStyles( theme => ({
 
 function My() {
     const classes = useStyles();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [ password, setPassword ] = React.useState("")
     const [ updatePassword, setUpdatePassword ] = React.useState("")
     const [ updatePasswordConfirm, setUpdatePasswordConfirm ] = React.useState("")
     const [ inValid, setInValid] = React.useState(false)
+    const [user, setUser] = React.useState({});
+    const [groups, setGroups] = React.useState([]);
+
+    React.useEffect(() => {
+        fetchMyInfo()
+    }, [])
+
+    function fetchMyInfo() {
+        fetch(`/api/auth/validate`)
+            .then(res => res.json())
+            .then(body => {
+                if (body.status !== 'success') {
+                    Router.push("/sign-in")
+                } else {
+                    setUser(body['user']);
+                    setGroups(body['groups']);
+                }
+            })
+            .catch(error => {
+                console.error(error)
+                enqueueSnackbar('조회 중 에러가 발생하였습니다.', {variant: "error"})
+                setTimeout(fetchMyInfo, 2000)
+            })
+    }
 
     function handleChangePassword() {
-        // if (updatePassword !== updatePasswordConfirm) {
-        //     setInValid(true)
-        //     return
-        // }
-        //
+        setInValid({})
+        let check = {}
+        if (password.trim().length < 4) {
+            check['password'] = "비밀번호를 확인하세요. 최소 4자";
+        }
+        if (updatePassword.trim().length < 4) {
+            check['updatePassword'] = "신규 비밀번호를 확인하세요. 최소 4자";
+        }
+        if (updatePassword !== updatePasswordConfirm) {
+            check['updatePasswordConfirm'] = "비밀번호가 다릅니다."
+        }
+        
+        if (Object.keys(check).length > 0) {
+            setInValid(check)
+            return false;
+        }
+
+        fetch(`/api/users/${user['id']}/action?type=updatePassword`, {
+            method: "PUT",
+            body: JSON.stringify({password, updatePassword})
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body.status === 'success') {
+                    setPassword("");
+                    setUpdatePassword("");
+                    setUpdatePasswordConfirm("");
+                    enqueueSnackbar('비밀번호가 변경되었습니다.', {variant: "success"})
+                } else {
+                    enqueueSnackbar(body.message, {variant: "error"})
+                }
+            })
+            .catch(error => {
+                console.error(error)
+                enqueueSnackbar('조회 중 에러가 발생하였습니다.', {variant: "error"})
+            })
+    }
+
+    let list = []
+    for (let i = 0; i < Math.ceil(groups.length / 4); i++) {
+        let s = i * 4;
+        list.push(groups.slice(s, s + 4))
     }
 
     return (
@@ -82,7 +144,7 @@ function My() {
 
                 <Card>
                     <CardContent>
-                        <Grid container mt={4}>
+                        <Grid container>
                             <Grid item xs={3}>
                                 <Box mt={2} align={"center"}>
                                     이메일
@@ -90,11 +152,12 @@ function My() {
                             </Grid>
                             <Grid item xs={9}>
                                 <Box mt={1}>
-                                    <TextField value={"hong@danawa.com"} disabled fullWidth/>
+                                    <TextField value={user['userId']||""} disabled fullWidth />
                                 </Box>
                             </Grid>
                         </Grid>
-                        <Grid container mt={4}>
+                        <br/>
+                        <Grid container>
                             <Grid item xs={3}>
                                 <Box mt={2} align={"center"}>
                                     이름
@@ -102,12 +165,12 @@ function My() {
                             </Grid>
                             <Grid item xs={9}>
                                 <Box mt={1}>
-                                    <TextField value={'홍길동'} disabled fullWidth/>
+                                    <TextField value={user['name']||""} disabled fullWidth />
                                 </Box>
                             </Grid>
                         </Grid>
-
-                        <Grid container mt={4}>
+                        <br/>
+                        <Grid container >
                             <Grid item xs={3}>
                                 <Box mt={2} align={"center"}>
                                     그룹
@@ -117,43 +180,33 @@ function My() {
                                 <Box>
                                     <Table>
                                         <TableBody>
-                                            <TableRow>
-                                                <TableCell>
-                                                    <Link href="#">ES검색</Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href="#">k8s</Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href="#">web</Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href="#">tomcat</Link>
-                                                </TableCell>
-                                            </TableRow>
-                                            <TableRow>
-                                                <TableCell>
-                                                    <Link href="#">php-web</Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href="#">dev-web</Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href="#"></Link>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Link href="#"></Link>
-                                                </TableCell>
-                                            </TableRow>
+
+                                            {
+                                                list.map((data, index) => {
+                                                    return (
+                                                        <TableRow key={index}>
+                                                            {
+                                                                data.map(group => {
+                                                                    return (
+                                                                        <TableCell key={group['id']}>
+                                                                            <Link href={`/groups/${group['id']}`}>{group['name']||''}</Link>
+                                                                        </TableCell>
+                                                                    )
+                                                                })
+                                                            }
+                                                        </TableRow>
+                                                    )
+                                                })
+                                            }
                                         </TableBody>
                                     </Table>
                                 </Box>
                             </Grid>
                         </Grid>
-
-                        <Divider mt={5}/>
-
-                        <Grid container mt={3}>
+                        <br/>
+                        <Divider />
+                        <br/>
+                        <Grid container >
                             <Grid item xs={3}>
                                 <Box mt={2} align={"center"}>
                                     현재 비밀번호
@@ -166,12 +219,14 @@ function My() {
                                                value={password}
                                                onChange={event => setPassword(event.target.value)}
                                                autoFocus
+                                               error={inValid['password']}
+                                               helperText={inValid['password']}
                                     />
                                 </Box>
                             </Grid>
                         </Grid>
-
-                        <Grid container mt={4}>
+                        <br/>
+                        <Grid container >
                             <Grid item xs={3}>
                                 <Box mt={2} align={"center"}>
                                     비밀번호 변경
@@ -183,13 +238,14 @@ function My() {
                                                type={"password"}
                                                value={updatePassword}
                                                onChange={event => setUpdatePassword(event.target.value)}
-                                               error={inValid}
+                                               error={inValid['updatePassword']}
+                                               helperText={inValid['updatePassword']}
                                     />
                                 </Box>
                             </Grid>
                         </Grid>
-
-                        <Grid container mt={4}>
+                        <br/>
+                        <Grid container >
                             <Grid item xs={3}>
                                 <Box mt={2} align={"center"}>
                                     비밀번호 변경 확인
@@ -201,13 +257,14 @@ function My() {
                                                type={"password"}
                                                value={updatePasswordConfirm}
                                                onChange={event => setUpdatePasswordConfirm(event.target.value)}
-                                               error={inValid}
+                                               error={inValid['updatePasswordConfirm']}
+                                               helperText={inValid['updatePasswordConfirm']}
                                     />
                                 </Box>
                             </Grid>
                         </Grid>
-
-                        <Box align={"right"} mt={5}>
+                        <br/>
+                        <Box align={"right"} >
                             <Button variant={"contained"}
                                     color={"secondary"}
                                     onClick={handleChangePassword}

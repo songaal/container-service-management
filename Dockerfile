@@ -1,12 +1,19 @@
-#FROM nginx:1.13.9-alpine
-#
-#RUN rm -rf /etc/nginx/conf.d
-#
-#COPY nginx /etc/nginx
-#
-#COPY build /usr/share/nginx/html
-#
-#ENV NODE_ENV=production
-#
-#EXPOSE 80
-#CMD ["nginx", "-g", "daemon off;"]
+FROM node:14
+
+ENV NODE_ENV=production
+
+WORKDIR /app
+
+RUN npm install next react react-dom -g
+
+COPY package.json .
+
+RUN npm install
+
+COPY  . .
+
+RUN npm run build
+
+EXPOSE 3000
+
+CMD ["npm", "start"]

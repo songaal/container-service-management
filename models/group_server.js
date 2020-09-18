@@ -11,6 +11,8 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      group_server.belongsTo(models.Groups, {foreignKey: "groupId"})
+      // group_server.belongsTo(models.Server, {foreignKey: "serverId"})
     }
   };
   group_server.init({

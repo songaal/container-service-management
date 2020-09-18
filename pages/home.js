@@ -82,7 +82,7 @@ function Home() {
                             <CardContent mt={2} style={{maxHeight: "170px"}}>
                                 <Grid container>
                                     <Grid item xs={8}>
-                                        <Link href="#">
+                                        <Link href="/groups/1">
                                             <Typography component={"h6"} style={{fontWeight: "bold"}}>
                                                 웹프론트
                                             </Typography>
@@ -100,13 +100,13 @@ function Home() {
                                 </p>
                                 <Grid container align={"center"}>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서비스 6</Link>
+                                        <Link href={"/groups/1#0"}>서비스 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서버 6</Link>
+                                        <Link href={"/groups/1#1"}>서버 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>사용자 6</Link>
+                                        <Link href={"/groups/1#2"}>사용자 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
 
@@ -122,9 +122,9 @@ function Home() {
                             <CardContent mt={2} style={{maxHeight: "170px"}}>
                                 <Grid container>
                                     <Grid item xs={8}>
-                                        <Link href="#">
+                                        <Link href="/groups/1">
                                             <Typography component={"h6"} style={{fontWeight: "bold"}}>
-                                                웹프론트
+                                                테스트 API
                                             </Typography>
                                         </Link>
                                     </Grid>
@@ -136,17 +136,17 @@ function Home() {
                                     </Grid>
                                 </Grid>
                                 <p style={{textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                                    도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.
+                                    API 테스트
                                 </p>
                                 <Grid container align={"center"}>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서비스 6</Link>
+                                        <Link href={"/groups/1#0"}>서비스 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서버 6</Link>
+                                        <Link href={"/groups/1#1"}>서버 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>사용자 6</Link>
+                                        <Link href={"/groups/1#2"}>사용자 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
 
@@ -163,9 +163,9 @@ function Home() {
                             <CardContent mt={2} style={{maxHeight: "170px"}}>
                                 <Grid container>
                                     <Grid item xs={8}>
-                                        <Link href="#">
+                                        <Link href="/groups/1">
                                             <Typography component={"h6"} style={{fontWeight: "bold"}}>
-                                                웹프론트
+                                                인증 서버
                                             </Typography>
                                         </Link>
                                     </Grid>
@@ -177,17 +177,17 @@ function Home() {
                                     </Grid>
                                 </Grid>
                                 <p style={{textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                                    도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.
+                                    인증서버 관리
                                 </p>
                                 <Grid container align={"center"}>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서비스 6</Link>
+                                        <Link href={"/groups/1#0"}>서비스 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서버 6</Link>
+                                        <Link href={"/groups/1#1"}>서버 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>사용자 6</Link>
+                                        <Link href={"/groups/1#2"}>사용자 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
 
@@ -202,9 +202,9 @@ function Home() {
                             <CardContent style={{maxHeight: "170px"}}>
                                 <Grid container>
                                     <Grid item xs={8}>
-                                        <Link href="#">
+                                        <Link href="/groups/1">
                                             <Typography component={"h6"} style={{fontWeight: "bold"}}>
-                                                웹프론트
+                                                쿠버네티스 클러스터 - 1
                                             </Typography>
                                         </Link>
                                     </Grid>
@@ -216,17 +216,17 @@ function Home() {
                                     </Grid>
                                 </Grid>
                                 <p style={{textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
-                                    도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.도커와 서버기반 하이브리드 PC윕서버입니다.
+                                    클러스터 관리 (1/2)
                                 </p>
                                 <Grid container align={"center"}>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서비스 6</Link>
+                                        <Link href={"/groups/1#0"}>서비스 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>서버 6</Link>
+                                        <Link href={"/groups/1#1"}>서버 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
-                                        <Link href={"#"}>사용자 6</Link>
+                                        <Link href={"/groups/1#2"}>사용자 6</Link>
                                     </Grid>
                                     <Grid item xs={6} mt={1}>
 
@@ -235,6 +235,47 @@ function Home() {
                             </CardContent>
                         </Card>
                     </Grid>
+
+                    <br />
+                    <Grid item xs={12} md={6} xl={4} style={{padding: "5px"}}>
+                        <Card>
+                            <CardContent style={{maxHeight: "170px"}}>
+                                <Grid container>
+                                    <Grid item xs={8}>
+                                        <Link href="/groups/1">
+                                            <Typography component={"h6"} style={{fontWeight: "bold"}}>
+                                                쿠버네티스 클러스터 - 2
+                                            </Typography>
+                                        </Link>
+                                    </Grid>
+                                    <Grid item xs={4} align={"right"} >
+                                        <Link href={"#"}>
+                                            {/*<StarIcon style={{color: "#ffeb3b"}} />*/}
+                                            <StarBorderIcon style={{color: "#000"}} />
+                                        </Link>
+                                    </Grid>
+                                </Grid>
+                                <p style={{textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap"}}>
+                                    클러스터 관리 (2/2)
+                                </p>
+                                <Grid container align={"center"}>
+                                    <Grid item xs={6} mt={1}>
+                                        <Link href={"/groups/1#0"}>서비스 6</Link>
+                                    </Grid>
+                                    <Grid item xs={6} mt={1}>
+                                        <Link href={"/groups/1#1"}>서버 6</Link>
+                                    </Grid>
+                                    <Grid item xs={6} mt={1}>
+                                        <Link href={"/groups/1#2"}>사용자 6</Link>
+                                    </Grid>
+                                    <Grid item xs={6} mt={1}>
+
+                                    </Grid>
+                                </Grid>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+
                 </Grid>
 
             </Container>

@@ -23,9 +23,16 @@ db.Groups = require("./group")(sequelize, Sequelize);
 db.GroupServer = require("./group_server")(sequelize, Sequelize);
 db.GroupAuth = require("./group_auth")(sequelize, Sequelize);
 
+
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
+
+
 module.exports = db;
 
-//
 // const fs = require('fs');
 // const path = require('path');
 // const Sequelize = require('sequelize');

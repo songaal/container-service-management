@@ -35,6 +35,9 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import Switch from '@material-ui/core/Switch';
 import Paper from '@material-ui/core/Paper';
 import Collapse from '@material-ui/core/Collapse';
+import {useSnackbar} from "notistack";
+import fetch from "isomorphic-unfetch";
+import Router from "next/router";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -102,23 +105,23 @@ function Service() {
                         <TableBody>
                             <TableRow>
                                 <TableCell>1</TableCell>
-                                <TableCell><Link href={"#"}>검색</Link></TableCell>
-                                <TableCell><Link href={"#"}>엘라스틱서치</Link></TableCell>
-                                <TableCell><Link href={"#"}>elk1-dev</Link></TableCell>
+                                <TableCell><Link href={"/groups/1"}>검색</Link></TableCell>
+                                <TableCell><Link href={"/services/1"}>엘라스틱서치</Link></TableCell>
+                                <TableCell><Link href={"/server/1"}>elk1-dev</Link></TableCell>
                                 <TableCell>프로세스</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>2</TableCell>
-                                <TableCell><Link href={"#"}>검색</Link></TableCell>
-                                <TableCell><Link href={"#"}>데이터</Link></TableCell>
-                                <TableCell><Link href={"#"}>elk2-dev</Link></TableCell>
+                                <TableCell><Link href={"/groups/1"}>검색</Link></TableCell>
+                                <TableCell><Link href={"/services/1"}>데이터</Link></TableCell>
+                                <TableCell><Link href={"/server/1"}>elk2-dev</Link></TableCell>
                                 <TableCell>프로세스</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>3</TableCell>
-                                <TableCell><Link href={"#"}>ES검색</Link></TableCell>
-                                <TableCell><Link href={"#"}>elasticsearch</Link></TableCell>
-                                <TableCell><Link href={"#"}>elk1-prod</Link></TableCell>
+                                <TableCell><Link href={"/groups/1"}>ES검색</Link></TableCell>
+                                <TableCell><Link href={"/services/1"}>elasticsearch</Link></TableCell>
+                                <TableCell><Link href={"/server/1"}>elk1-prod</Link></TableCell>
                                 <TableCell>컨테이너</TableCell>
                             </TableRow>
                         </TableBody>
@@ -130,28 +133,63 @@ function Service() {
 }
 
 function Server() {
-    const [open, setOpen] = React.useState(false);
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
-
+    const [open, setOpen] = React.useState(false);
     const [sampleHidden, setSampleHidden] = React.useState(true)
+    const [servers, setServers] = React.useState([]);
+    const [groups, setGroups] = React.useState([]);
+    const [showConnTest, setShowConnTest] = React.useState(false);
+    const [inValid, setInValid] = React.useState({});
+
+    // new
+    const [name, setName] = React.useState("");
+    const [selectedGroup, setSelectedGroup] = React.useState([]);
+    const [ip, setIp] = React.useState("");
+    const [port, setPort] = React.useState("22");
+    const [user, setUser] = React.useState("");
+    const [password, setPassword] = React.useState("");
+
+    React.useEffect(() => {
+        fetch('/api/settings/server')
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setServers(body['servers'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            }).catch(error => enqueueSnackbar(error, {variant: "error"}))
+
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            })
+        return () => {
+            setServers([])
+            setGroups([])
+        }
+    }, [])
 
     const handleClickOpen = () => {
+        setName('')
+        setSelectedGroup([])
+        setIp('')
+        setPort('22')
+        setUser('')
+        setPassword('')
         setOpen(true);
     };
 
     const handleClose = () => {
         setOpen(false);
     };
-
-    const top100Films = [
-        { title: '쿠버1'},
-        { title: '쿠버2'},
-        { title: '쿠버3'},
-        { title: '쿠버4'},
-        { title: '쿠버5'},
-        { title: '쿠버6'}
-        ];
 
     return (
         <React.Fragment>
@@ -192,39 +230,37 @@ function Server() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
+
                             <TableRow>
                                 <TableCell>1</TableCell>
-                                <TableCell>
-                                    <Link href={"#"}>쿠버1</Link>
-                                </TableCell>
-                                <TableCell>119.205.194.98</TableCell>
-                                <TableCell>22</TableCell>
-                                <TableCell>root</TableCell>
-                                <TableCell>2</TableCell>
-                                <TableCell>11</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>2</TableCell>
-                                <TableCell>
-                                    <Link href={"#"}>쿠버2</Link>
-                                </TableCell>
-                                <TableCell>119.205.194.99</TableCell>
-                                <TableCell>2222</TableCell>
-                                <TableCell>danawa</TableCell>
-                                <TableCell>1</TableCell>
-                                <TableCell>5</TableCell>
-                            </TableRow>
-                            <TableRow style={{display: sampleHidden ? 'none' : 'table-row'}}>
-                                <TableCell>2</TableCell>
-                                <TableCell>
-                                    <Link href={"#"}>쿠버3</Link>
-                                </TableCell>
-                                <TableCell>119.205.194.100</TableCell>
+                                <TableCell><Link href={`/settings/server/1`}>elk-dev1</Link></TableCell>
+                                <TableCell>119.205.194.121</TableCell>
                                 <TableCell>22</TableCell>
                                 <TableCell>danawa</TableCell>
                                 <TableCell>1</TableCell>
                                 <TableCell>0</TableCell>
                             </TableRow>
+                            {/*TODO 주석해제.*/}
+                            {/*{*/}
+                            {/*    servers.length === 0 ?*/}
+                            {/*        <TableRow>*/}
+                            {/*            <TableCell align={"center"} colSpan={"7"}>등록된 서버가 없습니다.</TableCell>*/}
+                            {/*        </TableRow>*/}
+                            {/*        :*/}
+                            {/*        servers.map((server, index) => {*/}
+                            {/*            return (*/}
+                            {/*                <TableRow>*/}
+                            {/*                    <TableCell>{index}</TableCell>*/}
+                            {/*                    <TableCell><Link href={`/settings/server/${server['id']}`}>{server['name']}</Link></TableCell>*/}
+                            {/*                    <TableCell>{server['ip']}</TableCell>*/}
+                            {/*                    <TableCell>{server['port']}</TableCell>*/}
+                            {/*                    <TableCell>{server['user']}</TableCell>*/}
+                            {/*                    <TableCell>{server['group_server_count']}</TableCell>*/}
+                            {/*                    <TableCell>{server['service_count']}</TableCell>*/}
+                            {/*                </TableRow>*/}
+                            {/*            )*/}
+                            {/*        })*/}
+                            {/*}*/}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -236,9 +272,7 @@ function Server() {
                 open={open}
                 onClose={handleClose}
             >
-                <DialogTitle>
-                    서버추가
-                </DialogTitle>
+                <DialogTitle>서버추가</DialogTitle>
                 <DialogContent>
                     <Box my={3}>
                         <Grid container>
@@ -246,29 +280,36 @@ function Server() {
                                 이름
                             </Grid>
                             <Grid item xs={8}>
-                                <TextField fullWidth={true} label={""} required={true} />
+                                <TextField fullWidth={true}
+                                           label={""}
+                                           required={true}
+                                           value={name}
+                                           onChange={event => setName(event.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     </Box>
                     <Box my={3}>
                         <Grid container >
                             <Grid item xs={4}>
-                                할당 그룹
+                                할당그룹
                             </Grid>
                             <Grid item xs={8}>
                                 <Autocomplete
-                                    id="size-small-standard"
                                     size="small"
                                     multiple
-                                    options={top100Films}
+                                    options={groups.map(group => ({title: group['name']}))}
                                     getOptionLabel={(option) => option.title}
-                                    defaultValue={top100Films[13]}
+                                    onChange={(event, value) => setSelectedGroup(value||[])}
                                     renderInput={(params) => (
-                                        <TextField {...params} variant="standard" fullWidth={true} />
+                                        <TextField {...params}
+                                                   variant="standard"
+                                                   fullWidth={true}
+                                                   onChange={e => console.log(e.target.value)}
+
+                                        />
                                     )}
                                 />
-
-
                             </Grid>
                         </Grid>
                     </Box>
@@ -278,7 +319,12 @@ function Server() {
                                 아이피
                             </Grid>
                             <Grid item xs={8}>
-                                <TextField fullWidth={true} label={""} required={true} />
+                                <TextField fullWidth={true}
+                                           label={""}
+                                           required={true}
+                                           value={ip}
+                                           onChange={event => setIp(event.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     </Box>
@@ -288,17 +334,28 @@ function Server() {
                                 포트
                             </Grid>
                             <Grid item xs={8}>
-                                <TextField fullWidth={true} label={""} required={true} />
+                                <TextField fullWidth={true}
+                                           label={""}
+                                           required={true}
+                                           value={port}
+                                           onChange={event => setPort(event.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     </Box>
+
                     <Box my={3}>
                         <Grid container>
                             <Grid item xs={4}>
                                 계정
                             </Grid>
                             <Grid item xs={8}>
-                                <TextField fullWidth={true} label={""} required={true} />
+                                <TextField fullWidth={true}
+                                           label={""}
+                                           required={true}
+                                           value={user}
+                                           onChange={event => setUser(event.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     </Box>
@@ -308,13 +365,22 @@ function Server() {
                                 비밀번호
                             </Grid>
                             <Grid item xs={8}>
-                                <TextField fullWidth={true} label={""} required={true} type={"password"}/>
+                                <TextField fullWidth={true}
+                                           label={""}
+                                           required={true}
+                                           type={"password"}
+                                           value={password}
+                                           onChange={event => setPassword(event.target.value)}
+                                />
                             </Grid>
                         </Grid>
                     </Box>
-                    <Box color="error.main" align="center">
-                        연결 실패하였습니다.
+
+
+                    <Box style={{display: showConnTest ? 'block' : 'none'}} color={inValid['connTest']||false ? 'error.main' : 'success.main'} align="center">
+                        {inValid['connTest']||''}
                     </Box>
+
                 </DialogContent>
                 <DialogActions>
                     <Grid container>
@@ -417,16 +483,16 @@ function User() {
                                                             <Table style={{paddingTop: "0px"}}>
                                                                 <TableBody>
                                                                     <TableRow>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">ES1</Link></TableCell>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">KUBE1</Link></TableCell>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">ES2</Link></TableCell>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">KUBE2</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">ES1</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">KUBE1</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">ES2</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">KUBE2</Link></TableCell>
                                                                     </TableRow>
                                                                     <TableRow>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">ES3</Link></TableCell>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">KUBE4</Link></TableCell>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">ES5</Link></TableCell>
-                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="#">KUBE6</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">ES3</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">KUBE4</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">ES5</Link></TableCell>
+                                                                        <TableCell style={{paddingTop: "2px", paddingBottom: "2px"}}><Link href="/groups/1">KUBE6</Link></TableCell>
                                                                     </TableRow>
                                                                 </TableBody>
                                                             </Table>
