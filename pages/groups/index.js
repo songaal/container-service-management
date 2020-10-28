@@ -205,6 +205,7 @@ function Groups() {
                                                onChange={event => setName(event.target.value)}
                                                error={Boolean(invalid['name'])}
                                                helperText={invalid['name']}
+                                               autoFocus
                                     />
                                 </Grid>
                             </Grid>

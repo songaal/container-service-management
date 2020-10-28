@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     description: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'group',
+    modelName: 'groups',
   });
 
   return group;

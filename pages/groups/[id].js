@@ -24,6 +24,7 @@ import Authentication from "../../components/authentication";
 import Server from "../../components/server";
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
+import {useRouter} from "next/router";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -58,8 +59,8 @@ function a11yProps(index) {
     };
 }
 
-
 function GroupDetail() {
+    const router = useRouter();
     const classes = useStyles();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
@@ -68,9 +69,27 @@ function GroupDetail() {
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [group, setGroup] = React.useState({})
+    const [name, setName] = React.useState("")
+    const [description, setDescription] = React.useState("")
+    const [invalid, setInvalid] = React.useState({})
+    const [removeOpen, setRemoveOpen] = React.useState(false)
 
     React.useEffect(() => {
-        location.pathname
+        // if (typeof window !== 'undefined') {
+        //     const index = location.hash
+        //     if (index === '#1' && tabIndex !== 0) {
+        //         setTabIndex(0)
+        //     } else if (index === '#2' && tabIndex !== 1) {
+        //         setTabIndex(1)
+        //     } else if (index === '#3' && tabIndex !== 2) {
+        //         setTabIndex(2)
+        //     }
+        // }
+
+        init()
+    }, [])
+
+    const init = () => {
         fetch("/api" + location.pathname)
             .then(res => res.json())
             .then(body => {
@@ -78,13 +97,70 @@ function GroupDetail() {
                     setGroup(body['group'])
                 } else {
                     enqueueSnackbar(body['message'], {variant: "error"})
+                    router.back()
+                }
+            })
+    }
+
+    const openGroupEdit = () => {
+        setName(group['name'])
+        setDescription(group['description'])
+        setEditOpen(true)
+    }
+
+    const handleEditGroupProcess = () => {
+        let tmpInvalid = {}
+        if (name.trim().length === 0) {
+            tmpInvalid['name'] = "이름을 입력하세요."
+        }
+
+        if (Object.keys(tmpInvalid).length > 0) {
+            setInvalid(tmpInvalid)
+            return
+        }
+        fetch("/api" + location.pathname, {
+            method: "PUT",
+            body: JSON.stringify({ name, description })
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    init()
+                    setEditOpen(false)
+                    enqueueSnackbar("그룹 정보를 수정하였습니다.", {variant: "success"})
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
+                }
+            })
+    }
+
+    const handleRemoveGroupProcess = () => {
+        fetch("/api" + location.pathname, {
+            method: "DELETE"
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    enqueueSnackbar("그룹을 삭제하였습니다.", {variant: "success"})
+                    Router.push("/groups")
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
                 }
             })
 
-        if (location.hash) {
-            setTabIndex(Number(location.hash.replace("#", "")))
-        }
-    }, [])
+        setRemoveOpen(false)
+    }
+
+    // if (typeof window !== 'undefined') {
+    //     const index = location.hash
+    //     if (index === '#1' && tabIndex !== 0) {
+    //         setTabIndex(0)
+    //     } else if (index === '#2' && tabIndex !== 1) {
+    //         setTabIndex(1)
+    //     } else if (index === '#3' && tabIndex !== 2) {
+    //         setTabIndex(2)
+    //     }
+    // }
 
     return (
         <Box className={classes.root}>
@@ -94,7 +170,7 @@ function GroupDetail() {
                 <br/>
                 <Grid container>
                     <Grid item xs={8}>
-                        <Box>
+                        <Box style={{minHeight: "40px"}}>
                             <Typography variant="h4" gutterBottom>
                                 {group['name'] || ""}
                             </Typography>
@@ -112,13 +188,13 @@ function GroupDetail() {
                                 keepMounted
                                 onClose={() => setAnchorEl(null)}
                             >
-                                <MenuItem onClick={() => setEditOpen(true)}>그룹 수정</MenuItem>
-                                <MenuItem >그룹 삭제</MenuItem>
+                                <MenuItem onClick={openGroupEdit}>그룹 수정</MenuItem>
+                                <MenuItem onClick={() => setRemoveOpen(true)}>그룹 삭제</MenuItem>
                             </Menu>
                         </Box>
                     </Grid>
                     <Grid item xs={12}>
-                        <Box style={{maxHeight: "200px", overflow: "auto"}}>
+                        <Box style={{maxHeight: "200px", minHeight: "70px", overflow: "auto"}}>
                             <pre style={{fontSize: "1.1em"}}>
                                 {group['description'] || ""}
                             </pre>
@@ -173,8 +249,11 @@ function GroupDetail() {
                             <Grid item xs={8}>
                                 <TextField fullWidth={true}
                                            label={""}
-                                           value={"sample"}
+                                           value={name}
+                                           onChange={event => setName(event.target.value)}
                                            required={true}
+                                           error={invalid['name']}
+                                           helperText={invalid['name']}
 
                                 />
                             </Grid>
@@ -186,7 +265,12 @@ function GroupDetail() {
                                 설명
                             </Grid>
                             <Grid item xs={8}>
-                                <TextareaAutosize style={{width: '100%', minHeight: "50px"}} >설명 도커와 서버기반 하이브리드 PC 웹서버입니다.</TextareaAutosize>
+                                <TextareaAutosize style={{width: '100%', minHeight: "50px"}}
+                                                  value={description}
+                                                  onChange={event => setDescription(event.target.value)}
+                                                  error={invalid['description']}
+                                                  helperText={invalid['description']}
+                                />
                             </Grid>
                         </Grid>
                     </Box>
@@ -198,7 +282,11 @@ function GroupDetail() {
                         </Grid>
                         <Grid item xs="6">
                             <Box align="right">
-                                <Button autoFocus variant={"outlined"} onClick={() => setEditOpen(false)} color="primary">
+                                <Button autoFocus
+                                        variant={"outlined"}
+                                        onClick={handleEditGroupProcess}
+                                        color="primary"
+                                >
                                     저장
                                 </Button>
                                 <Button style={{marginLeft: "5px"}} variant={"outlined"} onClick={() => setEditOpen(false)} color="default">
@@ -209,6 +297,47 @@ function GroupDetail() {
                     </Grid>
                 </DialogActions>
             </Dialog>
+
+
+
+            <Dialog
+                fullWidth={true}
+                fullScreen={fullScreen}
+                open={removeOpen}
+                onClose={() => setRemoveOpen(false)}
+            >
+                <DialogTitle>
+                    그룹삭제
+                </DialogTitle>
+                <DialogContent>
+                    <Box color="error.main">[ {group['name']} ] 그룹을 삭제하시겠습니까?</Box>
+                </DialogContent>
+                <DialogActions>
+                    <Grid container>
+                        <Grid item xs="6">
+
+                        </Grid>
+                        <Grid item xs="6">
+                            <Box align="right">
+                                <Button autoFocus
+                                        variant={"outlined"}
+                                        onClick={handleRemoveGroupProcess}
+                                        color="secondary"
+                                >
+                                    삭제
+                                </Button>
+                                <Button style={{marginLeft: "5px"}}
+                                        variant={"outlined"}
+                                        onClick={() => setRemoveOpen(false)} color="default"
+                                >
+                                    취소
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </DialogActions>
+            </Dialog>
+
         </Box>
     );
 }

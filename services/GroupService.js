@@ -2,7 +2,7 @@ const { Sequelize, sequelize, Groups, GroupAuth, GroupServer, Services } = requi
 
 
 export default {
-    findAll: async (userId, isAdmin) => {
+    async findAll (userId, isAdmin) {
         let where = {}
 
         if (!isAdmin) {
@@ -23,7 +23,7 @@ export default {
                         sequelize.literal(`(
                             SELECT count(*)
                               FROM group_servers a
-                             WHERE a.groupId = id
+                             WHERE a.groupId = groups.id
                         )`),
                         "server_count"
                     ],
@@ -31,7 +31,7 @@ export default {
                         sequelize.literal(`(
                             SELECT count(*)
                               FROM services b
-                             WHERE b.groupId = id
+                             WHERE b.groupId = groups.id
                         )`),
                         "service_count"
                     ],
@@ -39,7 +39,7 @@ export default {
                         sequelize.literal(`(
                             SELECT count(*)
                               FROM group_auths c
-                             WHERE c.groupId = id
+                             WHERE c.groupId = groups.id
                         )`),
                         "user_count"
                     ]
@@ -47,7 +47,7 @@ export default {
             }
         })
     },
-    findByUserId: async (userId) => {
+    async findByUserId (userId) {
         const groups = await GroupAuth.findAll({
             where: {userId: userId},
             include: [
@@ -56,11 +56,11 @@ export default {
         });
         return groups.map(group => group['group'])
     },
-    newGroup: async ({name, description}) => {
+    async newGroup ({name, description}) {
         const alreadyGroups = await Groups.findAll({where: {name}})
         if (alreadyGroups.length > 0) {
             return {
-                status: "fail",
+                status: "error",
                 message: "이미 사용하고있는 그룹이름입니다."
             }
         }
@@ -69,9 +69,8 @@ export default {
             group: await Groups.create({name, description})
         }
     },
-    findById: async (groupId) => {
+    async  findById(groupId) {
         const group = await Groups.findOne({where: {id: groupId}})
-
         if (group) {
             return {
                 status: "success",
@@ -79,9 +78,62 @@ export default {
             }
         } else {
             return {
-                status: "fial",
+                status: "error",
                 message: "그룹이 없습니다."
             }
+        }
+    },
+    async editGroup(id, { name, description }) {
+        try {
+            return {
+                status: 'success',
+                group: await Groups.update({ name, description}, {where: {id}})
+            }
+        } catch (err) {
+            console.error(err)
+            return {
+                status: 'error',
+                message: JSON.stringify(err)
+            }
+        }
+    },
+    async removeGroup (id) {
+        try {
+            await Groups.destroy({where: { id }})
+            return {
+                status: 'success',
+                groupId: id
+            }
+        } catch (err) {
+            console.error(err)
+            return {
+                status: 'error',
+                message: JSON.stringify(err)
+            }
+        }
+    },
+    async isRead(id, req, res) {
+        try {
+            const userId = req.session.auth.user.id;
+            const admin = req.session.auth.user.admin;
+            if (admin) {
+                return;
+            }
+            const result = await GroupAuth.count({where: { userId: userId, groupId: id}});
+            if (result === 0) {
+                res.statusCode = 403;
+                res.send({
+                    status: "fail",
+                    message: "접근 권한이 없습니다."
+                });
+            }
+        } catch (error) {
+            console.error(error)
+            res.statusCode = 403;
+            res.send({
+                status: "fail",
+                message: "접근 권한이 없습니다."
+            });
         }
     }
 }

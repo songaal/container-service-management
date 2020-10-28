@@ -16,9 +16,9 @@ function Index() {
     {name: "그룹상세", uri: "/groups/1"},
     {name: "서비스 추가", uri: "/services"},
     {name: "서비스 상세", uri: "/services/1"},
-    {name: "서버 상세", uri: "/server/1"},
+    {name: "서버 상세", uri: "/servers/1"},
     {name: "설정 목록", uri: "/settings"},
-    {name: "설정(서버)", uri: "/settings/server/1"},
+    {name: "설정(서버)", uri: "/settings/servers/1"},
 
   ]
 

@@ -4,6 +4,8 @@ import Grid from '@material-ui/core/Grid';
 import {Box, Card, CardContent, Table, TableBody, TableCell, TableHead, TableRow, TextField} from "@material-ui/core";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
+import fetch from "isomorphic-unfetch"
+import { SnackbarProvider, useSnackbar } from 'notistack';
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -15,6 +17,42 @@ const useStyles = makeStyles( theme => ({
 
 function Server() {
     const classes = useStyles();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const [servers, setServers] = React.useState([]);
+    const [tmpKeyword, setTmpKeyword] = React.useState("");
+    const [keyword, setKeyword] = React.useState("");
+
+    React.useEffect(() => {
+        init()
+    }, [])
+
+    const init = () => {
+        fetch(`/api${location.pathname}/servers`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setServers(body['servers']);
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
+                }
+            })
+    }
+
+    const handleKeywordSearch = () => {
+        setKeyword(tmpKeyword)
+    }
+
+    let viewServers = []
+    if (keyword.trim().length > 0) {
+        viewServers = servers
+            .filter(server =>
+                server['name'].includes(keyword)
+                || server['ip'].includes(keyword)
+                || server['user'].includes(keyword)
+            )
+    } else {
+        viewServers = servers
+    }
 
     return (
         <Box className={classes.root}>
@@ -28,8 +66,15 @@ function Server() {
                                            color={"primary"}
                                            size={"small"}
                                            placeholder="검색"
+                                           value={tmpKeyword}
+                                           onChange={event => setTmpKeyword(event.target.value)}
+                                           onKeyUp ={event=> event.keyCode === 13 ? handleKeywordSearch() : null}
                                 />
-                                <Button style={{height: '40px'}} variant={"outlined"} color={"default"}>검색</Button>
+                                <Button style={{height: '40px'}}
+                                        variant={"outlined"}
+                                        color={"default"}
+                                        onClick={handleKeywordSearch}
+                                >검색</Button>
                             </Grid>
                             <Grid item xs={4}>
                             </Grid>
@@ -41,33 +86,31 @@ function Server() {
                             <TableRow>
                                 <TableCell>#</TableCell>
                                 <TableCell>서버</TableCell>
+                                <TableCell>계정</TableCell>
                                 <TableCell>아이피</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            <TableRow>
-                                <TableCell>1</TableCell>
-                                <TableCell>
-                                    <Link href={"/server/1"}>elk1-dev</Link>
-                                </TableCell>
-                                <TableCell>119.205.194.121</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>2</TableCell>
-                                <TableCell>
-                                    <Link href={"/server/1"}>elk2-dev</Link>
-                                </TableCell>
-                                <TableCell>119.205.194.122</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>3</TableCell>
-                                <TableCell>
-                                    <Link href={"/server/1"}>kube1</Link>
-                                </TableCell>
-                                <TableCell>
-                                    119.205.194.98
-                                </TableCell>
-                            </TableRow>
+
+                            {
+                                viewServers.length === 0 ?
+                                    <TableRow>
+                                        <TableCell colSpan={4} align={"center"}>등록된 서버가 없습니다.</TableCell>
+                                    </TableRow>
+                                    :
+                                    viewServers.map((server, index) => {
+                                        return (
+                                            <TableRow key={server['id']}>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>
+                                                    <Link href={`/servers/${server['id']}`}>{server['name']}</Link>
+                                                </TableCell>
+                                                <TableCell>{server['user']}</TableCell>
+                                                <TableCell>{server['ip']}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                            }
                         </TableBody>
                     </Table>
                 </CardContent>

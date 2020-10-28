@@ -17,11 +17,15 @@ async function settingsServer(req, res) {
     }
 
     try {
-        const servers = await SettingsService.getServerList();
-        res.send({
-            status: "success",
-            servers
-        })
+        if (req.method === 'GET') {
+            res.send({
+                status: "success",
+                servers: await SettingsService.getServerList()
+            })
+        } else if (req.method === 'POST') {
+            const serverInfo = JSON.parse(req.body)
+            res.send(await SettingsService.addServerInfo(serverInfo))
+        }
     } catch (error) {
         console.error(error);
         res.send({
