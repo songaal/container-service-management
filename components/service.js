@@ -19,6 +19,18 @@ const useStyles = makeStyles( theme => ({
 function Service() {
     const classes = useStyles();
 
+    React.useEffect(() => {
+        init()
+    }, [])
+
+    const init = () => {
+        fetch(`/api${location.pathname}`)
+            .then(res => res.json())
+            .then(body => {
+                console.log(body )
+            })
+    }
+
     return (
         <Box className={classes.root}>
             <Card>

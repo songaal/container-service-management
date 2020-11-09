@@ -139,10 +139,10 @@ function SettingsServer() {
             .then(res => res.json())
             .then(body => {
                 setProcess(false)
-                if (body.status === "success") {
+                if (body['status'] === "success") {
                     enqueueSnackbar("정상적으로 연결되었습니다.", {variant: "success"});
                 } else {
-                    enqueueSnackbar(JSON.stringify(body.message), {variant: "error"});
+                    enqueueSnackbar(body['message'], {variant: "error"});
                 }
             })
             .catch(error => {

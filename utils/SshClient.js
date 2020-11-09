@@ -7,20 +7,19 @@ class SshClient {
         this.username = username;
         this.password = password;
     }
-    async exec(cmd, { readTimeout = 3000 } = {}) {
+    async exec(cmd, { timeout = 5000 } = {}) {
         return new Promise((resolve, reject) => {
             const conn = new Client();
-            let result = {
-                stdout: [],
-                stderr: []
-            }
+            let result = []
             conn.on('error', function (err) {
+                console.log("error:", err)
                 reject({
                     status: "error",
                     message: err['message']||err
                 })
             })
             conn.on('ready', function() {
+                console.log("Exec: ", cmd)
                 conn.exec(cmd, function(err, stream) {
                     if (err) reject(({
                         status: "error",
@@ -28,22 +27,26 @@ class SshClient {
                     }));
                     stream.on('end', function(code, signal) {
                         conn.end();
-                        resolve(result);
-                    }).on('data', function(data) {
-                        console.log('STDOUT: ' + data);
-                        result['stdout'].push(String(data));
+                    }).stdout.on('data', function(data) {
+                        result.push("STDOUT: " + String(data));
                     }).stderr.on('data', function(data) {
-                        console.log('STDERR: ' + data);
-                        result['stderr'].push(String(data));
+                        result.push("STDERR: " + String(data));
                     });
                 });
+            }).on("error", function(err) {
+                reject({
+                    status: "error",
+                    message: err['message']||err
+                })
+            }).on("close", function() {
+                resolve(result);
             }).connect({
                 host: this.ip,
                 port: this.port,
                 username: this.username,
-                password: this.password
+                password: this.password,
+                readyTimeout: timeout
             });
-
         })
     }
 }

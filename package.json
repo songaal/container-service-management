@@ -39,6 +39,7 @@
     "fs": "0.0.1-security",
     "google-map-react": "1.1.6",
     "isomorphic-unfetch": "^3.0.0",
+    "js-base64": "^3.5.2",
     "js-cookie": "^2.2.1",
     "jss": "10.0.4",
     "micro": "^9.3.4",

@@ -5,13 +5,19 @@ export default {
     async SshConnTest({ip, port, user, password}) {
         try {
             const client = new SshClient(ip, port, user, password);
-            const result = await client.exec("uptime", {})
-            return {
-                status: "success",
-                result
+            const result = await client.exec("uptime")
+            if (result.length > 0) {
+                return { status: "success", result: result }
+            } else {
+                return { status: "error", message: "연결에 실패하였습니다." }
             }
+
         } catch (error) {
-            return error
+            return {
+                status: "error",
+                message: "연결에 실패하였습니다.",
+                error: error
+            }
         }
     },
     async findServerByGroupId(groupId) {
@@ -67,11 +73,25 @@ export default {
         }
     },
     async findServerById(id) {
-        return await Servers.findOne({
-            attributes: ['id', 'name', 'user', 'ip', 'port', 'createdAt', 'updatedAt'],
+        return (await Servers.findOne({
             where: {id: id}
-        })
+        }))
     },
-
+    async execCmd(id, cmd) {
+        try {
+            const server = await Servers.findOne({ where: {id: id} })
+            const client = new SshClient(server['ip'], server['port'], server['user'], server['password']);
+            return {
+                status: "success",
+                result: await client.exec(cmd, {timeout: 3000})
+            }
+        } catch (error) {
+            return {
+                status: "error",
+                message: "에러가 발생하였습니다.",
+                error: error
+            }
+        }
+    },
 
 }
