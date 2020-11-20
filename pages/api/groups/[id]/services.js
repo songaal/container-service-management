@@ -16,7 +16,7 @@ async function groupsService(req, res) {
         if (req.method === "GET") {
             res.send({
                 status: "success",
-                servers:
+                servers: []
             })
         }
     } catch (error) {

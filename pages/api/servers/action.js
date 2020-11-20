@@ -14,6 +14,13 @@ async function serverTest(req, res) {
                 const result = await ServerService.SshConnTest(clientInfo)
                 res.send(result)
             }
+        } else if (req.method === 'GET') {
+            if (req.query['type'] === "terminal") {
+                res.send({
+                    status: "success",
+                    terminalUrl: process.env.webssh_host
+                })
+            }
         }
 
 

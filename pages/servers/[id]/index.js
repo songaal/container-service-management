@@ -12,6 +12,7 @@ import Divider from "@material-ui/core/Divider";
 import ButtonGroup from '@material-ui/core/ButtonGroup';
 import fetch from "isomorphic-unfetch";
 import {useRouter} from "next/router";
+import ServerTerminal from "./terminal";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -69,8 +70,9 @@ function ServerDetail() {
     const classes = useStyles();
     const router = useRouter();
     const [server, setServer] = React.useState({})
-    const [cmdName, setCmdName] = React.useState("")
+    const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
     const [cmdResult, setCmdResult] = React.useState("")
+    const [terminalUrl, setTerminalUrl] = React.useState("")
 
     React.useEffect(() => {
         init()
@@ -84,6 +86,11 @@ function ServerDetail() {
                 if (body['status'] === 'success') {
                     setServer(body['server'])
                 }
+            })
+        fetch("/api/servers/action?type=terminal")
+            .then(res => res.json())
+            .then(body => {
+                setTerminalUrl(body['terminalUrl'])
             })
     }
 
@@ -109,7 +116,6 @@ function ServerDetail() {
                     setCmdResult((body['error']||{})['message']||body['message'])
                 }
             })
-
     }
 
     return (
@@ -189,7 +195,6 @@ function ServerDetail() {
                 </Box>
 
                 <Box my={3}>
-                    <Box>{cmdName}</Box>
                     <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
                                       readOnly={true}
                                       style={{
@@ -200,7 +205,7 @@ function ServerDetail() {
                                           padding: '10px',
                                           overflow: "scroll"
                                       }}
-                                      value={cmdResult}
+                                      value={cmdResult || cmdName}
                     />
                 </Box>
             </Container>
