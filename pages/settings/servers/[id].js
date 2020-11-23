@@ -32,6 +32,12 @@ import Checkbox from '@material-ui/core/Checkbox';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import CheckBoxOutlineBlankIcon from '@material-ui/icons/CheckBoxOutlineBlank';
 import CheckBoxIcon from '@material-ui/icons/CheckBox';
+import fetch from "isomorphic-unfetch"
+import {useRouter} from "next/router"
+import { SnackbarProvider, useSnackbar } from 'notistack';
+import Menu from "@material-ui/core/Menu";
+import MenuItem from "@material-ui/core/MenuItem";
+import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -66,10 +72,10 @@ function ShowField({label, val, url}) {
     return (
         <Box my={3}>
             <Grid container>
-                <Grid item xs={3} sm={3}>
-                    <Box align={"right"} className={classes.label}>{ label }</Box>
+                <Grid item xs={2} sm={1}>
+                    <Box align={"center"} className={classes.label}>{ label }</Box>
                 </Grid>
-                <Grid item xs={9} sm={9}>
+                <Grid item xs={10} sm={11}>
                     {
                         url ?
                             <Link href={"#"}>
@@ -113,8 +119,35 @@ function a11yProps(index) {
     };
 }
 
-function SystemStatus() {
+function SystemStatus({server}) {
     const classes = useStyles();
+    const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
+    const [cmdResult, setCmdResult] = React.useState("")
+
+    const execCmd = (cmd, name) => {
+        setCmdResult("")
+        setCmdName("조회 중입니다.")
+
+        fetch(`${location.pathname.replace("/settings", "/api")}/action?type=exec`, {
+            method: "POST",
+            body: JSON.stringify({cmd, name})
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    let tmpResult = "";
+                    (body['result']||[]).forEach(text => {
+                        tmpResult += text;
+                    })
+                    setCmdName(name)
+                    setCmdResult(tmpResult)
+                } else if (body['status'] === 'error') {
+                    setCmdName(name)
+                    setCmdResult((body['error']||{})['message']||body['message'])
+                }
+            })
+    }
+
     return (
         <Card>
             <CardContent>
@@ -123,21 +156,34 @@ function SystemStatus() {
                         <Grid item xs={12} sm={8}>
                             <ButtonGroup color="primary">
                                 <Tooltip title="top -b -n 1">
-                                    <Button >TOP 조회</Button>
+                                    <Button onClick={() => execCmd("uptime", "TOP 조회")}
+                                    >UPTIME 조회</Button>
+                                </Tooltip>
+                                <Tooltip title="top -b -n 1">
+                                    <Button onClick={() => execCmd("top -b -n 1", "TOP 조회")}
+                                    >TOP 조회</Button>
                                 </Tooltip>
                                 <Tooltip title="ps -xfl">
-                                    <Button>PS 조회</Button>
+                                    <Button onClick={() => execCmd("ps -xfl", "PS 조회")}
+                                    >PS 조회</Button>
                                 </Tooltip>
                                 <Tooltip title="netstat -tnlp">
-                                    <Button>NetStat 조회</Button>
+                                    <Button onClick={() => execCmd("netstat -tnlp", "NetStat 조회")}
+                                    >NetStat 조회</Button>
                                 </Tooltip>
+                                {/*<Tooltip title="who">*/}
+                                {/*    <Button onClick={() => execCmd("who", "사용자 조회")}*/}
+                                {/*    >사용자 조회</Button>*/}
+                                {/*</Tooltip>*/}
                             </ButtonGroup>
                         </Grid>
+
                         <Grid item xs={12} sm={4}>
                             <Box align={"right"}>
                                 <Button variant={"outlined"}
                                         color={"primary"}
-                                        onClick={event => {}}
+                                        target="_blank"
+                                        href={`/servers/${server['id']}/terminal`}
                                 >터미널 열기</Button>
                             </Box>
                         </Grid>
@@ -145,8 +191,8 @@ function SystemStatus() {
                 </Box>
 
                 <Box my={3}>
-                    TOP 조회 결과
-                    <TextareaAutosize readOnly={true}
+                    <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
+                                      readOnly={true}
                                       style={{
                                           width: '100%',
                                           height: "500px",
@@ -155,45 +201,105 @@ function SystemStatus() {
                                           padding: '10px',
                                           overflow: "scroll"
                                       }}
-                                      value={"top - 10:36:32 up 238 days, 18:33,  1 user,  load average: 2.13, 2.10, 2.14\n" +
-                                      "Tasks: 407 total,   1 running, 405 sleeping,   0 stopped,   1 zombie\n" +
-                                      "%Cpu(s):  0.2 us,  0.5 sy,  0.0 ni, 95.0 id,  4.2 wa,  0.0 hi,  0.0 si,  0.0 st\n" +
-                                      "KiB Mem : 98992608 total,   395872 free, 25096172 used, 73500568 buff/cache\n" +
-                                      "KiB Swap:        0 total,        0 free,        0 used. 68981496 avail Mem\n" +
-                                      "\n" +
-                                      "  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND\n" +
-                                      "14474 danawa    20   0  164368   2464   1560 R   6.2  0.0   0:00.01 top\n" +
-                                      "18879 root      20   0 3104796 117704   9204 S   6.2  0.1   5335:59 dockerd\n" +
-                                      "20762 root      20   0   10.1g  57836   8772 S   6.2  0.1   2340:31 etcd\n" +
-                                      "20784 root      20   0  504788 278156  19288 S   6.2  0.3   5745:45 kube-apiserver\n" +
-                                      "    1 root      20   0  193228   5988   2396 S   0.0  0.0   1266:58 systemd\n" +
-                                      "    2 root      20   0       0      0      0 S   0.0  0.0   0:13.77 kthreadd\n" +
-                                      "    4 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/0:0H\n" +
-                                      "    6 root      20   0       0      0      0 S   0.0  0.0   4:58.81 ksoftirqd/0\n" +
-                                      "    7 root      rt   0       0      0      0 S   0.0  0.0   0:55.47 migration/0\n" +
-                                      "    8 root      20   0       0      0      0 S   0.0  0.0   0:00.00 rcu_bh\n" +
-                                      "    9 root      20   0       0      0      0 S   0.0  0.0 619:09.72 rcu_sched\n" +
-                                      "   10 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 lru-add-drain\n" +
-                                      "   11 root      rt   0       0      0      0 S   0.0  0.0   1:07.04 watchdog/0\n" +
-                                      "   12 root      rt   0       0      0      0 S   0.0  0.0   1:05.30 watchdog/1\n" +
-                                      "   13 root      rt   0       0      0      0 S   0.0  0.0   0:48.19 migration/1\n" +
-                                      "   14 root      20   0       0      0      0 S   0.0  0.0   3:02.72 ksoftirqd/1\n" +
-                                      "   16 root       0 -20       0      0      0 S   0.0  0.0   0:00.00 kworker/1:0H"}
+                                      value={cmdResult || cmdName}
                     />
                 </Box>
             </CardContent>
         </Card>
     )
 }
-const top100Films = [
-    { title: 'ES검색' },
-    { title: '쿠버1'},
-    { title: '쿠버2'},
-    { title: '쿠버3'},
-    { title: '쿠버4'},
-];
+
 function AdminGroup() {
     const classes = useStyles();
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const [groups, setGroups] = React.useState([])
+    const [useGroups, setUseGroups] = React.useState([])
+    const [selectedGroups, setSelectedGroups] = React.useState([])
+    const [deleteGroupOpen, setDeleteGroupOpen] = React.useState(false)
+    const [selectedGroup, setSelectedGroup] = React.useState({})
+
+    React.useEffect(() => {
+        init()
+    }, [])
+
+    const init = () => {
+        fetch(`/api/groups`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
+                }
+            })
+
+        fetch(`/api${location.pathname}/groups`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setUseGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"})
+                }
+            })
+
+
+    }
+
+    const handleDeleteGroup = () => {
+        fetch(`/api${location.pathname}/groups/${selectedGroup['id']}`, {
+            method: "DELETE"
+        })
+            .then(res => res.json())
+            .then(body => {
+                setDeleteGroupOpen(false)
+                init()
+                enqueueSnackbar("그룹을 제거 하였습니다.", {variant: "success"})
+            })
+    }
+
+    const handleAddGroup = () => {
+        let tmpMap = {}
+        const reqBody = {
+            groupIds: selectedGroups
+                .map(g => String(g['id']))
+                .filter(g => {
+                    if(tmpMap[g]) {
+                        return false
+                    } else {
+                        tmpMap[g] = true
+                        return true
+                    }
+                })
+        }
+        fetch(`/api${location.pathname}/groups`, {
+                    method: "POST",
+                    body: JSON.stringify(reqBody)
+                })
+                    .then(res => res.json())
+                    .then(body => {
+                        if (body['status'] === "success") {
+                            setSelectedGroups([])
+                            init()
+                            enqueueSnackbar("그룹을 추가 하였습니다.", {variant: "success"})
+                        } else {
+                            enqueueSnackbar("그룹을 추가 실패하였습니다.", {variant: "error"})
+                        }
+
+                    })
+    }
+
+    const groupOptions = groups.filter(group => {
+        for (let i = 0; i < useGroups.length; i++) {
+            if (String(group['id']) === useGroups[i]['groupId']) {
+                return false
+            }
+        }
+        return true
+    }).map(group => ({id: group['id'], name: group['name']}))
+
     return (
         <React.Fragment>
             <Card>
@@ -202,26 +308,31 @@ function AdminGroup() {
                         <Autocomplete
                             multiple
                             size="small"
-                            options={top100Films}
+                            options={groupOptions}
                             disableCloseOnSelect
-                            getOptionLabel={(option) => option.title}
-                            renderOption={(option, { selected }) => (
-                                <React.Fragment>
-                                    <Checkbox
-                                        icon={icon}
-                                        checkedIcon={checkedIcon}
-                                        style={{ marginRight: 8 }}
-                                        checked={selected}
-                                    />
-                                    {option.title}
-                                </React.Fragment>
-                            )}
+                            getOptionLabel={(option) => option.name}
+                            renderOption={(option, { selected }) => {
+                                return (
+                                    <React.Fragment>
+                                        <Checkbox
+                                            icon={icon}
+                                            checkedIcon={checkedIcon}
+                                            style={{ marginRight: 8 }}
+                                            checked={selected}
+                                        />
+                                        {option.name}
+                                    </React.Fragment>
+                                )
+                            }}
                             style={{display: "inline"}}
                             renderInput={(params) => (
                                 <TextField {...params} variant="outlined" label="그룹 추가" placeholder="" style={{minWidth: 300}} />
                             )}
+                            value={selectedGroups}
+                            onChange={(event, value)=> setSelectedGroups(value)}
+                            onKeyUp={event => event.keyCode === 13 ? handleAddGroup() : null}
                         />
-                        <Button variant={"outlined"} color={"primary"} style={{height: '40px'}}>추가</Button>
+                        <Button variant={"outlined"} color={"primary"} style={{height: '40px'}} onClick={handleAddGroup}>추가</Button>
                     </Box>
 
                     <Box style={{minHeight: '300px'}}>
@@ -231,64 +342,271 @@ function AdminGroup() {
                                     <TableCell>#</TableCell>
                                     <TableCell>그룹</TableCell>
                                     <TableCell>할당된 서비스</TableCell>
+                                    <TableCell>추가날짜</TableCell>
                                     <TableCell>제거</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                <TableRow>
-                                    <TableCell>1</TableCell>
-                                    <TableCell>
-                                        <Link href={"/groups/1"}>ES 검색</Link>
-                                    </TableCell>
-                                    <TableCell>3</TableCell>
-                                    <TableCell>
-                                        <Button style={{color: "white", backgroundColor: "red"}} variant={"contained"}>제거</Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell>2</TableCell>
-                                    <TableCell>
-                                        <Link href={"/groups/1"}>ES 검색</Link>
-                                    </TableCell>
-                                    <TableCell>2</TableCell>
-                                    <TableCell>
-                                        <Button style={{color: "white", backgroundColor: "red"}} variant={"contained"}>제거</Button>
-                                    </TableCell>
-                                </TableRow>
-                                <TableRow>
-                                    <TableCell>3</TableCell>
-                                    <TableCell>
-                                        <Link href={"/groups/1"}>쿠버 테스트</Link>
-                                    </TableCell>
-                                    <TableCell>9</TableCell>
-                                    <TableCell>
-                                        <Button style={{color: "white", backgroundColor: "red"}} variant={"contained"}>제거</Button>
-                                    </TableCell>
-                                </TableRow>
+                                {
+                                    useGroups.length === 0 ?
+                                        <TableRow>
+                                            <TableCell colSpan={4} align={"center"}>할당된 그룹이 없습니다.</TableCell>
+                                        </TableRow>
+                                        :
+                                        useGroups.map((useGroup, index) => {
+                                            const tmpGroup = groups.find(g => String(g['id']) === useGroup['groupId']||'')
+                                            return (
+                                                <TableRow key={index}>
+                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>
+                                                        <Link href={`/groups/${useGroup['id']||''}`}>{(tmpGroup||{})['name']||""}</Link>
+                                                    </TableCell>
+                                                    <TableCell>{useGroup['service_count']}</TableCell>
+                                                    <TableCell>{useGroup['createdAt']}</TableCell>
+                                                    <TableCell>
+                                                        <Button style={{color: "white", backgroundColor: "red"}}
+                                                                variant={"contained"}
+                                                                onClick={() => {
+                                                                    setSelectedGroup(tmpGroup);
+                                                                    setDeleteGroupOpen(true)
+                                                                }}
+                                                        >
+                                                            제거
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })
+                                }
                             </TableBody>
                         </Table>
                     </Box>
 
                 </CardContent>
             </Card>
+
+            <Dialog
+                fullWidth={true}
+                fullScreen={fullScreen}
+                open={deleteGroupOpen}
+                onClose={() => setDeleteGroupOpen(false)}
+            >
+                <DialogTitle>그룹 제거</DialogTitle>
+                <DialogContent>
+                    <Box component={"span"} style={{fontWeight: "bold"}}>{(selectedGroup||{})['name']||''}</Box> 그룹을 제거하시겠습니까?
+                </DialogContent>
+                <DialogActions>
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <Box align={"right"}>
+                                <Button style={{marginLeft: "2px", marginRight: "2px"}}
+                                        autoFocus
+                                        variant={"outlined"}
+                                        onClick={handleDeleteGroup}
+                                        color="secondary"
+                                >
+                                    삭제
+                                </Button>
+                                <Button style={{marginLeft: "2px", marginRight: "2px"}}
+                                        variant={"outlined"}
+                                        onClick={() => setDeleteGroupOpen(false)}
+                                        color="default"
+                                >
+                                    취소
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+
+                </DialogActions>
+            </Dialog>
         </React.Fragment>
     )
 }
 
 function AdminServerDetail() {
     const classes = useStyles();
-    const [open, setOpen] = React.useState(false);
+    const router = useRouter();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
+    const [open, setOpen] = React.useState(false);
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const [tabIndex, setTabIndex] = React.useState(0);
+    const [server, setServer] = React.useState({})
+    const [editOpen, setEditOpen] = React.useState(false);
+    const [name, setName] = React.useState("");
+    const [ip, setIp] = React.useState("");
+    const [port, setPort] = React.useState("");
+    const [user, setUser] = React.useState("");
+    const [inValid, setInValid] = React.useState({});
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [removeServiceOpen, setRemoveServiceOpen] = React.useState(false);
+    const [editPassword, setEditPassword] = React.useState("")
+    const [confirmPassword, setConfirmPassword] = React.useState("")
+    const [process, setProcess] = React.useState(false)
 
-    const handleClickOpen = () => {
-        setOpen(true);
-    };
+    React.useEffect(() => {
+        init()
+    }, [])
+
+    const init = () => {
+        const url = location.pathname.replace("\/settings", "\/api")
+        fetch(url)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setServer(body['server'])
+                } else {
+                    enqueueSnackbar("서버 정보 조회를 실패하였습니다.", {variant: "error"})
+                }
+            })
+    }
+
+    const handleEditOpen = () => {
+        setInValid({})
+        setName(server['name'])
+        setIp(server['ip'])
+        setPort(server['port'])
+        setUser(server['user'])
+        setEditOpen(true)
+    }
+    const handleEditClose = () => {
+        setEditOpen(false)
+    }
+    const handleEditServer = () => {
+        setInValid({})
+        let tmpInvalid = {}
+        if (name.trim() === '') {
+            tmpInvalid['name'] = '이름을 입력하세요.'
+        }
+        if (ip.trim() === '') {
+            tmpInvalid['ip'] = '아이피를 입력하세요.'
+        }
+        if (port.trim() === '') {
+            tmpInvalid['port'] = '포트를 입력하세요.'
+        }
+        if (user.trim() === '') {
+            tmpInvalid['user'] = '계정을 입력하세요.'
+        }
+        if (Object.keys(tmpInvalid).length > 0) {
+            setInValid(tmpInvalid)
+            return false
+        }
+        fetch(location.pathname.replace("/settings", "/api"), {
+            method: "PUT",
+            body: JSON.stringify({ id: server['id'], name, ip, port, user})
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    init()
+                    handleEditClose()
+                    enqueueSnackbar("서버 정보를 수정하였습니다.", {variant: "success"})
+                }
+            })
+    }
 
     const handleClose = () => {
+        setInValid({})
+        setEditPassword("")
+        setConfirmPassword("")
         setOpen(false);
     };
+
+    const handleRemoveService =() => {
+        fetch(location.pathname.replace("/settings", "/api"), {
+            method: "DELETE"
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    handleEditClose()
+                    enqueueSnackbar("서버를 삭제하였습니다.", {variant: "success"})
+                    router.replace("/settings")
+                }
+            })
+    }
+
+    const handleConnectionTest = () => {
+        setInValid({})
+        let tmpInValid = {}
+
+        if (editPassword.trim() === '') {
+            tmpInValid['editPassword'] = "신규 비밀번호를 입력하세요."
+        }
+        if (confirmPassword.trim() === '') {
+            tmpInValid['confirmPassword'] = "확인 비밀번호를 입력하세요."
+        }
+        if (confirmPassword.trim() !== editPassword.trim()) {
+            tmpInValid['editPassword'] = "비밀번호를 확인하세요."
+            tmpInValid['confirmPassword'] = "비밀번호를 확인하세요."
+        }
+        if (Object.keys(tmpInValid).length > 0) {
+            setInValid(tmpInValid)
+            return false
+        }
+
+        setProcess(true)
+        fetch(`/api/servers/action?type=test`, {
+            method: "POST",
+            body: JSON.stringify({
+                ip: server['ip'],
+                port: server['port'],
+                user: server['user'],
+                password: editPassword
+            })
+        })
+            .then(res => res.json())
+            .then(body => {
+                setProcess(false)
+                if (body['status'] === "success") {
+                    enqueueSnackbar("정상적으로 연결되었습니다.", {variant: "success"});
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            })
+            .catch(error => {
+                setProcess(false)
+                enqueueSnackbar(JSON.stringify(error), {variant: "error"});
+            })
+    }
+
+    const handleEditPassword = () => {
+        setInValid({})
+        let tmpInValid = {}
+
+        if (editPassword.trim() === '') {
+            tmpInValid['editPassword'] = "신규 비밀번호를 입력하세요."
+        }
+        if (confirmPassword.trim() === '') {
+            tmpInValid['confirmPassword'] = "확인 비밀번호를 입력하세요."
+        }
+        if (confirmPassword.trim() !== editPassword.trim()) {
+            tmpInValid['editPassword'] = "비밀번호를 확인하세요."
+            tmpInValid['confirmPassword'] = "비밀번호를 확인하세요."
+        }
+        if (Object.keys(tmpInValid).length > 0) {
+            setInValid(tmpInValid)
+            return false
+        }
+
+        fetch(`/api${location.pathname}`, {
+            method: "PUT",
+            body: JSON.stringify({ password: editPassword })
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === "success") {
+                    handleClose()
+                    enqueueSnackbar("비밀번호가 변경되었습니다.", {variant: "success"});
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            })
+            .catch(error => {
+                enqueueSnackbar(JSON.stringify(error), {variant: "error"});
+            })
+    }
 
     return (
         <Box className={classes.root}>
@@ -307,26 +625,38 @@ function AdminServerDetail() {
                         </Grid>
                         <Grid item xs={6}>
                             <Box align={"right"}>
-                                <Button variant={"outlined"} onClick={() => history.go(-1)}>뒤로</Button>
+                                <Button size={"small"} onClick={event => setAnchorEl(event.currentTarget)} variant={"outlined"} color={"primary"}>
+                                    설정 <ArrowDropDownIcon/>
+                                </Button>
+                                <Menu
+                                    style={{marginTop: "45px"}}
+                                    anchorEl={anchorEl}
+                                    open={Boolean(anchorEl)}
+                                    keepMounted
+                                    onClose={() => setAnchorEl(null)}
+                                >
+                                    <MenuItem onClick={handleEditOpen}>서버 수정</MenuItem>
+                                    <MenuItem onClick={() => setRemoveServiceOpen(true)}>서버 삭제</MenuItem>
+                                </Menu>
                             </Box>
                         </Grid>
                     </Grid>
                 </Box>
 
-                <ShowField label={"이름"} val={"esapi1"} />
+                <ShowField label={"이름"} val={server['name']} />
 
-                <ShowField label={"아이피"} val={"119.205.194.131"} />
+                <ShowField label={"아이피"} val={server['ip']} />
 
-                <ShowField label={"포트"} val={"22"} />
+                <ShowField label={"포트"} val={server['port']} />
 
-                <ShowField label={"계정"} val={"danawa"} />
+                <ShowField label={"계정"} val={server['user']} />
 
                 <Box my={3}>
                     <Grid container>
-                        <Grid item xs={3} sm={3}>
-                            <Box align={"right"} className={classes.label}>비밀번호</Box>
+                        <Grid item xs={2} sm={1}>
+                            <Box align={"center"} className={classes.label}>비밀번호</Box>
                         </Grid>
-                        <Grid item xs={9} sm={9}>
+                        <Grid item xs={10} sm={11}>
                             <Button size={"small"}
                                     variant={"contained"}
                                     color={"primary"}
@@ -352,10 +682,10 @@ function AdminServerDetail() {
                         </Tabs>
                     </AppBar>
                     <TabPanel value={tabIndex} index={0}>
-                        <SystemStatus />
+                        <SystemStatus server={server} />
                     </TabPanel>
                     <TabPanel value={tabIndex} index={1}>
-                        <AdminGroup />
+                        <AdminGroup server={server}/>
                     </TabPanel>
                 </Box>
 
@@ -374,12 +704,17 @@ function AdminServerDetail() {
                         <Box my={3}>
                             <Grid container>
                                 <Grid item xs={4}>
-                                    현재 비밀번호
+                                    신규 비밀번호
                                 </Grid>
                                 <Grid item xs={8}>
                                     <TextField fullWidth={true}
                                                label={""}
                                                required={true}
+                                               type={"password"}
+                                               value={editPassword}
+                                               onChange={event => setEditPassword(event.target.value)}
+                                               error={inValid['editPassword']}
+                                               helperText={inValid['editPassword']}
                                     />
                                 </Grid>
                             </Grid>
@@ -387,12 +722,17 @@ function AdminServerDetail() {
                         <Box my={3}>
                             <Grid container>
                                 <Grid item xs={4}>
-                                    신규 비밀번호
+                                    확인 비밀번호
                                 </Grid>
                                 <Grid item xs={8}>
                                     <TextField fullWidth={true}
                                                label={""}
                                                required={true}
+                                               type={"password"}
+                                               value={confirmPassword}
+                                               onChange={event => setConfirmPassword(event.target.value)}
+                                               error={inValid['confirmPassword']}
+                                               helperText={inValid['confirmPassword']}
                                     />
                                 </Grid>
                             </Grid>
@@ -401,13 +741,13 @@ function AdminServerDetail() {
                     <DialogActions>
                         <Grid container>
                             <Grid item xs={4}>
-                                <Button autoFocus variant={"outlined"} onClick={handleClose} color="primary">
+                                <Button autoFocus variant={"outlined"} onClick={handleConnectionTest} color="primary" disabled={process}>
                                     연결테스트
                                 </Button>
                             </Grid>
                             <Grid item xs={8}>
                                 <Box align={"right"}>
-                                    <Button style={{marginLeft: '2px', marginRight: '2px'}} autoFocus variant={"outlined"} onClick={handleClose} color="primary">
+                                    <Button style={{marginLeft: '2px', marginRight: '2px'}} autoFocus variant={"outlined"} onClick={handleEditPassword} color="primary" disabled={process}>
                                         변경
                                     </Button>
                                     <Button style={{marginLeft: '2px', marginRight: '2px'}} variant={"outlined"} onClick={handleClose} color="default">
@@ -419,6 +759,153 @@ function AdminServerDetail() {
 
                     </DialogActions>
                 </Dialog>
+
+
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={editOpen}
+                    onClose={handleEditClose}
+                >
+                    <DialogTitle>서버수정</DialogTitle>
+                    <DialogContent>
+                        <Box my={3}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                    이름
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextField fullWidth={true}
+                                               label={""}
+                                               required={true}
+                                               placeholder={"개발서버"}
+                                               value={name}
+                                               onChange={event => setName(event.target.value)}
+                                               error={inValid['name']}
+                                               helperText={inValid['name']}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+                        <Box my={3}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                    아이피
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextField fullWidth={true}
+                                               label={""}
+                                               required={true}
+                                               placeholder={"192.168.0.1"}
+                                               value={ip}
+                                               onChange={event => setIp(event.target.value)}
+                                               error={inValid['ip']}
+                                               helperText={inValid['ip']}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+                        <Box my={3}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                    포트
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextField fullWidth={true}
+                                               label={""}
+                                               required={true}
+                                               placeholder={"22"}
+                                               value={port}
+                                               onChange={event => setPort(event.target.value)}
+                                               error={inValid['port']}
+                                               helperText={inValid['port']}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+
+                        <Box my={3}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                    계정
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextField fullWidth={true}
+                                               label={""}
+                                               required={true}
+                                               placeholder={"root"}
+                                               value={user}
+                                               onChange={event => setUser(event.target.value)}
+                                               error={inValid['user']}
+                                               helperText={inValid['user']}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Grid container>
+                            <Grid item xs={12}>
+                                <Box align={"right"}>
+                                    <Button style={{marginLeft: "2px", marginRight: "2px"}}
+                                            autoFocus
+                                            variant={"outlined"}
+                                            onClick={handleEditServer}
+                                            color="primary"
+                                    >
+                                        저장
+                                    </Button>
+                                    <Button style={{marginLeft: "2px", marginRight: "2px"}}
+                                            variant={"outlined"}
+                                            onClick={handleEditClose}
+                                            color="default"
+                                    >
+                                        취소
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
+
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={removeServiceOpen}
+                    onClose={() => setRemoveServiceOpen(false)}
+                >
+                    <DialogTitle>서버 삭제</DialogTitle>
+                    <DialogContent>
+                        서버를 삭제하시겠습니까?
+                    </DialogContent>
+                    <DialogActions>
+                        <Grid container>
+                            <Grid item xs={12}>
+                                <Box align={"right"}>
+                                    <Button style={{marginLeft: "2px", marginRight: "2px"}}
+                                            autoFocus
+                                            variant={"outlined"}
+                                            onClick={handleRemoveService}
+                                            color="secondary"
+                                    >
+                                        삭제
+                                    </Button>
+                                    <Button style={{marginLeft: "2px", marginRight: "2px"}}
+                                            variant={"outlined"}
+                                            onClick={() => setRemoveServiceOpen(false)}
+                                            color="default"
+                                    >
+                                        취소
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
+
+                    </DialogActions>
+                </Dialog>
+
             </Container>
         </Box>
     );

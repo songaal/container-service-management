@@ -46,7 +46,7 @@ function Service() {
         setKeyword(tmpKeyword)
     }
 
-    const viewServices = services.filter(server => {
+    const viewServices = (services||[]).filter(server => {
         return server['name'].includes(keyword) || server['server_name'].includes(keyword)
     })
 

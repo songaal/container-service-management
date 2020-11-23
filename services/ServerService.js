@@ -1,4 +1,4 @@
-const { Servers, GroupServer, GroupAuth, Sequelize, sequelize } = require("../models")
+const { Services, Servers, GroupServer, GroupAuth, Sequelize, sequelize } = require("../models")
 import SshClient from '../utils/SshClient'
 
 export default {
@@ -93,5 +93,28 @@ export default {
             }
         }
     },
+    async editServer(id, reqServer) {
+        let regServer = await Servers.count({where: { id }})
+        if (regServer !== 1) {
+            throw new Error("서버 정보를 찾을 수 없습니다.")
+        }
+        regServer = await Servers.update({
+            name: reqServer['name'],
+            ip: reqServer['ip'],
+            port: reqServer['port'],
+            user: reqServer['user']
+        }, {where: { id }})
+        return regServer
+    },
+    async removeServer(id) {
+        let regServer = await Servers.count({where: { id }})
+        if (regServer !== 1) {
+            throw new Error("서버 정보를 찾을 수 없습니다.")
+        }
 
+        await Services.update({serverId: -1}, {where: { serverId: id }})
+        await GroupServer.destroy({where: { serverId: id }})
+        await Servers.destroy({where: { id }})
+
+    }
 }

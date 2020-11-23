@@ -44,10 +44,10 @@ function ShowField({label, val, url}) {
     return (
         <Box my={3}>
             <Grid container>
-                <Grid item xs={3} sm={3}>
-                    <Box align={"right"} className={classes.label}>{ label }</Box>
+                <Grid item xs={2} sm={1}>
+                    <Box align={"center"} className={classes.label}>{ label }</Box>
                 </Grid>
-                <Grid item xs={9} sm={9}>
+                <Grid item xs={10} sm={11}>
                     {
                         url ?
                             <Link href={"#"}>
@@ -72,7 +72,6 @@ function ServerDetail() {
     const [server, setServer] = React.useState({})
     const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
     const [cmdResult, setCmdResult] = React.useState("")
-    const [terminalUrl, setTerminalUrl] = React.useState("")
 
     React.useEffect(() => {
         init()
@@ -86,11 +85,6 @@ function ServerDetail() {
                 if (body['status'] === 'success') {
                     setServer(body['server'])
                 }
-            })
-        fetch("/api/servers/action?type=terminal")
-            .then(res => res.json())
-            .then(body => {
-                setTerminalUrl(body['terminalUrl'])
             })
     }
 
@@ -135,7 +129,7 @@ function ServerDetail() {
                         </Grid>
                         <Grid item xs={6}>
                             <Box align={"right"}>
-                                <Button variant={"outlined"} onClick={() => router.back()}>뒤로</Button>
+                                {/*<Button variant={"outlined"} onClick={() => router.back()}>뒤로</Button>*/}
                             </Box>
                         </Grid>
                     </Grid>
@@ -154,11 +148,6 @@ function ServerDetail() {
                 <Box my={3}>
                     <Divider />
                 </Box>
-
-
-                <Typography variant={"h6"}>
-                    시스템 조회
-                </Typography>
 
                 <Box my={3}>
                     <Grid container>
@@ -180,6 +169,10 @@ function ServerDetail() {
                                     <Button onClick={() => execCmd("netstat -tnlp", "NetStat 조회")}
                                     >NetStat 조회</Button>
                                 </Tooltip>
+                                {/*<Tooltip title="who">*/}
+                                {/*    <Button onClick={() => execCmd("who", "사용자 조회")}*/}
+                                {/*    >사용자 조회</Button>*/}
+                                {/*</Tooltip>*/}
                             </ButtonGroup>
                         </Grid>
                         <Grid item xs={12} sm={4}>
@@ -199,14 +192,21 @@ function ServerDetail() {
                                       readOnly={true}
                                       style={{
                                           width: '100%',
+                                          backgroundColor: "black",
+                                          color: "white",
+                                          padding: '10px',
+                                          fontSize: "12pt",
+                                          overflow: 'auto',
+                                      }}
+                                      value={cmdResult || cmdName}
+                    />
+
+                {/*    width: '100%',
                                           height: "500px",
                                           backgroundColor: "black",
                                           color: "white",
                                           padding: '10px',
-                                          overflow: "scroll"
-                                      }}
-                                      value={cmdResult || cmdName}
-                    />
+                                          overflow: "scroll"*/}
                 </Box>
             </Container>
         </Box>

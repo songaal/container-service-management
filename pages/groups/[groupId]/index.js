@@ -142,7 +142,7 @@ function GroupDetail() {
             .then(body => {
                 if (body['status'] === 'success') {
                     enqueueSnackbar("그룹을 삭제하였습니다.", {variant: "success"})
-                    Router.push("/groups")
+                    router.push("/groups")
                 } else {
                     enqueueSnackbar(body['message'], {variant: "error"})
                 }

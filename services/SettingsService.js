@@ -1,4 +1,4 @@
-const { GroupServer, Servers, sequelize } = require("../models")
+const { GroupServer, Servers, Services, sequelize } = require("../models")
 
 export default {
     getServerList: async () => {
@@ -53,5 +53,47 @@ export default {
             }
         }
 
+    },
+    async findGroupsById(serverId) {
+        return await GroupServer.findAll(
+            {
+                where: {
+                    serverId: serverId
+                },
+                attributes: {
+                    include: [
+                        [
+                            sequelize.literal(`(
+                            SELECT count(*)
+                              FROM services b
+                             WHERE b.groupId = groupId
+                        )`),
+                            "service_count"
+                        ]
+                    ]
+                }
+            })
+    },
+    async deleteServerByGroup(serverId, groupId) {
+
+        const servicesResult = await Services.update({ serverId: -1 }, { where : {serverId, groupId}})
+        const groupServerResult = await GroupServer.destroy({ where : {serverId, groupId}})
+
+        return {
+            servicesResult,
+            groupServerResult
+        }
+    },
+    async addServerOnGroups(serverId, groupIds) {
+        let results = []
+        for (let i = 0; i < groupIds.length; i++) {
+            results.push(await GroupServer.create({
+                serverId, groupId: groupIds[i]
+            }))
+        }
+        return results
+    },
+    async editPassword(serverId, editPassword) {
+        return await Servers.update({password: editPassword}, {where: {id: serverId}})
     }
 }

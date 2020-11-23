@@ -64,7 +64,7 @@ function SettingsServer() {
     const init = () => {
         setServers([])
         setGroups([])
-        fetch('/api/settings/server')
+        fetch('/api/settings/servers')
             .then(res => res.json())
             .then(body => {
                 if (body['status'] === 'success') {
@@ -177,7 +177,7 @@ function SettingsServer() {
             return false
         }
 
-        fetch(`/api/settings/server`, {
+        fetch(`/api/settings/servers`, {
             method: "POST",
             body: JSON.stringify({name, groups: selectedGroup, ip, port, user, password})
         })
@@ -270,7 +270,7 @@ function SettingsServer() {
                                     viewServers.map((server, index) => {
                                         return (
                                             <TableRow key={server['id']}>
-                                                <TableCell>{index}</TableCell>
+                                                <TableCell>{index + 1}</TableCell>
                                                 <TableCell><Link href={`/settings/servers/${server['id']}`}>{server['name']}</Link></TableCell>
                                                 <TableCell>{server['ip']}</TableCell>
                                                 <TableCell>{server['port']}</TableCell>

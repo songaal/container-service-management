@@ -2,7 +2,7 @@ import React from 'react';
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import Header from "../../../../components/Header";
+import Header from "../../../../../components/Header";
 import {Box, MenuItem} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
@@ -12,6 +12,8 @@ import Menu from "@material-ui/core/Menu";
 import Divider from '@material-ui/core/Divider';
 import Link from '@material-ui/core/Link';
 import { unstable_Box} from "@material-ui/core/Box";
+import {useRouter} from "next/router"
+import fetch from "isomorphic-unfetch"
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -52,7 +54,7 @@ function ShowField({label, val, url}) {
                 <Grid item xs={9} sm={9}>
                     {
                         url ?
-                            <Link href={"#"}>
+                            <Link href={url}>
                                 <Typography className={classes.value}>
                                     {val}
                                 </Typography>
@@ -70,8 +72,34 @@ function ShowField({label, val, url}) {
 
 function ServicesDetail() {
     const classes = useStyles();
+    const router = useRouter()
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [execEl, setExecEl] = React.useState(null);
+    const [servers, setServers] = React.useState([])
+    const [service, setService] = React.useState({})
+
+    const { groupId, serviceId } = router.query
+
+    React.useEffect(() => {
+        init()
+    }, [])
+
+    const init = () => {
+        fetch(`/api/groups/${groupId}/servers`)
+            .then(res => res.json())
+            .then(body => setServers(body['servers']))
+
+        fetch(`/api/groups/${groupId}/services/${serviceId}`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setService(body['service']);
+                }
+            })
+    }
+
+
+    const selectedServer = servers.find(server => String(server['id']) === service['serverId'])||{}
 
     return (
         <Box className={classes.root}>
@@ -100,7 +128,9 @@ function ServicesDetail() {
                                     keepMounted
                                     onClose={() => setAnchorEl(null)}
                                 >
-                                    <MenuItem>서비스 수정</MenuItem>
+                                    <MenuItem onClick={() => Router.push(`${location.pathname}/edit`)}>
+
+                                        서비스 수정</MenuItem>
                                     <MenuItem>서비스 삭제</MenuItem>
                                 </Menu>
                             </Box>
@@ -112,11 +142,11 @@ function ServicesDetail() {
                     <Grid container>
                         <Grid item xs={12} sm={12} md={6}>
 
-                            <ShowField label={"서비스명"} val={"톰켓 프로세스 서비스"} />
+                            <ShowField label={"서비스명"} val={service['name']} />
 
-                            <ShowField label={"서비스타입"} val={"프로세스"} />
+                            <ShowField label={"서비스타입"} val={service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']} />
 
-                            <ShowField label={"서버"} val={"TP3"} url={"#"}/>
+                            <ShowField label={"서버"} val={ selectedServer['id'] ? `${selectedServer['name']||''} (${selectedServer['user']||''}@${selectedServer['ip']||''})` : "할당된 서버가 없습니다."} url={selectedServer['id'] ? `/servers/${service['serverId']}` : undefined }/>
 
                         </Grid>
                         <Grid item xs={12} sm={12} md={6}>

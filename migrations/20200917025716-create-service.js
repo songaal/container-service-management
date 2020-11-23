@@ -21,16 +21,16 @@ module.exports = {
         type: Sequelize.STRING
       },
       pidCmd: {
-        type: Sequelize.BLOB
+        type: Sequelize.TEXT
       },
       startScript: {
-        type: Sequelize.BLOB
+        type: Sequelize.TEXT,
       },
       stopScript: {
-        type: Sequelize.BLOB
+        type: Sequelize.TEXT,
       },
       yaml: {
-        type: Sequelize.BLOB
+        type: Sequelize.TEXT,
       },
       createdAt: {
         allowNull: false,

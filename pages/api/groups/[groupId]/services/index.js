@@ -2,21 +2,26 @@
 import React from 'react';
 import fetch from "isomorphic-unfetch";
 import { withSession } from 'next-session';
-import AuthService from "../../../../services/AuthService";
-import ServerService from "../../../../services/ServerService";
+import AuthService from "../../../../../services/AuthService";
+import GroupSvcService from "../../../../../services/GroupSvcService";
 
 
-async function groupsServers(req, res) {
+async function groupsService(req, res) {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json')
     await AuthService.validate(req, res);
 
     try {
-        const id = req.query['id'];
+        const groupId = req.query['groupId'];
         if (req.method === "GET") {
             res.send({
                 status: "success",
-                servers: await ServerService.findServerByGroupId(id)
+                services: await GroupSvcService.findServiceByGroupId(groupId)
+            })
+        } else if(req.method === "POST") {
+            res.send({
+                status: "success",
+                service: await GroupSvcService.addService(groupId, JSON.parse(req.body))
             })
         }
     } catch (error) {
@@ -29,4 +34,4 @@ async function groupsServers(req, res) {
     }
 }
 
-export default withSession(groupsServers)
+export default withSession(groupsService)

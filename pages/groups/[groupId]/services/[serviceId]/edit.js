@@ -2,8 +2,8 @@ import React from 'react';
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import Header from "../../../../components/Header";
-import {Box, FormControl, MenuItem, Select, TextField} from "@material-ui/core";
+import Header from "../../../../../components/Header";
+import {Box, FormControl, MenuItem, Select, TextareaAutosize, TextField, useTheme} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -18,11 +18,14 @@ import AddBoxIcon from '@material-ui/icons/AddBox';
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import dynamic from 'next/dynamic'
 const AceEditor = dynamic(import("react-ace"), {ssr: false})
-// dynamic(import("ace-builds/src-noconflict/mode-yaml"), {ssr: false})
-// dynamic(import("ace-builds/src-noconflict/theme-kuroir"), {ssr: false})
 import {OptionsObject, SnackbarMessage, SnackbarProvider, useSnackbar} from 'notistack';
 import fetch from "isomorphic-unfetch"
 import {useRouter} from "next/router";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogActions from "@material-ui/core/DialogActions";
+import Dialog from "@material-ui/core/Dialog";
+import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -40,17 +43,12 @@ const useStyles = makeStyles( theme => ({
     }
 }));
 
-// function generate(element) {
-//     return [0, 1].map((value) =>
-//         React.cloneElement(element, {
-//             key: value,
-//         }),
-//     );
-// }
-
-function Services() {
+let tmpYaml = ""
+function ServiceEdit() {
     const classes = useStyles();
     const router = useRouter();
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [servers, setServers] = React.useState([]);
 
@@ -58,6 +56,7 @@ function Services() {
     const [server, setServer] = React.useState('-1');
     const [type, setType] = React.useState('container');
     const [invalid, setInvalid] = React.useState({})
+    const [editConfirmOpen, setEditConfirmOpen] = React.useState(false)
 
     // 컨테이너
     const [variables, setVariables] = React.useState([{}]);
@@ -68,7 +67,7 @@ function Services() {
     const [stopScript, setStopScript] = React.useState("");
     const [logFiles, setLogFiles] = React.useState([{}]);
 
-    const { groupId } = router.query
+    const { groupId, serviceId } = router.query
 
     React.useEffect(() => {
         init()
@@ -84,38 +83,38 @@ function Services() {
                 }
                 setServers(tmp)
             })
+        fetch(`/api/groups/${groupId}/services/${serviceId}`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    const service = body['service'];
+                    setName(service['name'])
+                    setServer(service['serverId'])
+                    setType(service['type'])
+                    setVariables(service['variables'].length === 0 ? [{}] : service['variables'])
+                    setPidCmd(service['pidCmd'])
+                    setStartScript(service['startScript'])
+                    setStopScript(service['stopScript'])
+                    setYaml(service['yaml'])
+                    setLogFiles(service['logFiles'].length === 0 ? [{}] : service['logFiles'])
+                }
+            })
     }
 
-    const handleAddService = () => {
+    const handleEditService = () => {
         setInvalid({})
         let tmpInvalid = {}
         if(name.trim() === "") {
             tmpInvalid['name'] = "이름을 입력해주세요."
         }
 
-        // if (type === "container") {
-        //     if (dockerComposeYml.trim() === "") {
-        //         tmpInvalid['dockerComposeYml'] = "도커 컴포즈를 입력하세요."
-        //     }
-        // } else if (type === "process") {
-        //     if(pidCmd.trim() === "") {
-        //         tmpInvalid['pidCmd'] = "PID 조회 명령어를 입력하세요."
-        //     }
-        //     if (startScript.trim() === "") {
-        //         tmpInvalid['startScript'] = "시작스크립트를 입력하세요."
-        //     }
-        //     if (stopScript.trim() === "") {
-        //         tmpInvalid['stopScript'] = "종료스크립트를 입력하세요."
-        //     }
-        // }
-
         if (Object.keys(tmpInvalid).length > 0) {
             setInvalid(tmpInvalid)
             return false
         }
 
-        fetch(`/api/groups/${groupId}/services`, {
-            method: "POST",
+        fetch(`/api/groups/${groupId}/services/${serviceId}`, {
+            method: "PUT",
             body: JSON.stringify({
                 name, server, type,
                 variables: variables.filter(variable => variable['key'] && variable['value']),
@@ -127,10 +126,10 @@ function Services() {
             .then(res => res.json())
             .then(body => {
                 if (body['status'] === 'success') {
-                    enqueueSnackbar("서비스를 등록하였습니다.", {variant: "success"})
-                    router.replace(`/groups/${groupId}`)
+                    enqueueSnackbar("서비스를 수정하였습니다.", {variant: "success"})
+                    router.push(`/groups/${groupId}/services/${serviceId}`)
                 } else {
-                    enqueueSnackbar("서비스 등록 실패하였습니다.", {variant: "error"})
+                    enqueueSnackbar("서비스 수정 실패하였습니다.", {variant: "error"})
                 }
             })
     }
@@ -146,13 +145,13 @@ function Services() {
                     <Grid item xs={6}>
                         <Box>
                             <Typography variant="h4" gutterBottom>
-                                서비스 추가
+                                서비스 수정
                             </Typography>
                         </Box>
                     </Grid>
                     <Grid item xs={6}>
                         <Box align={"right"}>
-                            <Button style={{margin: 5}} variant={"contained"} color={"primary"} onClick={handleAddService}>저장</Button>
+                            <Button style={{margin: 5}} variant={"contained"} color={"primary"} onClick={() => setEditConfirmOpen(true)}>저장</Button>
                             <Button style={{margin: 5}} variant={"contained"} color={"secondary"} onClick={() => router.back()}>취소</Button>
                         </Box>
                     </Grid>
@@ -262,7 +261,7 @@ function Services() {
                                                                    variant={"outlined"}
                                                                    color={"primary"}
                                                                    required={true}
-                                                                   // value={variable['val']}
+                                                                   value={variable['value']}
                                                                    onChange={event => {
                                                                        variables[index]['value'] = event.target.value
                                                                        setVariables([
@@ -323,6 +322,7 @@ services:
                                     `}
                                     setOptions={{ useWorker: false }}
                                     onChange={(value) => setYaml(value)}
+                                    value={yaml}
                                 />
                             </Box>
                         </Grid>
@@ -371,6 +371,7 @@ services:
                                     tabSize={2}
                                     placeholder=""
                                     setOptions={{ useWorker: false }}
+                                    value={startScript}
                                     onChange={(value) => setStartScript(value)}
                                 />
                             </Box>
@@ -394,6 +395,7 @@ services:
                                     tabSize={2}
                                     placeholder=""
                                     setOptions={{ useWorker: false }}
+                                    value={stopScript}
                                     onChange={(value) => setStopScript(value)}
                                 />
                             </Box>
@@ -481,8 +483,33 @@ services:
                 <br/>
                 <br/>
             </Container>
+
+
+            <Dialog
+                fullWidth={true}
+                fullScreen={fullScreen}
+                open={editConfirmOpen}
+                onClose={() => setEditConfirmOpen(false)}
+            >
+                <DialogTitle>
+                    서비스 수정
+                </DialogTitle>
+                <DialogContent>
+                    변경된 내용을 저장하시겠습니까?
+                </DialogContent>
+                <DialogActions>
+                    <Button autoFocus variant={"outlined"} onClick={handleEditService} color="primary">
+                        저장
+                    </Button>
+                    <Button variant={"outlined"} onClick={() => setEditConfirmOpen(false)} color="default">
+                        취소
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+
         </Box>
     );
 }
 
-export default Services;
+export default ServiceEdit;

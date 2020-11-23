@@ -20,6 +20,22 @@ async function server(req, res) {
                 status: "success",
                 server: server
             });
+        } else if (req.method === 'PUT') {
+            if (!req.session.auth.user.admin) {
+                throw new Error("관리자 전용 API 입니다.");
+            }
+            res.send({
+                status: "success",
+                server: await ServerService.editServer(id, JSON.parse(req.body))
+            });
+        } else if (req.method === 'DELETE') {
+            if (!req.session.auth.user.admin) {
+                throw new Error("관리자 전용 API 입니다.");
+            }
+            res.send({
+                status: "success",
+                server: await ServerService.removeServer(id)
+            });
         }
 
     } catch (error) {

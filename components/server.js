@@ -6,6 +6,7 @@ import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
+import Router from "next/router"
 
 const useStyles = makeStyles( theme => ({
     root: {
