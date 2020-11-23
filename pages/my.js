@@ -189,7 +189,7 @@ function My() {
                                                                 data.map(group => {
                                                                     return (
                                                                         <TableCell key={group['id']}>
-                                                                            <Link href={`/groups/${group['id']}`}>{group['name']||''}</Link>
+                                                                            <Link href={"#none"} onClick={() => Router.push(`/groups/${group['id']}`)}>{group['name']||''}</Link>
                                                                         </TableCell>
                                                                     )
                                                                 })

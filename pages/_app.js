@@ -36,6 +36,18 @@ export default function MyApp(props) {
   );
 }
 
+MyApp.getInitialProps = async ({ Component, ctx }) => {
+    let pageProps = {};
+
+    if (Component.getInitialProps) {
+        pageProps = await Component.getInitialProps(ctx);
+    }
+
+    return {
+        pageProps
+    };
+}
+
 MyApp.propTypes = {
   Component: PropTypes.elementType.isRequired,
   pageProps: PropTypes.object.isRequired,

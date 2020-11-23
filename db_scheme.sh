@@ -10,7 +10,7 @@ sequelize model:create --name service   --attributes groupId:string,serverId:str
 
 sequelize model:create --name variable   --attributes serviceId:string,key:string,value:string,type:string
 
-sequelize model:create --name server    --attributes name:string,user:string,password:string,ip:string,port:string
+sequelize model:create --name server    --attributes type:string,name:string,user:string,password:string,ip:string,port:string
 
 sequelize model:create --name group_server --attributes serverId:string,groupId:string
 

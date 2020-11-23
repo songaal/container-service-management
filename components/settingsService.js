@@ -63,21 +63,21 @@ function SettingsService() {
                             <TableRow>
                                 <TableCell>1</TableCell>
                                 <TableCell><Link href={"/groups/1"}>검색</Link></TableCell>
-                                <TableCell><Link href={"/services/1"}>엘라스틱서치</Link></TableCell>
+                                <TableCell><Link href={"/groups/1/services/1"}>엘라스틱서치</Link></TableCell>
                                 <TableCell><Link href={"/server/1"}>elk1-dev</Link></TableCell>
                                 <TableCell>프로세스</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>2</TableCell>
                                 <TableCell><Link href={"/groups/1"}>검색</Link></TableCell>
-                                <TableCell><Link href={"/services/1"}>데이터</Link></TableCell>
+                                <TableCell><Link href={"/groups/1/services/1"}>데이터</Link></TableCell>
                                 <TableCell><Link href={"/server/1"}>elk2-dev</Link></TableCell>
                                 <TableCell>프로세스</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell>3</TableCell>
                                 <TableCell><Link href={"/groups/1"}>ES검색</Link></TableCell>
-                                <TableCell><Link href={"/services/1"}>elasticsearch</Link></TableCell>
+                                <TableCell><Link href={"/groups/1/services/1"}>elasticsearch</Link></TableCell>
                                 <TableCell><Link href={"/server/1"}>elk1-prod</Link></TableCell>
                                 <TableCell>컨테이너</TableCell>
                             </TableRow>

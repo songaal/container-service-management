@@ -27,6 +27,7 @@ import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import {makeStyles} from "@material-ui/core/styles";
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
+import Router from "next/router"
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -171,7 +172,11 @@ function Groups() {
                                         return (
                                             <TableRow key={group['name']}>
                                                 <TableCell>{index + 1}</TableCell>
-                                                <TableCell><Link href={`/groups/${group['id']}`}>{group['name']}</Link></TableCell>
+                                                <TableCell>
+                                                    <Link href="#" onClick={event => {Router.push(`/groups/${group['id']}`)}}>
+                                                        {group['name']}
+                                                    </Link>
+                                                </TableCell>
                                                 <TableCell>{group['server_count']}</TableCell>
                                                 <TableCell>{group['service_count']}</TableCell>
                                                 <TableCell>{group['user_count']}</TableCell>

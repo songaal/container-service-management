@@ -12,11 +12,16 @@ async function groupsService(req, res) {
     await AuthService.validate(req, res);
 
     try {
-        const id = req.query['id'];
+        const groupId = req.query['id'];
         if (req.method === "GET") {
             res.send({
                 status: "success",
-                servers: []
+                services: await GroupSvcService.findServiceByGroupId(groupId)
+            })
+        } else if(req.method === "POST") {
+            res.send({
+                status: "success",
+                service: await GroupSvcService.addService(groupId, JSON.parse(req.body))
             })
         }
     } catch (error) {

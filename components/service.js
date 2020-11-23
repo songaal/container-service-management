@@ -17,19 +17,38 @@ const useStyles = makeStyles( theme => ({
 }));
 
 function Service() {
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const classes = useStyles();
+    const [services, setServices] = React.useState([])
+    const [keyword, setKeyword] = React.useState("")
+    const [tmpKeyword, setTmpKeyword] = React.useState("")
 
     React.useEffect(() => {
         init()
     }, [])
 
     const init = () => {
-        fetch(`/api${location.pathname}`)
+        fetch(`/api${location.pathname}/services`)
             .then(res => res.json())
             .then(body => {
-                console.log(body )
+                if (body['status'] === 'error') {
+                    console.error(body)
+                    enqueueSnackbar('조회 중 에러가 발생하였습니다.', {
+                        variant: "error"
+                    });
+                } else {
+                    setServices(body['services'])
+                }
             })
     }
+
+    const handleSearch = () => {
+        setKeyword(tmpKeyword)
+    }
+
+    const viewServices = services.filter(server => {
+        return server['name'].includes(keyword) || server['server_name'].includes(keyword)
+    })
 
     return (
         <Box className={classes.root}>
@@ -43,17 +62,19 @@ function Service() {
                                            color={"primary"}
                                            size={"small"}
                                            placeholder="검색"
+                                           value={tmpKeyword}
+                                           onChange={event => setTmpKeyword(event.target.value)}
+                                           onKeyUp={event => event.keyCode === 13 ? handleSearch() : null}
+
                                 />
-                                <Button style={{height: '40px'}} variant={"outlined"} color={"default"}>검색</Button>
+                                <Button style={{height: '40px'}} variant={"outlined"} color={"default"} onClick={handleSearch}>검색</Button>
                             </Grid>
                             <Grid item xs={4}>
                                 <Box align={"right"}>
-                                    <Button onClick={() => Router.push('/services')} size={"small"} variant={"outlined"} color={"primary"}>서비스 추가</Button>
+                                    <Button onClick={() => Router.push(location.pathname + '/services')} size={"small"} variant={"outlined"} color={"primary"}>서비스 추가</Button>
                                 </Box>
                             </Grid>
                         </Grid>
-
-
                     </Box>
 
                     <Table my={2}>
@@ -66,30 +87,25 @@ function Service() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            <TableRow>
-                                <TableCell>1</TableCell>
-                                <TableCell>
-                                    <Link href={"/services/1"}>ES 검색</Link>
-                                </TableCell>
-                                <TableCell>elk1-dev</TableCell>
-                                <TableCell>프로세스</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>2</TableCell>
-                                <TableCell>
-                                    <Link href={"/services/1"}>ES 검색</Link>
-                                </TableCell>
-                                <TableCell>elk2-dev</TableCell>
-                                <TableCell>컨테이너</TableCell>
-                            </TableRow>
-                            <TableRow>
-                                <TableCell>3</TableCell>
-                                <TableCell>
-                                    <Link href={"/services/1"}>쿠버 테스트</Link>
-                                </TableCell>
-                                <TableCell>elk2-dev</TableCell>
-                                <TableCell>컨테이너</TableCell>
-                            </TableRow>
+                            {
+                                viewServices.length === 0 ?
+                                    <TableRow>
+                                        <TableCell colSpan={4} align={"center"}>등록된 서비스가 없습니다.</TableCell>
+                                    </TableRow>
+                                    :
+                                    viewServices.map((service, index) => {
+                                        return (
+                                            <TableRow>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>
+                                                    <Link href={"#none"} onClick={() => Router.push(`${location.pathname}/services/${service['id']}`)}>{service['name']}</Link>
+                                                </TableCell>
+                                                <TableCell>{service['server_name']}</TableCell>
+                                                <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                            }
                         </TableBody>
                     </Table>
                 </CardContent>

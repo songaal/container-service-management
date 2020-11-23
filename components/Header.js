@@ -87,13 +87,13 @@ export default function Header({active}) {
                                 운영관리
                             </Typography>
                             <nav style={{display: "inline", marginLeft: '20px'}}>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="/home" className={ active === 0 ? classes.active : classes.link}>
+                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => Router.push("/home")} className={ active === 0 ? classes.active : classes.link}>
                                     홈
                                 </Link>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="/groups" className={ active === 1 ? classes.active : classes.link}>
+                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => Router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>
                                     그룹
                                 </Link>
-                                <Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="/settings" className={ active === 2 ? classes.active : classes.link}>
+                                <Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => Router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
                                     설정
                                 </Link>
                             </nav>
@@ -109,7 +109,7 @@ export default function Header({active}) {
                                     open={Boolean(anchorEl)}
                                     onClose={handleClose}
                                 >
-                                    <MenuItem  onClick={() => {location.href="/my"}}>개인정보</MenuItem>
+                                    <MenuItem  onClick={() => Router.push("/my")}>개인정보</MenuItem>
                                     <MenuItem onClick={logout}>로그아웃</MenuItem>
                                 </Menu>
                             </Box>

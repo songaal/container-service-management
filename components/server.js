@@ -103,7 +103,7 @@ function Server() {
                                             <TableRow key={server['id']}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>
-                                                    <Link href={`/servers/${server['id']}`}>{server['name']}</Link>
+                                                    <Link href={"#none"} onClick={() => Router.push(`/servers/${server['id']}`)}>{server['name']}</Link>
                                                 </TableCell>
                                                 <TableCell>{server['user']}</TableCell>
                                                 <TableCell>{server['ip']}</TableCell>

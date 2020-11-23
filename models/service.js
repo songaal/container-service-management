@@ -19,10 +19,11 @@ module.exports = (sequelize, DataTypes) => {
     groupId: DataTypes.STRING,
     serverId: DataTypes.STRING,
     name: DataTypes.STRING,
-    pidCmd: DataTypes.STRING,
-    startScript: DataTypes.STRING,
-    stopScript: DataTypes.STRING,
-    yaml: DataTypes.STRING
+    type: DataTypes.STRING,
+    pidCmd: DataTypes.BLOB,
+    startScript: DataTypes.BLOB,
+    stopScript: DataTypes.BLOB,
+    yaml: DataTypes.BLOB,
   }, {
     sequelize,
     modelName: 'service',

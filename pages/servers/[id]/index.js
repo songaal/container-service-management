@@ -135,7 +135,7 @@ function ServerDetail() {
                         </Grid>
                         <Grid item xs={6}>
                             <Box align={"right"}>
-                                <Button variant={"outlined"} onClick={() => history.go(-1)}>뒤로</Button>
+                                <Button variant={"outlined"} onClick={() => router.back()}>뒤로</Button>
                             </Box>
                         </Grid>
                     </Grid>

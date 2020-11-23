@@ -14,20 +14,23 @@ module.exports = {
       serverId: {
         type: Sequelize.STRING
       },
+      type: {
+        type: Sequelize.STRING,
+      },
       name: {
         type: Sequelize.STRING
       },
       pidCmd: {
-        type: Sequelize.STRING
+        type: Sequelize.BLOB
       },
       startScript: {
-        type: Sequelize.STRING
+        type: Sequelize.BLOB
       },
       stopScript: {
-        type: Sequelize.STRING
+        type: Sequelize.BLOB
       },
       yaml: {
-        type: Sequelize.STRING
+        type: Sequelize.BLOB
       },
       createdAt: {
         allowNull: false,
