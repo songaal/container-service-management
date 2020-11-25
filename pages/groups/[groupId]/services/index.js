@@ -251,6 +251,7 @@ function Services() {
                                                                            ...variables,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"image"}
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
@@ -269,6 +270,7 @@ function Services() {
                                                                            ...variables,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"nginx"}
                                                         />
                                                     </Grid>
                                                 </Grid>
@@ -317,10 +319,9 @@ function Services() {
                                     placeholder={`version: '3.7'
 services: 
   nginx:
-    image: nginx:\${version}
+    image: \${image}
     ports:
-    - 80:80                                
-                                    `}
+    - 80:80`}
                                     setOptions={{ useWorker: false }}
                                     onChange={(value) => setYaml(value)}
                                 />
@@ -369,7 +370,10 @@ services:
                                     height={"300px"}
                                     width="100%"
                                     tabSize={2}
-                                    placeholder=""
+                                    placeholder={`trap '' 1 2
+java -jar app.jar -Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -server -Dfile.encoding=UTF-8 -Dspring.config.location=file:/home/danawa/application.yml > $OUTPUT_LOG 2>&1 &
+return 0
+                                    `}
                                     setOptions={{ useWorker: false }}
                                     onChange={(value) => setStartScript(value)}
                                 />
@@ -392,7 +396,11 @@ services:
                                     height={"300px"}
                                     width="100%"
                                     tabSize={2}
-                                    placeholder=""
+                                    placeholder={`PID=$(ps -ef| grep app.jar |grep -v grep |awk '{print $2}')
+if [ -z $PID ];then
+    kill -15 $PID
+fi
+                                    `}
                                     setOptions={{ useWorker: false }}
                                     onChange={(value) => setStopScript(value)}
                                 />
@@ -429,6 +437,7 @@ services:
                                                                            ...logFiles,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"access log"}
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
@@ -447,6 +456,7 @@ services:
                                                                            ...logFiles,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"/var/log/access.log"}
                                                         />
                                                     </Grid>
                                                 </Grid>

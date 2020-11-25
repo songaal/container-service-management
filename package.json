@@ -37,6 +37,7 @@
     "clsx": "latest",
     "css-vendor": "2.0.7",
     "date-fns": "2.10.0",
+    "docker-compose": "^0.23.5",
     "fs": "0.0.1-security",
     "google-map-react": "1.1.6",
     "isomorphic-unfetch": "^3.0.0",

@@ -17,10 +17,7 @@ export default {
                         sequelize.literal(`(
                             SELECT COUNT(*)
                               FROM services b
-                             WHERE b.groupId in (SELECT groupId 
-                                                   FROM group_servers c
-                                                  WHERE c.serverId = server.id
-                                                    AND c.groupId is not NULL)
+                             WHERE b.serverId = server.id
                         )`), 'service_count'
                     ]
                 ]

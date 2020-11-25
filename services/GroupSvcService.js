@@ -1,5 +1,5 @@
 const { Sequelize, sequelize, Services, Variable} = require("../models")
-
+import DockerComposeService from "./DockerComposeService";
 
 export default {
     async findServiceById(id) {
@@ -50,33 +50,24 @@ export default {
         service['logFiles'] = []
 
         const id = String(regServer['dataValues']['id'])
-        if (reqService['type'] === 'container') {
-            const variableSize = reqService['variables'].length
-            for (let i = 0; i < variableSize; i++) {
-                service['variables'].push((await Variable.create({
-                    serviceId: id,
-                    key: reqService['variables'][i]['key'],
-                    value: reqService['variables'][i]['value'],
-                    type: reqService['type'],
-                }))['dataValues'])
-            }
-        }
-        if (reqService['type'] === 'process') {
-            const logFileSize = reqService['logFiles'].length
-            for (let i = 0; i < logFileSize; i++) {
-                service['logFiles'].push((await Variable.create({
-                    serviceId: id,
-                    key: reqService['logFiles'][i]['key'],
-                    value: reqService['logFiles'][i]['value'],
-                    type: reqService['type'],
-                }))['dataValues'])
-            }
+        const type = reqService['type']
+        const variables = type === 'container' ? reqService['variables'] : reqService['logFiles']
+        const yaml = reqService['yaml'];
+
+        await Variable.destroy({ where: { serviceId: id } })
+        await this.appendVariables({serviceId: id, type: type, variables: variables})
+
+        const dockerComposeFilePath = await DockerComposeService.getDockerComposeFilePath({serverId: reqService['server'], groupId, serviceId: id})
+        await DockerComposeService.cleanDockerComposeFile(dockerComposeFilePath)
+
+        if (type === 'container') {
+            await DockerComposeService.writeDockerCompose({dockerComposeFilePath, yaml, variables})
+        } else if (type === 'process') {
+            // TODO 프로세스 처리 필요시 사용.
         }
         return service;
     },
     async editService(id, reqService) {
-        let service = {}
-
         await Services.update({
             name: reqService['name'],
             serverId: reqService['server'],
@@ -88,38 +79,54 @@ export default {
         }, {
             where: { id }
         })
-
-        service['variables'] = []
-        service['logFiles'] = []
+        const variables = reqService['type'] === 'container' ? reqService['variables'] : reqService['logFiles']
+        const yaml = reqService['yaml'];
 
         await Variable.destroy({ where: { serviceId: id } })
+        await this.appendVariables({serviceId: id, type: reqService['type'], variables: variables})
 
-        if (reqService['type'] === 'container') {
-            const variableSize = reqService['variables'].length
-            for (let i = 0; i < variableSize; i++) {
-                service['variables'].push((await Variable.create({
-                    serviceId: id,
-                    key: reqService['variables'][i]['key'],
-                    value: reqService['variables'][i]['value'],
-                    type: reqService['type'],
-                }))['dataValues'])
-            }
-        }
-        if (reqService['type'] === 'process') {
-            const logFileSize = reqService['logFiles'].length
-            for (let i = 0; i < logFileSize; i++) {
-                service['logFiles'].push((await Variable.create({
-                    serviceId: id,
-                    key: reqService['logFiles'][i]['key'],
-                    value: reqService['logFiles'][i]['value'],
-                    type: reqService['type'],
-                }))['dataValues'])
-            }
+
+        const regService = await this.findServiceById(id)
+        const serverId = regService['serverId']
+        const groupId = regService['groupId']
+        const type = reqService['type']
+
+        const dockerComposeFilePath = await DockerComposeService.getDockerComposeFilePath({serverId: serverId, groupId, serviceId: id})
+        await DockerComposeService.cleanDockerComposeFile(dockerComposeFilePath)
+
+        if (type === 'container') {
+            await DockerComposeService.writeDockerCompose({dockerComposeFilePath, yaml, variables})
+        } else if (type === 'process') {
+            // TODO 프로세스 처리 필요시 사용.
         }
 
         return {
-            ...service,
             ...reqService
-        };
+        }
+    },
+    async appendVariables({serviceId, type, variables}){
+        let tmp = []
+        const variableSize = variables.length
+        for (let i = 0; i < variableSize; i++) {
+            tmp.push((await Variable.create({
+                serviceId: serviceId,
+                key: variables[i]['key'],
+                value: variables[i]['value'],
+                type: type,
+            }))['dataValues'])
+        }
+        return tmp
+    },
+    async removeService(id) {
+        const regService = await this.findServiceById(id)
+        const serverId = regService['dataValues']['serverId']
+        const groupId = regService['dataValues']['groupId']
+
+        const dockerComposeFilePath = await DockerComposeService.getDockerComposeFilePath({serverId: serverId, groupId, serviceId: id})
+        await DockerComposeService.cleanDockerComposeFile(dockerComposeFilePath)
+
+        await Variable.destroy({ where: { serviceId: id } })
+        await Services.destroy({ where: { serviceId: id } })
+        return regService
     }
 }

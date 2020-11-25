@@ -3,7 +3,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../../../components/Header";
-import {Box, MenuItem} from "@material-ui/core";
+import {Box, MenuItem, useTheme} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -14,6 +14,12 @@ import Link from '@material-ui/core/Link';
 import { unstable_Box} from "@material-ui/core/Box";
 import {useRouter} from "next/router"
 import fetch from "isomorphic-unfetch"
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogContent from "@material-ui/core/DialogContent";
+import DialogActions from "@material-ui/core/DialogActions";
+import Dialog from "@material-ui/core/Dialog";
+import {useSnackbar} from "notistack";
+import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -71,13 +77,16 @@ function ShowField({label, val, url}) {
 }
 
 function ServicesDetail() {
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+    const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const classes = useStyles();
     const router = useRouter()
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [execEl, setExecEl] = React.useState(null);
     const [servers, setServers] = React.useState([])
     const [service, setService] = React.useState({})
-
+    const [removeServiceOpen, setRemoveServiceOpen] = React.useState(false)
     const { groupId, serviceId } = router.query
 
     React.useEffect(() => {
@@ -98,6 +107,21 @@ function ServicesDetail() {
             })
     }
 
+    const handleRemoveService = () => {
+        fetch(`/api/groups/${groupId}/services/${serviceId}`, {
+            method: "DELETE"
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    enqueueSnackbar("서비스를 삭제 완료하였습니다.", { variant: "success" })
+                } else {
+                    enqueueSnackbar("서비스 삭제 실패하였습니다.", { variant: "error" })
+                }
+            })
+
+
+    }
 
     const selectedServer = servers.find(server => String(server['id']) === service['serverId'])||{}
 
@@ -128,10 +152,8 @@ function ServicesDetail() {
                                     keepMounted
                                     onClose={() => setAnchorEl(null)}
                                 >
-                                    <MenuItem onClick={() => Router.push(`${location.pathname}/edit`)}>
-
-                                        서비스 수정</MenuItem>
-                                    <MenuItem>서비스 삭제</MenuItem>
+                                    <MenuItem onClick={() => router.push(`${location.pathname}/edit`)}>서비스 수정</MenuItem>
+                                    <MenuItem onClick={() => setRemoveServiceOpen(true)}>서비스 삭제</MenuItem>
                                 </Menu>
                             </Box>
                         </Grid>
@@ -235,6 +257,45 @@ function ServicesDetail() {
                         </Grid>
                     </Grid>
                 </Box>
+
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={removeServiceOpen}
+                    onClose={() => setRemoveServiceOpen(false)}
+                >
+                    <DialogTitle>
+                        서비스삭제
+                    </DialogTitle>
+                    <DialogContent>
+                        <Box color="error.main">서비스를 삭제하시겠습니까?</Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Grid container>
+                            <Grid item xs="6">
+
+                            </Grid>
+                            <Grid item xs="6">
+                                <Box align="right">
+                                    <Button autoFocus
+                                            variant={"outlined"}
+                                            onClick={handleRemoveService}
+                                            color="secondary"
+                                    >
+                                        삭제
+                                    </Button>
+                                    <Button style={{marginLeft: "5px"}}
+                                            variant={"outlined"}
+                                            onClick={() => setRemoveServiceOpen(false)} color="default"
+                                    >
+                                        취소
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </DialogActions>
+                </Dialog>
 
             </Container>
         </Box>

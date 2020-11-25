@@ -24,6 +24,7 @@ module.exports = (sequelize, DataTypes) => {
     startScript: DataTypes.TEXT,
     stopScript: DataTypes.TEXT,
     yaml: DataTypes.TEXT,
+    dockerPort: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'service',

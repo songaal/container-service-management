@@ -250,6 +250,7 @@ function ServiceEdit() {
                                                                            ...variables,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"image"}
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
@@ -268,6 +269,7 @@ function ServiceEdit() {
                                                                            ...variables,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"nginx"}
                                                         />
                                                     </Grid>
                                                 </Grid>
@@ -316,10 +318,9 @@ function ServiceEdit() {
                                     placeholder={`version: '3.7'
 services: 
   nginx:
-    image: nginx:\${version}
+    image: \${image}
     ports:
-    - 80:80                                
-                                    `}
+    - 80:80`}
                                     setOptions={{ useWorker: false }}
                                     onChange={(value) => setYaml(value)}
                                     value={yaml}
@@ -373,6 +374,10 @@ services:
                                     setOptions={{ useWorker: false }}
                                     value={startScript}
                                     onChange={(value) => setStartScript(value)}
+                                    placeholder={`trap '' 1 2
+java -jar app.jar -Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -server -Dfile.encoding=UTF-8 -Dspring.config.location=file:/home/danawa/application.yml > $OUTPUT_LOG 2>&1 &
+return 0
+                                    `}
                                 />
                             </Box>
                         </Grid>
@@ -397,6 +402,11 @@ services:
                                     setOptions={{ useWorker: false }}
                                     value={stopScript}
                                     onChange={(value) => setStopScript(value)}
+                                    placeholder={`PID=$(ps -ef| grep app.jar |grep -v grep |awk '{print $2}')
+if [ -z $PID ];then
+    kill -15 $PID
+fi
+                                    `}
                                 />
                             </Box>
                         </Grid>
@@ -431,6 +441,7 @@ services:
                                                                            ...logFiles,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"access log"}
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
@@ -449,6 +460,7 @@ services:
                                                                            ...logFiles,
                                                                        ])
                                                                    }}
+                                                                   placeholder={"/var/log/access.log"}
                                                         />
                                                     </Grid>
                                                 </Grid>

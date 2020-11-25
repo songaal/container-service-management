@@ -64,9 +64,9 @@ function GroupDetail() {
     const classes = useStyles();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
+    const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const [tabIndex, setTabIndex] = React.useState(0);
     const [editOpen, setEditOpen] = React.useState(false);
-    const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [group, setGroup] = React.useState({})
     const [name, setName] = React.useState("")
