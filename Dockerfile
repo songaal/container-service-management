@@ -1,19 +1,16 @@
-FROM dcr.danawa.io/node:14
+FROM node:15
 
-ENV NODE_ENV=production
+ENV PORT 3000
 
 WORKDIR /app
 
-RUN npm install -g next react react-dom --unsafe-perm=true --allow-root
-
-COPY package.json .
-
+COPY package*.json /app/
 RUN npm install
 
-COPY  . .
+COPY  . /app/
 
-RUN next build
+RUN npm run build
 
 EXPOSE 3000
 
-CMD ["next", "start", "--hostname", "0.0.0.0"]
+CMD ["npm", "start"]

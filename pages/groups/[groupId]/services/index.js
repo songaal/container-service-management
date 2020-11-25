@@ -62,6 +62,7 @@ function Services() {
     // 컨테이너
     const [variables, setVariables] = React.useState([{}]);
     const [yaml, setYaml] = React.useState("");
+    const [dockerPort, setDockerPort] = React.useState("2375");
     // 프로세스
     const [pidCmd, setPidCmd] = React.useState("");
     const [startScript, setStartScript] = React.useState("");
@@ -119,7 +120,7 @@ function Services() {
             body: JSON.stringify({
                 name, server, type,
                 variables: variables.filter(variable => variable['key'] && variable['value']),
-                yaml,
+                yaml, dockerPort,
                 pidCmd, startScript, stopScript,
                 logFiles: logFiles.filter(logFile => logFile['key'] && logFile['value']),
             })
@@ -223,6 +224,29 @@ function Services() {
 
                 {/*  컨테이너  */}
                 <Box display={type === 'container' ? 'block' : 'none'}>
+
+                    <Grid container>
+                        <Grid item xs={3} sm={1}>
+                            <Box align={"right"} className={classes.label}>포트</Box>
+                        </Grid>
+                        <Grid item xs={9} sm={11}>
+                            <Box>
+                                <TextField value={dockerPort}
+                                           onChange={event => setDockerPort(event.target.value)}
+                                           autoFocus={true}
+                                           fullWidth
+                                           size={"small"}
+                                           variant={"outlined"}
+                                           color={"primary"}
+                                           required={true}
+                                           error={invalid['dockerPort']}
+                                           helperText={invalid['dockerPort']}
+                                />
+                            </Box>
+                        </Grid>
+                    </Grid>
+
+
                     <Grid container>
                         <Grid item xs={3} sm={1}>
                             <Box align={"right"} className={classes.label} style={{marginTop: 25}}>변수</Box>

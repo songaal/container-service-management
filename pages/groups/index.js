@@ -27,7 +27,7 @@ import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import {makeStyles} from "@material-ui/core/styles";
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
-import Router from "next/router"
+import {useRouter} from "next/router"
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -41,6 +41,7 @@ const useStyles = makeStyles( theme => ({
 function Groups() {
     const classes = useStyles();
     const theme = useTheme();
+    const router = useRouter()
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [open, setOpen] = React.useState(false);
@@ -173,7 +174,7 @@ function Groups() {
                                             <TableRow key={group['name']}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>
-                                                    <Link href="#" onClick={event => {Router.push(`/groups/${group['id']}`)}}>
+                                                    <Link href="#" onClick={event => {router.push(`/groups/${group['id']}`)}}>
                                                         {group['name']}
                                                     </Link>
                                                 </TableCell>

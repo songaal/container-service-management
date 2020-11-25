@@ -22,7 +22,7 @@ import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import {spacing} from "@material-ui/system";
 import fetch from "isomorphic-unfetch";
-import Router from "next/router";
+import {useRouter} from "next/router";
 import {useSnackbar} from "notistack";
 
 const Card = styled(MuiCard)(spacing);
@@ -54,6 +54,7 @@ const useStyles = makeStyles( theme => ({
 
 function My() {
     const classes = useStyles();
+    const router = useRouter();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [ password, setPassword ] = React.useState("")
     const [ updatePassword, setUpdatePassword ] = React.useState("")
@@ -71,7 +72,7 @@ function My() {
             .then(res => res.json())
             .then(body => {
                 if (body.status !== 'success') {
-                    Router.push("/sign-in")
+                    router.push("/sign-in")
                 } else {
                     setUser(body['user']);
                     setGroups(body['groups']);
@@ -189,7 +190,7 @@ function My() {
                                                                 data.map(group => {
                                                                     return (
                                                                         <TableCell key={group['id']}>
-                                                                            <Link href={"#none"} onClick={() => Router.push(`/groups/${group['id']}`)}>{group['name']||''}</Link>
+                                                                            <Link href={"#none"} onClick={() => router.push(`/groups/${group['id']}`)}>{group['name']||''}</Link>
                                                                         </TableCell>
                                                                     )
                                                                 })

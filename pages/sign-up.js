@@ -1,5 +1,5 @@
 import React from 'react';
-import Router from "next/router";
+import {useRouter} from "next/router";
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -41,6 +41,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function Page() {
+    const router = useRouter();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
@@ -56,7 +57,7 @@ function Page() {
             .then(res => res.json())
             .then(body => {
                 if(body['status'] === "success") {
-                    Router.replace("/home")
+                    router.replace("/home")
                 } else {
                     setLoginCheck(true)
                 }
@@ -93,7 +94,7 @@ function Page() {
             const body = await res.json()
             if (body['status'] === "success") {
                 enqueueSnackbar('회원가입이 완료되었습니다.', { variant: "success" });
-                Router.push("/sign-in")
+                router.push("/sign-in")
             } else {
                 enqueueSnackbar(body['message'], { variant: "error" });
             }

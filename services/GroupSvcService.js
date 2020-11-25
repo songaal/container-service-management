@@ -44,6 +44,7 @@ export default {
             pidCmd: reqService['type'] === 'process' ? reqService['pidCmd'] : "",
             startScript: reqService['type'] === 'process' ? reqService['startScript'] : "",
             stopScript:  reqService['type'] === 'process' ? reqService['stopScript'] : "",
+            dockerPort: reqService['type'] === 'process' ? reqService['dockerPort'] : ''
         })
         service = regServer['dataValues']
         service['variables'] = []

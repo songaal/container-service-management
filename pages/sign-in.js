@@ -18,7 +18,7 @@ import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { useTheme } from '@material-ui/core/styles';
 import {useSnackbar} from "notistack";
 import fetch from "isomorphic-unfetch";
-import Router from "next/router";
+import {useRouter} from "next/router";
 
 
 const useStyles = makeStyles((theme) => ({
@@ -54,6 +54,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function Page() {
+    const router = useRouter()
     const classes = useStyles();
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
@@ -71,7 +72,7 @@ function Page() {
             .then(res => res.json())
             .then(body => {
                 if(body.status === "success") {
-                    Router.replace("/home")
+                    router.replace("/home")
                 } else {
                     setLoginCheck(true)
                 }
@@ -141,7 +142,7 @@ function Page() {
             })
             const body = await res.json()
             if(res.ok && body['status'] === 'success') {
-                await Router.replace("/home")
+                await router.replace("/home")
             } else {
                 enqueueSnackbar('등록된 사용자가 없습니다.', { variant: "error" });
             }

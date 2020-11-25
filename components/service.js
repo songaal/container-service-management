@@ -6,7 +6,7 @@ import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import { SnackbarProvider, useSnackbar } from 'notistack';
 import fetch from "isomorphic-unfetch";
-import Router from "next/router";
+import {useRouter} from "next/router";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -17,6 +17,7 @@ const useStyles = makeStyles( theme => ({
 }));
 
 function Service() {
+    const router = useRouter();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const classes = useStyles();
     const [services, setServices] = React.useState([])
@@ -71,7 +72,7 @@ function Service() {
                             </Grid>
                             <Grid item xs={4}>
                                 <Box align={"right"}>
-                                    <Button onClick={() => Router.push(location.pathname + '/services')} size={"small"} variant={"outlined"} color={"primary"}>서비스 추가</Button>
+                                    <Button onClick={() => router.push(location.pathname + '/services')} size={"small"} variant={"outlined"} color={"primary"}>서비스 추가</Button>
                                 </Box>
                             </Grid>
                         </Grid>
@@ -98,7 +99,7 @@ function Service() {
                                             <TableRow>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>
-                                                    <Link href={"#none"} onClick={() => Router.push(`${location.pathname}/services/${service['id']}`)}>{service['name']}</Link>
+                                                    <Link href={"#none"} onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}>{service['name']}</Link>
                                                 </TableCell>
                                                 <TableCell>{service['server_name']}</TableCell>
                                                 <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>

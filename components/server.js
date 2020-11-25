@@ -6,7 +6,7 @@ import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
-import Router from "next/router"
+import {useRouter} from "next/router"
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -17,6 +17,7 @@ const useStyles = makeStyles( theme => ({
 }));
 
 function Server() {
+    const router = useRouter()
     const classes = useStyles();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [servers, setServers] = React.useState([]);
@@ -104,7 +105,7 @@ function Server() {
                                             <TableRow key={server['id']}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>
-                                                    <Link href={"#none"} onClick={() => Router.push(`/servers/${server['id']}`)}>{server['name']}</Link>
+                                                    <Link href={"#none"} onClick={() => router.push(`/servers/${server['id']}`)}>{server['name']}</Link>
                                                 </TableCell>
                                                 <TableCell>{server['user']}</TableCell>
                                                 <TableCell>{server['ip']}</TableCell>

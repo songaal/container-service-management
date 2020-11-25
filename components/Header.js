@@ -11,7 +11,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import fetch from "isomorphic-unfetch";
-import Router from "next/router";
+import {useRouter} from "next/router";
 
 const useStyles = makeStyles((theme) => ({
     appBar: {
@@ -42,6 +42,7 @@ const useStyles = makeStyles((theme) => ({
 
 export default function Header({active}) {
     const classes = useStyles();
+    const router = useRouter();
     const [anchorEl, setAnchorEl] = React.useState(null);
     const [user, setUser] = React.useState({});
 
@@ -50,12 +51,12 @@ export default function Header({active}) {
             .then(res => res.json())
             .then(body => {
                 if (body.status !== 'success') {
-                    Router.push("/sign-in")
+                    router.push("/sign-in")
                 } else {
                     setUser(body['user'])
                     if ((!body['user']['admin']) && location.pathname.startsWith("/settings")) {
                         // 관리자 아닐겨우
-                        Router.push("/home")
+                        router.push("/home")
                     }
                 }
             })
@@ -71,7 +72,7 @@ export default function Header({active}) {
 
     const logout = async () => {
         await fetch(`/api/auth/logout`)
-        await Router.replace("/sign-in")
+        await router.replace("/sign-in")
     }
 
     const display = user['admin'] === true ? 'inline' : 'none'
@@ -87,13 +88,13 @@ export default function Header({active}) {
                                 운영관리
                             </Typography>
                             <nav style={{display: "inline", marginLeft: '20px'}}>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => Router.push("/home")} className={ active === 0 ? classes.active : classes.link}>
+                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/home")} className={ active === 0 ? classes.active : classes.link}>
                                     홈
                                 </Link>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => Router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>
+                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>
                                     그룹
                                 </Link>
-                                <Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => Router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
+                                <Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
                                     설정
                                 </Link>
                             </nav>
@@ -109,7 +110,7 @@ export default function Header({active}) {
                                     open={Boolean(anchorEl)}
                                     onClose={handleClose}
                                 >
-                                    <MenuItem  onClick={() => Router.push("/my")}>개인정보</MenuItem>
+                                    <MenuItem  onClick={() => router.push("/my")}>개인정보</MenuItem>
                                     <MenuItem onClick={logout}>로그아웃</MenuItem>
                                 </Menu>
                             </Box>
