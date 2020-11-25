@@ -5,19 +5,17 @@ import path from "path";
 export default {
     async getDockerComposeFilePath({serverId, groupId, serviceId}) {
         // 1. 도커파일 경로 생성
-        const dockerComposeRootPath = process.env.docker_compose_root_path
-        const dockerComposeName = process.env.docker_compose_file_name
-        const dockerComposeHomePath = path.join(dockerComposeRootPath, String(serverId), String(groupId), String(serviceId))
-        const dockerComposeFilePath = path.join(dockerComposeHomePath, dockerComposeName)
-
+        const dockerComposeHomePath = path.join(process.env.docker_compose_root_path, String(serverId), String(groupId), String(serviceId))
         fs.mkdirSync(dockerComposeHomePath, {recursive: true});
-        return dockerComposeFilePath
+        return dockerComposeHomePath
     },
     async cleanDockerComposeFile(dockerComposeFilePath) {
         try {
+            const dockerComposeFilePath = path.join(dockerComposeFilePath, process.env.docker_compose_file_name)
             if(fs.existsSync(dockerComposeFilePath)) {
                 fs.unlinkSync(dockerComposeFilePath)
             }
+            console.log("old docker-compose.yml file clean")
         } catch (e) {
             // ignore
             console.log("not found yaml file")
@@ -34,7 +32,6 @@ export default {
                 console.log("mapping fail...", key, val, dockerComposeFilePath)
             }
         }
-
         // 3. 도커 컴포즈 파일 생성
         fs.appendFileSync(dockerComposeFilePath, convertYaml)
         return {
