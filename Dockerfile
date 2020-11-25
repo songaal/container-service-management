@@ -4,7 +4,7 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-RUN npm install next react react-dom -g
+RUN npm install -g next react react-dom --unsafe-perm=true --allow-root
 
 COPY package.json .
 
@@ -12,8 +12,8 @@ RUN npm install
 
 COPY  . .
 
-RUN npm run build
+RUN next build
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["next", "start", "--hostname", "0.0.0.0"]

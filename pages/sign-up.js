@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Router from "next/router";
 import Avatar from '@material-ui/core/Avatar';
 import Button from '@material-ui/core/Button';
@@ -44,11 +44,11 @@ function Page() {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-    const [userId, setUserId] = useState("")
-    const [name, setName] = useState("")
-    const [password, setPassword] = useState("")
-    const [passwordConfirm, setPasswordConfirm] = useState("")
-    const [invalid,setInvalid] = useState({})
+    const [userId, setUserId] = React.useState("")
+    const [name, setName] = React.useState("")
+    const [password, setPassword] = React.useState("")
+    const [passwordConfirm, setPasswordConfirm] = React.useState("")
+    const [invalid,setInvalid] = React.useState({})
     const [loginCheck, setLoginCheck] = React.useState(false);
 
     React.useEffect(() => {

@@ -3,8 +3,8 @@ node_modules
 .next
 package-lock.json
 .env
-.env.development
-.env.development
+.env.*
+
 *.sqlite
 
 dist/*
