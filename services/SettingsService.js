@@ -1,4 +1,4 @@
-const { GroupServer, Servers, Services, sequelize } = require("../models")
+const { Groups, GroupServer, Servers, Services, sequelize } = require("../models")
 
 export default {
     getServerList: async () => {
@@ -64,6 +64,7 @@ export default {
                             SELECT count(*)
                               FROM services b
                              WHERE b.groupId = groupId
+                               AND b.serverId = group_server.serverId
                         )`),
                             "service_count"
                         ]
@@ -92,5 +93,29 @@ export default {
     },
     async editPassword(serverId, editPassword) {
         return await Servers.update({password: editPassword}, {where: {id: serverId}})
+    },
+    async getServices() {
+        return await Services.findAll({
+            include: [
+                {
+                    model: Groups,
+                    attributes: ['name']
+                }
+            ],
+            attributes: {
+                include: [
+                    [
+                        sequelize.literal(`(
+                            SELECT name
+                              FROM servers b
+                             WHERE b.id = service.serverId
+                        )`),
+                        "server_name"
+                    ]
+
+
+                ]
+            }
+        })
     }
 }

@@ -5,6 +5,6 @@
   },
   "production": {
     "dialect": "sqlite",
-    "storage": "/data/dev.sqlite"
+    "storage": "/data/service-management/prod.sqlite"
   }
 }

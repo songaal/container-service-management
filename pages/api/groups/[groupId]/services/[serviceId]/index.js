@@ -27,7 +27,7 @@ async function groupsService(req, res) {
         } else if (req.method === "DELETE") {
             res.send({
                 status: "success",
-                service: await GroupSvcService.removeService(serviceId)
+                service: await GroupSvcService.removeService(groupId, serviceId)
             })
         }
     } catch (error) {

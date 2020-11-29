@@ -1,5 +1,6 @@
-const { Sequelize, sequelize, Groups, GroupAuth, GroupServer, Services } = require("../models")
-
+const { Sequelize, sequelize, Groups, GroupAuth, GroupServer, Services, Variable} = require("../models")
+import FileUtil from "../utils/FileUtil"
+import path from "path"
 
 export default {
     async findAll (userId, isAdmin) {
@@ -99,6 +100,21 @@ export default {
     },
     async removeGroup (id) {
         try {
+            const groupPath = path.join(FileUtil.getHomePath(), String(id))
+            await FileUtil.deleteFolderRecursive(groupPath)
+
+            const svcList = await Services.findAll({where: {groupId: id}})
+            const svcListSize = svcList.length
+            for (let i = 0; i < svcListSize; i++) {
+                try {
+                    await Variable.destroy({where: {serviceId: svcList[i]['dataValues']['id']}})
+                } catch (err) {
+                    console.error("error", err, svcList[i])
+                }
+            }
+            await Services.destroy({where: {groupId: id}})
+            await GroupServer.destroy({where: {groupId: id}})
+            await GroupAuth.destroy({where: {groupId: id}})
             await Groups.destroy({where: { id }})
             return {
                 status: 'success',

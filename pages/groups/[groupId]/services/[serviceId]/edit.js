@@ -222,6 +222,7 @@ function ServiceEdit() {
 
                 {/*  컨테이너  */}
                 <Box display={type === 'container' ? 'block' : 'none'}>
+
                     <Grid container>
                         <Grid item xs={3} sm={1}>
                             <Box align={"right"} className={classes.label} style={{marginTop: 25}}>변수</Box>

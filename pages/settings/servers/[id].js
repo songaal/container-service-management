@@ -209,7 +209,7 @@ function SystemStatus({server}) {
     )
 }
 
-function AdminGroup() {
+function AdminGroup(server) {
     const classes = useStyles();
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
@@ -350,7 +350,7 @@ function AdminGroup() {
                                 {
                                     useGroups.length === 0 ?
                                         <TableRow>
-                                            <TableCell colSpan={4} align={"center"}>할당된 그룹이 없습니다.</TableCell>
+                                            <TableCell colSpan={5} align={"center"}>할당된 그룹이 없습니다.</TableCell>
                                         </TableRow>
                                         :
                                         useGroups.map((useGroup, index) => {

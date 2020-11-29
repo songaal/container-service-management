@@ -1,8 +1,9 @@
+const yaml = require('js-yaml');
 const fs = require("fs")
 const path = require("path")
 const compose = require('docker-compose')
 
-const yaml = `version: "3.7"
+const dockerComposeYaml = `version: "3.7"
 services:
   image: \${image}
   ports:
@@ -26,14 +27,14 @@ async function newDockerComposeFile({serverId, groupId, serviceId, yaml, variabl
     }
 
     // 3. 변수 맵핑
-    let convertYaml = String(yaml)
+    let convertYaml = String(dockerComposeYaml)
     for (let i = 0; i < variables.length; i++) {
         let key = variables[i]['key']
         let val = variables[i]['value']
         if (key && val) {
             convertYaml = convertYaml.replace(`\${${key}}`, val)
         } else {
-            console.log("mapping fail...", key, val, serverId, groupId, serviceId, yaml, variables)
+            console.log("mapping fail...", key, val, serverId, groupId, serviceId, dockerComposeYaml, variables)
         }
     }
 
@@ -42,7 +43,7 @@ async function newDockerComposeFile({serverId, groupId, serviceId, yaml, variabl
 
     return {
         dockerComposeFilePath,
-        originalYaml: yaml,
+        originalYaml: dockerComposeYaml,
         convertYaml,
     }
 }
@@ -84,9 +85,10 @@ async function run({serverId, groupId, serviceId}) {
 new Promise((resolve, reject) => {
     (async () => {
         try {
-            // await newDockerComposeFile({serverId: 2, groupId: 1, serviceId: 33, variables, yaml})
-            await run({serverId: 2, groupId: 1, serviceId: 33, variables, yaml});
-
+            // await newDockerComposeFile({serverId: 2, groupId: 1, serviceId: 33, variables, dockerComposeYaml})
+            const doc = yaml.safeLoad(fs.readFileSync("C:\\TEST_HOME\\danawa\\data\\4\\25\\docker-compose.yml", 'utf8'));
+            Object.keys(doc['services'])
+            console.log(doc);
 
         } catch(err) {
             reject(err)

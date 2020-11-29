@@ -3,7 +3,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../../../components/Header";
-import {Box, MenuItem, useTheme} from "@material-ui/core";
+import {Box, MenuItem, useTheme, CircularProgress, Card, CardContent } from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -76,6 +76,71 @@ function ShowField({label, val, url}) {
     );
 }
 
+
+function ContainerState({name, container}) {
+    let up = "DOWN"
+    let networkMode = ''
+    let image = ''
+    let PortBindings = ''
+    let upTime = ''
+    let cpuUsage = ''
+    let memUsage = ''
+    if (container && !!container['id'] && ((container['inspect']||{})['State']||{})['Status'] === 'running') {
+        up = "UP"
+        networkMode = container['inspect']['HostConfig']['NetworkMode'].split("_")[1]
+        image = container['inspect']['Config']['Image']
+        PortBindings = Object
+            .keys(container['inspect']['HostConfig']['PortBindings'])
+            .map(containerPort => {
+                const hostPort = container['inspect']['HostConfig']['PortBindings'][containerPort][0]['HostPort']
+                return `${hostPort}:${containerPort}`
+            }).join(", ")
+        upTime = container['inspect']['State']['StartedAt']
+
+        let cpu_delta = container['stats']['cpu_stats']['cpu_usage']['total_usage'] - container['stats']['precpu_stats']['cpu_usage']['total_usage']
+        let system_cpu_delta = container['stats']['cpu_stats']['system_cpu_usage'] - container['stats']['precpu_stats']['system_cpu_usage']
+        let number_cpus = container['stats']['cpu_stats']['online_cpus']
+        cpuUsage = (cpu_delta / system_cpu_delta) * number_cpus * 100.0
+
+        let used_memory = container['stats']['memory_stats']['usage'] - container['stats']['memory_stats']['stats']['cache']
+        let available_memory = container['stats']['memory_stats']['limit']
+        memUsage = ((used_memory / available_memory) * 100.0).toFixed(2)
+    }
+    return (
+        <Card style={{marginBottom: "40px"}}>
+            <CardContent>
+                <Grid container>
+                    <Grid item xs={6}>
+                        <ShowField label={"서비스명"} val={name} />
+
+                        <ShowField label={"네트워크"} val={networkMode} />
+
+                        <ShowField label={"이미지"} val={image} />
+
+                        <ShowField label={"포트"} val={PortBindings} />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <ShowField label={"상태"} val={up} />
+
+                        <ShowField label={"업타임"} val={upTime} />
+
+                        <ShowField label={"사용 CPU(%)"} val={cpuUsage} />
+
+                        <ShowField label={"사용 MEM(%)"} val={memUsage} />
+
+                        <ShowField label={"로그"} val={up === 'UP' ? "컨테이너 로그 열기" : ""} url={up === 'UP' ? "#" : undefined} />
+
+                    </Grid>
+
+                </Grid>
+
+            </CardContent>
+        </Card>
+    )
+}
+
+let stateEventCode = null
+
 function ServicesDetail() {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
@@ -87,13 +152,24 @@ function ServicesDetail() {
     const [servers, setServers] = React.useState([])
     const [service, setService] = React.useState({})
     const [removeServiceOpen, setRemoveServiceOpen] = React.useState(false)
+    const [state, setState] = React.useState([])
+    const [loading, setLoading] = React.useState(false)
     const { groupId, serviceId } = router.query
+    const [processing, setProcessing] = React.useState(false)
 
     React.useEffect(() => {
         init()
+        return () => {
+            if (stateEventCode) {
+                clearTimeout(stateEventCode)
+                stateEventCode = null
+            }
+        }
     }, [])
 
     const init = () => {
+        setLoading(true)
+        setProcessing(true)
         fetch(`/api/groups/${groupId}/servers`)
             .then(res => res.json())
             .then(body => setServers(body['servers']))
@@ -101,29 +177,102 @@ function ServicesDetail() {
         fetch(`/api/groups/${groupId}/services/${serviceId}`)
             .then(res => res.json())
             .then(body => {
+                setProcessing(false)
                 if (body['status'] === 'success') {
                     setService(body['service']);
                 }
+                fetchState()
             })
+    }
+
+    const fetchState = ({force}={}) => {
+        if (force) {
+            clearInterval(stateEventCode)
+            stateEventCode = null
+        }
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=stats`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setState(body['state'])
+                }
+                setLoading(false)
+            })
+        stateEventCode = setTimeout(() => {
+            fetchState()
+        }, 3 * 60 * 1000)
     }
 
     const handleRemoveService = () => {
         fetch(`/api/groups/${groupId}/services/${serviceId}`, {
             method: "DELETE"
         })
+        .then(res => res.json())
+        .then(body => {
+            if (body['status'] === 'success') {
+                enqueueSnackbar("서비스를 삭제 완료하였습니다.", { variant: "success" })
+                router.replace(`/groups/${groupId}`)
+            } else {
+                enqueueSnackbar("서비스 삭제 실패하였습니다.", { variant: "error" })
+            }
+        })
+    }
+
+    const handleStartService = () => {
+        setExecEl(null)
+        setProcessing(true)
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=start`, {
+            method: "PUT"
+        })
+        .then(res => res.json())
+        .then(body => {
+            if (body['status'] === 'success') {
+                setProcessing(false)
+                fetchState({force:true})
+                enqueueSnackbar("서비스를 시작하였습니다.", { variant: "success" })
+            } else {
+                enqueueSnackbar("오류가 발생하였습니다. " + body['message'], { variant: "error" })
+            }
+        })
+    }
+
+    const handleStopService = () => {
+        setExecEl(null)
+        setProcessing(true)
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=stop`, {
+            method: "PUT"
+        })
+        .then(res => res.json())
+        .then(body => {
+            if (body['status'] === 'success') {
+                setProcessing(false)
+                fetchState({force:true})
+                enqueueSnackbar("서비스를 종료하였습니다.", { variant: "success" })
+            } else {
+                enqueueSnackbar("오류가 발생하였습니다. " + body['message'], { variant: "error" })
+            }
+        })
+    }
+
+    const handleUpdateService = () => {
+        setExecEl(null)
+        setProcessing(true)
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=update`, {
+            method: "PUT"
+        })
             .then(res => res.json())
             .then(body => {
                 if (body['status'] === 'success') {
-                    enqueueSnackbar("서비스를 삭제 완료하였습니다.", { variant: "success" })
+                    setProcessing(false)
+                    fetchState({force:true})
+                    enqueueSnackbar("서비스를 업데이트 후 재시작하였습니다.", { variant: "success" })
                 } else {
-                    enqueueSnackbar("서비스 삭제 실패하였습니다.", { variant: "error" })
+                    enqueueSnackbar("오류가 발생하였습니다. " + body['message'], { variant: "error" })
                 }
             })
-
-
     }
 
-    const selectedServer = servers.find(server => String(server['id']) === service['serverId'])||{}
+    const selectedServer = (servers||[]).find(server => String(server['id']) === service['serverId'])||{}
 
     return (
         <Box className={classes.root}>
@@ -145,6 +294,7 @@ function ServicesDetail() {
                                 <Button size={"small"} onClick={event => setAnchorEl(event.currentTarget)} variant={"contained"} color={"primary"}>
                                     설정 <ArrowDropDownIcon/>
                                 </Button>
+
                                 <Menu
                                     style={{marginTop: "45px"}}
                                     anchorEl={anchorEl}
@@ -173,6 +323,41 @@ function ServicesDetail() {
                         </Grid>
                         <Grid item xs={12} sm={12} md={6}>
 
+                            <Box my={3}>
+                                <Grid container>
+                                    <Grid item xs={3} sm={3}>
+                                        <Box align={"right"} className={classes.label}> 실행 </Box>
+                                    </Grid>
+
+                                    <Grid item xs={9} sm={9}>
+                                        <Box style={{display: processing ? "none" : "block"}}>
+                                            <Button size={"small"}
+                                                    onClick={event => setExecEl(event.currentTarget)}
+                                                    variant={"outlined"}
+                                                    color={"primary"}
+                                                    disabled={service["serverId"] === '-1'}
+                                            >
+                                                실행 <ArrowDropDownIcon/>
+                                            </Button>
+                                            <Menu
+                                                anchorEl={execEl}
+                                                open={Boolean(execEl)}
+                                                keepMounted
+                                                onClose={() => setExecEl(null)}
+                                            >
+                                                <MenuItem onClick={handleStartService}>시작</MenuItem>
+                                                <MenuItem onClick={handleStopService}>종료</MenuItem>
+                                                <MenuItem onClick={handleUpdateService}
+                                                          style={{display: service['type'] === 'container' ? "block" : "none"}}>업데이트후 재시작</MenuItem>
+                                            </Menu>
+                                        </Box>
+                                        <Box style={{textAlign: "center", display: processing ? "block" : "none"}}>
+                                            <CircularProgress/>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+
                         </Grid>
                     </Grid>
                 </Box>
@@ -184,63 +369,60 @@ function ServicesDetail() {
                 {/*  컨테이너  */}
                 <Box my={3}>
                     <Box align={"center"}>
-                        <Grid container>
-                            <Box clone  order={{xs: 2, md: 1}}>
-                                <Grid item xs={12} sm={12} md={6}>
-                                    <ShowField label={"상태"} val={"UP"} />
+                        <CircularProgress style={{display: loading ? "block" : "none"}}/>
+                    </Box>
 
-                                    <ShowField label={"업타임"} val={"233일 5시 30분"} />
+                    <Box align={"center"} style={{display: loading ? "none" : "block"}}>
+                        {
+                            (state['services']||[]).map(name => {
+                                let results = null
+                                if (state['type'] === 'container') {
+                                    const container = state['containers'].find(c => name === c['inspect']['Config']['Labels']['com.docker.compose.service'])
+                                    results = (
+                                        <ContainerState name={name} container={container} />
+                                    )
+                                } else if (state['type'] === 'process') {
+                                    return null
+                                }
+                                return results
+                            })
+                        }
 
-                                    <ShowField label={"사용 CPU(%)"} val={"20"} />
 
-                                    <ShowField label={"사용 MEM(%)"} val={"60"} />
+                        {/*<Box>*/}
+                        {/*    <Grid container>*/}
+                        {/*        <Grid item xs={6}>*/}
+                        {/*            <ShowField label={"서비스명"} val={"app1"} />*/}
 
-                                    <ShowField label={"네트워크"} val={"overlay"} />
+                        {/*            <ShowField label={"네트워크"} val={"overlay"} />*/}
 
-                                    <ShowField label={"이미지"} val={"apache-tomcat:8.5"} />
+                        {/*            <ShowField label={"이미지"} val={"apache-tomcat:8.5"} />*/}
 
-                                    <ShowField label={"포트1"} val={"8080:8080"} />
+                        {/*            <ShowField label={"포트1"} val={"8080:8080"} />*/}
 
-                                    <ShowField label={"포트2"} val={"80:80"} />
-                                </Grid>
-                            </Box>
-                            <Box clone order={{xs: 1, md: 2}}>
-                                <Grid item xs={12} sm={12} md={6}>
-                                    <Box my={3}>
-                                        <Grid container>
-                                            <Grid item xs={3} sm={3}>
-                                                <Box align={"right"} className={classes.label}> 실행 </Box>
-                                            </Grid>
-                                            {/*<Grid item xs={2} sm={3}>*/}
-                                            {/*    <Typography className={classes.value}>*/}
-                                            {/*        대기 중*/}
-                                            {/*    </Typography>*/}
-                                            {/*</Grid>*/}
-                                            <Grid item xs={9} sm={9}>
-                                                <Box>
-                                                    <Button size={"small"} onClick={event => setExecEl(event.currentTarget)} variant={"outlined"} color={"primary"}>
-                                                        실행 <ArrowDropDownIcon/>
-                                                    </Button>
-                                                    <Menu
-                                                        style={{marginTop: "45px"}}
-                                                        anchorEl={execEl}
-                                                        open={Boolean(execEl)}
-                                                        keepMounted
-                                                        onClose={() => setExecEl(null)}
-                                                    >
-                                                        <MenuItem>시작</MenuItem>
-                                                        <MenuItem>종료</MenuItem>
-                                                        <MenuItem>업데이트후 재시작</MenuItem>
-                                                    </Menu>
-                                                </Box>
-                                            </Grid>
-                                        </Grid>
-                                    </Box>
+                        {/*            <ShowField label={"포트2"} val={"80:80"} />*/}
+                        {/*        </Grid>*/}
+                        {/*        <Grid item xs={6}>*/}
+                        {/*            <ShowField label={"상태"} val={"UP"} />*/}
 
-                                    <ShowField label={"로그"} val={"컨테이너 로그 열기"} url={"#"} />
-                                </Grid>
-                            </Box>
-                        </Grid>
+                        {/*            <ShowField label={"업타임"} val={"233일 5시 30분"} />*/}
+
+                        {/*            <ShowField label={"사용 CPU(%)"} val={"20"} />*/}
+
+                        {/*            <ShowField label={"사용 MEM(%)"} val={"60"} />*/}
+
+                        {/*            <ShowField label={"로그"} val={"컨테이너 로그 열기"} url={"#"} />*/}
+                        {/*        </Grid>*/}
+
+                        {/*    </Grid>*/}
+
+                        {/*    <Divider />*/}
+                        {/*</Box>*/}
+
+
+
+
+
                     </Box>
                 </Box>
 
