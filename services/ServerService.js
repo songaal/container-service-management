@@ -75,7 +75,7 @@ export default {
     async findServerById(id) {
         return (await Servers.findOne({
             where: {id: id}
-        }))
+        }))['dataValues']
     },
     async execCmd(id, cmd) {
         try {

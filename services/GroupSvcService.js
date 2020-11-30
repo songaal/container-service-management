@@ -2,6 +2,7 @@ import ServerService from "./ServerService"
 const { Sequelize, sequelize, Services, Variable} = require("../models")
 import FileUtil from "../utils/FileUtil"
 import DockerClient from "../utils/DockerClient"
+import SshClient from '../utils/SshClient'
 
 const dockerDefaultPort = 2375
 
@@ -159,8 +160,8 @@ export default {
         if(service['type'] === 'container') {
             result['type'] = "container"
             result['services'] = await FileUtil.getServiceNameList({groupId, serviceId})
-            const ip = server['dataValues']['ip']
-            const port = server['dataValues']['dockerPort']
+            const ip = server['ip']
+            const port = server['dockerPort']
             const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
             const dockerClient = new DockerClient(ip, port||dockerDefaultPort, servicePath)
             const containerIds = await dockerClient.getContainerIds()
@@ -183,67 +184,122 @@ export default {
             result['containers'] = containerInfoList
         } else if (service['type'] === 'process') {
             result['type'] = "process"
-            console.log("container")
+
+            const sshClient = new SshClient( server['ip'], server['port'], server['user'], server['password'])
+            const pidResult = await sshClient.exec(service['pidCmd'], {})
+            const pid = pidResult.join("").replace("\n", "")
+
+            if (/[^0-9]+/.test(pid)) {
+                throw new Error("PID Not Found Error. pid: " + String(pid||""))
+            }
+            result['pid'] = pid
+            if (pid !== "") {
+                let tmpPs = (await sshClient.exec(`ps -p ${pid} -o %cpu,%mem,lstart|tail -n 1`)).join("")
+                if (!tmpPs.includes("%CPU") || !tmpPs.includes("%MEM")) {
+                    let tmpPsArr = tmpPs.trim().split(" ")
+                    result['cpuUsage'] = tmpPsArr[0]
+                    result['memUsage'] = tmpPsArr[1]
+                    result['startTime'] = tmpPs.replace(tmpPsArr[0], "").replace(tmpPsArr[1], "").trim()
+                } else {
+                    result['cpuUsage'] = ""
+                    result['memUsage'] = ""
+                    result['startTime'] = ""
+                }
+                result['stat'] = (await sshClient.exec(`cat /proc/${pid}/stat`)).join("").trim().split(" ")
+                result['ports'] = (await sshClient.exec(`netstat -tnlp|grep ${pid}/|awk '{print $4}'`))
+            }
         }
         return result
     },
     async startServices(groupId, serviceId) {
-        let result = {}
-        const service = await this.findServiceById(serviceId)
+        try {
+            let result = {}
+            const service = await this.findServiceById(serviceId)
 
-        if (!service['serverId'] || Number(service['serverId']) < 0) {
-            return result
-        }
-        const server = await ServerService.findServerById(service['serverId'])
+            if (!service['serverId'] || Number(service['serverId']) < 0) {
+                return result
+            }
+            const server = await ServerService.findServerById(service['serverId'])
 
-        if(service['type'] === 'container') {
-            const ip = server['dataValues']['ip']
-            const port = server['dataValues']['dockerPort']
-            const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
-            const dockerClient = new DockerClient(ip, port||dockerDefaultPort, servicePath)
-            result = await dockerClient.dockerCompose("upAll")
-        } else if (service['type'] === 'process') {
-
+            if(service['type'] === 'container') {
+                const ip = server['ip']
+                const port = server['dockerPort']||dockerDefaultPort
+                const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
+                const dockerClient = new DockerClient(ip, port, servicePath)
+                result = await dockerClient.dockerCompose("upAll")
+            } else if (service['type'] === 'process') {
+                const sshClient = new SshClient( server['ip'], server['port'], server['user'], server['password'])
+                result = await sshClient.exec(service['startScript'], {})
+            }
+        } catch (err) {
+            let errMsh = ""
+            try {
+                errMsh = JSON.stringify(err)
+            } catch (err2) {
+                errMsh = err
+            }
+            throw new Error(errMsh)
         }
     },
     async stopServices(groupId, serviceId) {
-        let result = {}
-        const service = await this.findServiceById(serviceId)
+        try {
+            let result = {}
+            const service = await this.findServiceById(serviceId)
 
-        if (!service['serverId'] || Number(service['serverId']) < 0) {
-            return result
-        }
-        const server = await ServerService.findServerById(service['serverId'])
+            if (!service['serverId'] || Number(service['serverId']) < 0) {
+                return result
+            }
+            const server = await ServerService.findServerById(service['serverId'])
 
-        if(service['type'] === 'container') {
-            const ip = server['dataValues']['ip']
-            const port = server['dataValues']['dockerPort']
-            const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
-            const dockerClient = new DockerClient(ip, port||dockerDefaultPort, servicePath)
-            result = await dockerClient.dockerCompose("down")
-        } else if (service['type'] === 'process') {
-
+            if(service['type'] === 'container') {
+                const ip = server['ip']
+                const port = server['dockerPort']
+                const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
+                const dockerClient = new DockerClient(ip, port||dockerDefaultPort, servicePath)
+                result = await dockerClient.dockerCompose("down")
+            } else if (service['type'] === 'process') {
+                const sshClient = new SshClient( server['ip'], server['port'], server['user'], server['password'])
+                result = await sshClient.exec(service['stopScript'], {})
+            }
+        } catch (err) {
+            let errMsh = ""
+            try {
+                errMsh = JSON.stringify(err)
+            } catch (err2) {
+                errMsh = err
+            }
+            throw new Error(errMsh)
         }
     },
     async updateServices(groupId, serviceId) {
-        let result = {}
-        const service = await this.findServiceById(serviceId)
+        try {
+            let result = {}
+            const service = await this.findServiceById(serviceId)
 
-        if (!service['serverId'] || Number(service['serverId']) < 0) {
-            return result
-        }
-        const server = await ServerService.findServerById(service['serverId'])
+            if (!service['serverId'] || Number(service['serverId']) < 0) {
+                return result
+            }
+            const server = await ServerService.findServerById(service['serverId'])
 
-        if(service['type'] === 'container') {
-            const ip = server['dataValues']['ip']
-            const port = server['dataValues']['dockerPort']
-            const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
-            const dockerClient = new DockerClient(ip, port||dockerDefaultPort, servicePath)
-            result['pullAll'] = await dockerClient.dockerCompose("pullAll")
-            result['down'] = await dockerClient.dockerCompose("down")
-            result['upAll'] = await dockerClient.dockerCompose("upAll")
-        } else if (service['type'] === 'process') {
-
+            if(service['type'] === 'container') {
+                const ip = server['ip']
+                const port = server['dockerPort']
+                const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
+                const dockerClient = new DockerClient(ip, port||dockerDefaultPort, servicePath)
+                result['pullAll'] = await dockerClient.dockerCompose("pullAll")
+                result['down'] = await dockerClient.dockerCompose("down")
+                result['upAll'] = await dockerClient.dockerCompose("upAll")
+            } else {
+                result["message"] = "Not Supported.";
+            }
+        } catch (err) {
+            let errMsh = ""
+            try {
+                errMsh = JSON.stringify(err)
+            } catch (err2) {
+                errMsh = err
+            }
+            throw new Error(errMsh)
         }
     },
 }

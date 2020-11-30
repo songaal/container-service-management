@@ -139,8 +139,63 @@ function ContainerState({name, container}) {
     )
 }
 
-let stateEventCode = null
+function ProcessState({process, service}) {
+    let up = "DOWN"
+    let upTime = ""
+    let cpuUsage = ""
+    let memUsage = ""
+    let threadSize = ""
+    let ports = ""
+    let logs = []
+    if (process['pid'] && process['pid'] !== "" && /[0-9]/gi.test(process['pid'])) {
+        up = "UP"
+        upTime = new Date(process["startTime"]||'').toLocaleString()
+        cpuUsage = process["cpuUsage"]||''
+        memUsage = process["memUsage"]||''
+        threadSize = (process['stat']||[])[19]||''
+        ports = process["ports"].join(", ")
+        logs = service['logFiles']||[]
+        console.log(service['logFiles'])
+    }
 
+    return (
+        <Card style={{marginBottom: "40px"}}>
+            <CardContent>
+                <Grid container>
+                    <Grid item xs={6}>
+                        <ShowField label={"상태"} val={up} />
+
+                        <ShowField label={"업타임"} val={upTime} />
+
+                        <ShowField label={"사용 CPU(%)"} val={cpuUsage} />
+
+                        <ShowField label={"사용 MEM(%)"} val={memUsage} />
+
+                        {/*<ShowField label={"쓰레드"} val={threadSize} />*/}
+
+                    </Grid>
+                    <Grid item xs={6}>
+
+                        <ShowField label={"포트"} val={ports} />
+
+                        {
+                            logs.map((log, index) => {
+
+                                return (
+                                    <ShowField label={`log-${index + 1}`} val={up === 'UP' ? `${log['key']}` : ""} url={up === 'UP' ? "#" : undefined} />
+                                )
+                            })
+                        }
+
+                    </Grid>
+                </Grid>
+
+            </CardContent>
+        </Card>
+    )
+}
+
+let stateEventCode = null
 function ServicesDetail() {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
@@ -156,6 +211,7 @@ function ServicesDetail() {
     const [loading, setLoading] = React.useState(false)
     const { groupId, serviceId } = router.query
     const [processing, setProcessing] = React.useState(false)
+    const [disabledAction, setDisabledAction] = React.useState(false)
 
     React.useEffect(() => {
         init()
@@ -170,6 +226,7 @@ function ServicesDetail() {
     const init = () => {
         setLoading(true)
         setProcessing(true)
+        setDisabledAction(true)
         fetch(`/api/groups/${groupId}/servers`)
             .then(res => res.json())
             .then(body => setServers(body['servers']))
@@ -180,8 +237,16 @@ function ServicesDetail() {
                 setProcessing(false)
                 if (body['status'] === 'success') {
                     setService(body['service']);
+
+                    if (body['service']["serverId"] !== '-1') {
+                        setDisabledAction(false)
+                        fetchState()
+                    } else {
+                        setDisabledAction(true)
+                    }
+                } else {
+                    setDisabledAction(true)
                 }
-                fetchState()
             })
     }
 
@@ -195,6 +260,13 @@ function ServicesDetail() {
             .then(body => {
                 if (body['status'] === 'success') {
                     setState(body['state'])
+                } else {
+                    setDisabledAction(true)
+                    enqueueSnackbar("서비스 조회를 실패하였습니다. \n" + body['message'], {
+                        variant: "error",
+                        autoHideDuration: 6000,
+                        style: { whiteSpace: 'pre-line' }
+                    })
                 }
                 setLoading(false)
             })
@@ -213,7 +285,7 @@ function ServicesDetail() {
                 enqueueSnackbar("서비스를 삭제 완료하였습니다.", { variant: "success" })
                 router.replace(`/groups/${groupId}`)
             } else {
-                enqueueSnackbar("서비스 삭제 실패하였습니다.", { variant: "error" })
+                enqueueSnackbar("서비스 삭제 실패하였습니다.", { variant: "error"})
             }
         })
     }
@@ -226,12 +298,16 @@ function ServicesDetail() {
         })
         .then(res => res.json())
         .then(body => {
+            setProcessing(false)
             if (body['status'] === 'success') {
-                setProcessing(false)
                 fetchState({force:true})
                 enqueueSnackbar("서비스를 시작하였습니다.", { variant: "success" })
             } else {
-                enqueueSnackbar("오류가 발생하였습니다. " + body['message'], { variant: "error" })
+                enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                    variant: "error",
+                    autoHideDuration: 6000,
+                    style: { whiteSpace: 'pre-line' }
+                })
             }
         })
     }
@@ -244,12 +320,16 @@ function ServicesDetail() {
         })
         .then(res => res.json())
         .then(body => {
+            setProcessing(false)
             if (body['status'] === 'success') {
-                setProcessing(false)
                 fetchState({force:true})
                 enqueueSnackbar("서비스를 종료하였습니다.", { variant: "success" })
             } else {
-                enqueueSnackbar("오류가 발생하였습니다. " + body['message'], { variant: "error" })
+                enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                    variant: "error",
+                    autoHideDuration: 6000,
+                    style: { whiteSpace: 'pre-line' }
+                })
             }
         })
     }
@@ -262,12 +342,16 @@ function ServicesDetail() {
         })
             .then(res => res.json())
             .then(body => {
+                setProcessing(false)
                 if (body['status'] === 'success') {
-                    setProcessing(false)
                     fetchState({force:true})
                     enqueueSnackbar("서비스를 업데이트 후 재시작하였습니다.", { variant: "success" })
                 } else {
-                    enqueueSnackbar("오류가 발생하였습니다. " + body['message'], { variant: "error" })
+                    enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                        variant: "error",
+                        autoHideDuration: 6000,
+                        style: { whiteSpace: 'pre-line' }
+                    })
                 }
             })
     }
@@ -335,7 +419,7 @@ function ServicesDetail() {
                                                     onClick={event => setExecEl(event.currentTarget)}
                                                     variant={"outlined"}
                                                     color={"primary"}
-                                                    disabled={service["serverId"] === '-1'}
+                                                    disabled={disabledAction}
                                             >
                                                 실행 <ArrowDropDownIcon/>
                                             </Button>
@@ -374,72 +458,21 @@ function ServicesDetail() {
 
                     <Box align={"center"} style={{display: loading ? "none" : "block"}}>
                         {
-                            (state['services']||[]).map(name => {
-                                let results = null
-                                if (state['type'] === 'container') {
+                            state['type'] === 'container' ?
+                                (state['services']||[]).map((name, index) => {
                                     const container = state['containers'].find(c => name === c['inspect']['Config']['Labels']['com.docker.compose.service'])
-                                    results = (
-                                        <ContainerState name={name} container={container} />
+                                    return (
+                                        <ContainerState key={index} name={name} container={container} />
                                     )
-                                } else if (state['type'] === 'process') {
-                                    return null
-                                }
-                                return results
-                            })
+                                })
+                                :
+                                state['type'] === 'process' ?
+                                    <ProcessState process={state} service={service}/>
+                                    :
+                                    null
                         }
-
-
-                        {/*<Box>*/}
-                        {/*    <Grid container>*/}
-                        {/*        <Grid item xs={6}>*/}
-                        {/*            <ShowField label={"서비스명"} val={"app1"} />*/}
-
-                        {/*            <ShowField label={"네트워크"} val={"overlay"} />*/}
-
-                        {/*            <ShowField label={"이미지"} val={"apache-tomcat:8.5"} />*/}
-
-                        {/*            <ShowField label={"포트1"} val={"8080:8080"} />*/}
-
-                        {/*            <ShowField label={"포트2"} val={"80:80"} />*/}
-                        {/*        </Grid>*/}
-                        {/*        <Grid item xs={6}>*/}
-                        {/*            <ShowField label={"상태"} val={"UP"} />*/}
-
-                        {/*            <ShowField label={"업타임"} val={"233일 5시 30분"} />*/}
-
-                        {/*            <ShowField label={"사용 CPU(%)"} val={"20"} />*/}
-
-                        {/*            <ShowField label={"사용 MEM(%)"} val={"60"} />*/}
-
-                        {/*            <ShowField label={"로그"} val={"컨테이너 로그 열기"} url={"#"} />*/}
-                        {/*        </Grid>*/}
-
-                        {/*    </Grid>*/}
-
-                        {/*    <Divider />*/}
-                        {/*</Box>*/}
-
-
-
-
-
                     </Box>
                 </Box>
-
-
-                {/*  프로세스  */}
-                <Box my={3}>
-                    <Grid container>
-                        <Grid item xs={6}>
-                            {/*<ShowField label={"서비스타입"} val={"프로세스"} />*/}
-
-                        </Grid>
-                        <Grid item xs={6}>
-
-                        </Grid>
-                    </Grid>
-                </Box>
-
 
                 <Dialog
                     fullWidth={true}

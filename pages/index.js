@@ -1,9 +1,6 @@
 import React from 'react';
-import Container from '@material-ui/core/Container';
 import Box from '@material-ui/core/Grid';
 import {makeStyles} from "@material-ui/core/styles";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import fetch from "isomorphic-unfetch";
 import {withSession} from "next-session";
 
 const useStyles = makeStyles( theme => ({

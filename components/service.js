@@ -96,7 +96,7 @@ function Service() {
                                     :
                                     viewServices.map((service, index) => {
                                         return (
-                                            <TableRow>
+                                            <TableRow key={index}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>
                                                     <Link href={"#none"} onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}>{service['name']}</Link>

@@ -46,14 +46,13 @@ export default {
         }
     },
     async writeDockerCompose({dockerComposeServicePath, yaml, variables}) {
-        let convertYaml = String(yaml)
+        let convertYaml = String(yaml||"")
         for (let i = 0; i < variables.length; i++) {
             let key = variables[i]['key']
             let val = variables[i]['value']
-            if (key && val) {
-                convertYaml = convertYaml.replace(`\${${key}}`, val)
-            } else {
-                console.log("mapping fail...", key, val, dockerComposeServicePath)
+            let replaceKey = "${" + key + "}"
+            while (convertYaml.includes(replaceKey)) {
+                convertYaml = convertYaml.replace(replaceKey, String(val||""))
             }
         }
         const dockerFilePath = path.join(dockerComposeServicePath, dockerComposeName)

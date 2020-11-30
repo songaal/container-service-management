@@ -7,7 +7,7 @@ class SshClient {
         this.username = username;
         this.password = password;
     }
-    async exec(cmd, { timeout = 5000 } = {}) {
+    async exec(cmd, { timeout } = {}) {
         return new Promise((resolve, reject) => {
             const conn = new Client();
             let result = []
@@ -19,7 +19,7 @@ class SshClient {
                 })
             })
             conn.on('ready', function() {
-                console.log("Exec: ", cmd)
+                // console.log("Exec: ", cmd)
                 conn.exec(cmd, function(err, stream) {
                     if (err) reject(({
                         status: "error",
@@ -28,9 +28,9 @@ class SshClient {
                     stream.on('end', function(code, signal) {
                         conn.end();
                     }).stdout.on('data', function(data) {
-                        result.push("STDOUT: " + String(data));
+                        result.push(String(data));
                     }).stderr.on('data', function(data) {
-                        result.push("STDERR: " + String(data));
+                        result.push(String(data));
                     });
                 });
             }).on("error", function(err) {
@@ -45,10 +45,11 @@ class SshClient {
                 port: this.port,
                 username: this.username,
                 password: this.password,
-                readyTimeout: timeout
+                readyTimeout: timeout||99999
             });
         })
     }
+
 }
 
 export default SshClient;
