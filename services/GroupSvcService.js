@@ -196,7 +196,7 @@ export default {
             if (pid !== "") {
                 let tmpPs = (await sshClient.exec(`ps -p ${pid} -o %cpu,%mem,lstart|tail -n 1`)).join("")
                 if (!tmpPs.includes("%CPU") || !tmpPs.includes("%MEM")) {
-                    let tmpPsArr = tmpPs.trim().split(" ")
+                    let tmpPsArr = tmpPs.split(" ").filter(p => p.length !== 0)
                     result['cpuUsage'] = tmpPsArr[0]
                     result['memUsage'] = tmpPsArr[1]
                     result['startTime'] = tmpPs.replace(tmpPsArr[0], "").replace(tmpPsArr[1], "").trim()

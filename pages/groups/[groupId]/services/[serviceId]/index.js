@@ -155,7 +155,6 @@ function ProcessState({process, service}) {
         threadSize = (process['stat']||[])[19]||''
         ports = process["ports"].join(", ")
         logs = service['logFiles']||[]
-        console.log(service['logFiles'])
     }
 
     return (
@@ -182,7 +181,7 @@ function ProcessState({process, service}) {
                             logs.map((log, index) => {
 
                                 return (
-                                    <ShowField label={`log-${index + 1}`} val={up === 'UP' ? `${log['key']}` : ""} url={up === 'UP' ? "#" : undefined} />
+                                    <ShowField key={index} label={`log-${index + 1}`} val={up === 'UP' ? `${log['key']}` : ""} url={up === 'UP' ? "#" : undefined} />
                                 )
                             })
                         }
