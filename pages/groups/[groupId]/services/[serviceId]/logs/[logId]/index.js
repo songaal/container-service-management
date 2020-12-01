@@ -32,6 +32,7 @@ function LogDetail() {
 
     React.useEffect(() => {
         init()
+        alive()
         return () => {
             if (!aliveEventCode) {
                 clearTimeout(aliveEventCode)

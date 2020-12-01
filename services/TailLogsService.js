@@ -83,7 +83,11 @@ export default {
         tail
             .on('stderr', function(data){
                 const key = tail.sshOpts['key']
-                if (KEY_MAP[key]) {
+                console.log('data in..', 'stderr ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
+                if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']||0) < new Date().getTime()) {
+                    tail.stop()
+                    delete KEY_MAP[key]
+                } else {
                     const value = DATA_TTL.get(key)
                     if (value === null) {
                         DATA_TTL.push(key, [ data ], {ttl: dataTtlSec * 1000})
@@ -95,17 +99,14 @@ export default {
                         }
                     }
                 }
-                if ( KEY_MAP[key] === undefined
-                    || KEY_MAP[key] === null
-                    || ((KEY_MAP[key]||{})['expire']||0) < new Date().getTime()) {
-                    tail.stop()
-                    delete KEY_MAP[key]
-                }
             })
             .on('stdout', function(data){
                 const key = tail.sshOpts['key']
-                console.log('data in..', 'logs ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
-                if (KEY_MAP[key]) {
+                console.log('data in..', 'stdout ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
+                if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']||0) < new Date().getTime()) {
+                    tail.stop()
+                    delete KEY_MAP[key]
+                } else {
                     const value = DATA_TTL.get(key)
                     if (value === null) {
                         DATA_TTL.push(key, [ data ], {ttl: dataTtlSec * 1000})
@@ -118,24 +119,24 @@ export default {
                         }
                     }
                 }
-                if ( KEY_MAP[key] === undefined
-                    || KEY_MAP[key] === null
-                    || ((KEY_MAP[key]||{})['expire']||0) < new Date().getTime()) {
-                    tail.stop()
-                    delete KEY_MAP[key]
-                }
             })
             .on('disconnected', function(){
+                const key = tail.sshOpts['key']
+                console.log('data in..', 'disconnected ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
                 const value = DATA_TTL.get(key)
                 value.push(Buffer.from("disconnected"))
                 DATA_TTL.push(key, value)
                 delete KEY_MAP[key]
                 KEY_MAP[key] = undefined
             })
-            .on('connected',    function(){ DATA_TTL.push(key, [ Buffer.from("connected") ]) })
-            // .on('tailing',      function(){console.log('tailing')})
-            // .on('eof',          function(signal, code){console.log('EOF:', signal, code)})
-            .on('error',        function(error){ console.log('ERR:' + error) })
+            .on('connected',    function(){
+                const key = tail.sshOpts['key']
+                DATA_TTL.push(key, [ Buffer.from("connected") ])
+            })
+            .on('error',        function(error){
+                const key = tail.sshOpts['key']
+                console.log('ERR:' + error)
+            })
             .start(targets)
 
         return {
@@ -154,6 +155,7 @@ export default {
             return false
         }
         KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
+        console.log('refresh expire', KEY_MAP[key]['expire'])
         return {
             key: key,
             expire: KEY_MAP[key]['expire'],
