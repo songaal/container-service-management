@@ -68,7 +68,7 @@ function LogDetail() {
     return (
         <Box style={{width: "100%", height: "100vh", backgroundColor: "black", color: "white", padding: "20px"}}>
             {logs.map((log, index) => {
-                const key = new Buffer(log).toString('base64').replace("==", "")
+                const key = new Buffer(log).toString('base64').replace("==", "").substring(0, 30)
                 const str = new Buffer(log).toString()
                 return (
                     <div key={key}>{str}</div>

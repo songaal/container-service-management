@@ -87,9 +87,9 @@ export default {
                     tail.stop()
                 } else {
                     const value = DATA_TTL.get(key)
+                    value.push(data)
                     if (value.length > MAX_SIZE) {
                         let tmpValue = value.slice(Math.floor(MAX_SIZE / 2))
-                        tmpValue.push(data)
                         DATA_TTL.push(key, tmpValue, {ttl: dataTtlSec * 1000})
                     } else {
                         DATA_TTL.push(key, value, {ttl: dataTtlSec * 1000})
@@ -102,10 +102,9 @@ export default {
                     tail.stop()
                 } else {
                     const value = DATA_TTL.get(key)
-                    console.log(value.length)
+                    value.push(data)
                     if (value.length > MAX_SIZE) {
                         let tmpValue = value.slice(Math.floor(MAX_SIZE / 2))
-                        tmpValue.push(data)
                         DATA_TTL.push(key, tmpValue, {ttl: dataTtlSec * 1000})
                     } else {
                         DATA_TTL.push(key, value, {ttl: dataTtlSec * 1000})
@@ -114,7 +113,6 @@ export default {
             })
             .on('disconnected', function(){
                 const key = tail.sshOpts['key']
-                console.log('data in..', 'disconnected ', new Date().getTime(), KEY_MAP[key], (KEY_MAP[key]||{})['expire'], key)
                 const value = DATA_TTL.get(key)
                 value.push(Buffer.from("disconnected"))
                 DATA_TTL.push(key, value)
