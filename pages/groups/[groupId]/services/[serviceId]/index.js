@@ -49,7 +49,7 @@ const useStyles = makeStyles( theme => ({
 //
 // `;
 
-function ShowField({label, val, url}) {
+function ShowField({label, val, url, target}) {
     const classes = useStyles();
     return (
         <Box my={3}>
@@ -60,7 +60,7 @@ function ShowField({label, val, url}) {
                 <Grid item xs={9} sm={9}>
                     {
                         url ?
-                            <Link href={url}>
+                            <Link href={url} target={target}>
                                 <Typography className={classes.value}>
                                     {val}
                                 </Typography>
@@ -77,7 +77,7 @@ function ShowField({label, val, url}) {
 }
 
 
-function ContainerState({name, container}) {
+function ContainerState({index, name, container, service}) {
     let up = "DOWN"
     let networkMode = ''
     let image = ''
@@ -100,12 +100,17 @@ function ContainerState({name, container}) {
         let cpu_delta = container['stats']['cpu_stats']['cpu_usage']['total_usage'] - container['stats']['precpu_stats']['cpu_usage']['total_usage']
         let system_cpu_delta = container['stats']['cpu_stats']['system_cpu_usage'] - container['stats']['precpu_stats']['system_cpu_usage']
         let number_cpus = container['stats']['cpu_stats']['online_cpus']
-        cpuUsage = (cpu_delta / system_cpu_delta) * number_cpus * 100.0
+        cpuUsage = Number((cpu_delta / system_cpu_delta) * number_cpus * 100.0).toFixed(2)
 
         let used_memory = container['stats']['memory_stats']['usage'] - container['stats']['memory_stats']['stats']['cache']
         let available_memory = container['stats']['memory_stats']['limit']
-        memUsage = ((used_memory / available_memory) * 100.0).toFixed(2)
+        memUsage = Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2)
     }
+
+    const aa = () => {
+        window.open("/gorups", "","target=_blank")
+    }
+
     return (
         <Card style={{marginBottom: "40px"}}>
             <CardContent>
@@ -128,7 +133,11 @@ function ContainerState({name, container}) {
 
                         <ShowField label={"사용 MEM(%)"} val={memUsage} />
 
-                        <ShowField label={"로그"} val={up === 'UP' ? "컨테이너 로그 열기" : ""} url={up === 'UP' ? "#" : undefined} />
+                        <ShowField label={"로그"}
+                                   val={up === 'UP' ? "컨테이너 로그 열기" : ""}
+                                   url={up === 'UP' ? `/groups/${service['groupId']}/services/${service['id']}/logs/${index}?serverId=${service['serverId']}` : undefined}
+                                   target={"_blank"}
+                        />
 
                     </Grid>
 
@@ -181,7 +190,12 @@ function ProcessState({process, service}) {
                             logs.map((log, index) => {
 
                                 return (
-                                    <ShowField key={index} label={`log-${index + 1}`} val={up === 'UP' ? `${log['key']}` : ""} url={up === 'UP' ? "#" : undefined} />
+                                    <ShowField key={index}
+                                               label={`log-${index + 1}`}
+                                               val={up === 'UP' ? `${log['key']}` : ""}
+                                               url={up === 'UP' ? `/groups/${service['groupId']}/services/${service['id']}/logs/${log['id']}?serverId=${service['serverId']}` : undefined}
+                                               target={"_blank"}
+                                    />
                                 )
                             })
                         }
@@ -461,7 +475,7 @@ function ServicesDetail() {
                                 (state['services']||[]).map((name, index) => {
                                     const container = state['containers'].find(c => name === c['inspect']['Config']['Labels']['com.docker.compose.service'])
                                     return (
-                                        <ContainerState key={index} name={name} container={container} />
+                                        <ContainerState key={index} index={String(index + 1)} name={name} container={container} service={service}/>
                                     )
                                 })
                                 :

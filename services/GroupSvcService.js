@@ -4,7 +4,7 @@ import FileUtil from "../utils/FileUtil"
 import DockerClient from "../utils/DockerClient"
 import SshClient from '../utils/SshClient'
 
-const dockerDefaultPort = 2375
+const dockerDefaultPort = process.env.docker_default_api||2375
 
 export default {
     async findServiceById(id) {
@@ -41,9 +41,9 @@ export default {
     },
     async addService(groupId, reqService) {
         let service = {}
-        let regServer = {}
+        let regService = {}
         try {
-            regServer = await Services.create({
+            regService = await Services.create({
                 name: reqService['name'], groupId,
                 serverId: reqService['server'],
                 type: reqService['type'],
@@ -52,16 +52,18 @@ export default {
                 startScript: reqService['type'] === 'process' ? reqService['startScript'] : "",
                 stopScript:  reqService['type'] === 'process' ? reqService['stopScript'] : "",
             })
-            service = regServer['dataValues']
+            service = regService['dataValues']
             service['variables'] = []
             service['logFiles'] = []
 
-            const id = String(regServer['dataValues']['id'])
+            const id = String(regService['id'])
             const type = reqService['type']
             const variables = type === 'container' ? reqService['variables'] : reqService['logFiles']
             const yaml = reqService['yaml'];
 
-            await Variable.destroy({ where: { serviceId: id } })
+            if ((await Variable.count({ where: { serviceId: id } })) > 0) {
+                await Variable.destroy({ where: { serviceId: id } })
+            }
             await this.appendVariables({serviceId: id, type: type, variables: variables})
 
             const dockerComposeServicePath = await FileUtil.getDockerComposeServicePath({
@@ -76,10 +78,10 @@ export default {
                 // TODO 프로세스 처리 필요시 사용.
             }
         } catch (err) {
-            console.error(err)
-            if (regServer['id']) {
-                await Services.destroy({where: { id: regServer['id']}})
-                await Variable.destroy({ where: { serviceId: id } })
+            console.error('err', err)
+            if (regService['id']) {
+                await Services.destroy({where: { id: regService['id']}})
+                await Variable.destroy({ where: { serviceId: regService['id'] } })
             }
 
             throw err

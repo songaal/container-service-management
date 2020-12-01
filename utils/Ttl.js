@@ -1,16 +1,16 @@
-var util = require('util'),
-    events = require('events'),
-    os = require('os'),
-    async = require('async');
+const util = require('util')
+const events = require('events')
+const os = require('os')
+const async = require('async')
 
-var timer = null;
+let timer = null;
 
 function Ttl(options) {
 
     this._store = {};
 
     this.options = {
-        ttl: 0,
+        ttl: 0, // ms
         timeOutFunction: null,
         lastUsage: false,
         checkPeriode: 0
@@ -37,11 +37,11 @@ function Ttl(options) {
     }
 
     this.options = util._extend(this.options, options);
-    var self = this;
+    let self = this;
 
     if (this.options.checkPeriode > 0) {
         timer = setInterval(function() {
-            var keys = Object.keys(self._store), i=0, len=keys.length, obj;
+            let keys = Object.keys(self._store), i=0, len=keys.length, obj;
 
             for (; i < len; i++) {
                 obj = self._store[keys[i]];
@@ -54,7 +54,7 @@ function Ttl(options) {
 util.inherits(Ttl, events.EventEmitter);
 
 Ttl.prototype.get = function(keys, callback) {
-    var self = this;
+    let self = this;
 
     if (Array.isArray(keys) === false) {
         keys = [keys];
@@ -64,7 +64,7 @@ Ttl.prototype.get = function(keys, callback) {
         callback = null;
     }
 
-    var values = {},
+    let values = {},
         i=0, len=keys.length, key;
 
     if (callback) {
@@ -101,7 +101,7 @@ Ttl.prototype.push = function(key, value, timeOutFunction, ttl) {
         return false;
     }
 
-    var container = {
+    let container = {
         createTime: os.uptime(),
         lastUsage: os.uptime(),
         ttl: ttl,
@@ -129,7 +129,7 @@ Ttl.prototype.del = function(keys) {
         keys = [keys];
     }
 
-    var count = 0,
+    let count = 0,
         i=0, len=keys.length, key;
 
     for (; i < len; i++) {
@@ -168,7 +168,7 @@ Ttl.prototype._shiftValue = function(keys, values) {
 };
 
 Ttl.prototype._readObj = function(key, callback) {
-    var self = this;
+    let self = this;
 
     if (!this._store.hasOwnProperty(key)) {
         if (!callback) {
@@ -178,7 +178,7 @@ Ttl.prototype._readObj = function(key, callback) {
         }
     }
 
-    var obj = this._store[key];
+    let obj = this._store[key];
 
     if (callback) {
         this._check(obj, function(check) {
@@ -201,7 +201,7 @@ Ttl.prototype._readValue = function(obj, key, callback) {
     // Last Usage
     obj.lastUsage = os.uptime();
 
-    var value = null;
+    let value = null;
 
     if (typeof obj.value === 'function') {
         value = obj.value();
@@ -218,13 +218,13 @@ Ttl.prototype._readValue = function(obj, key, callback) {
 };
 
 Ttl.prototype._check = function(obj, callback, pass) {
-    var self = this;
+    let self = this;
 
     if (typeof pass === 'undefined') {
         pass = 1;
     }
 
-    var lastTime = obj.createTime;
+    let lastTime = obj.createTime;
     if (this.options.lastUsage) {
         lastTime = obj.lastUsage;
     }
