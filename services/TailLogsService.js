@@ -10,7 +10,7 @@ import ServerService from "./ServerService";
 
 const dockerDefaultPort = process.env.docker_default_api||2375
 const dataTtlSec = 30
-const keyMapTTLSec = 20
+const keyMapTTLSec = 30
 const MAX_SIZE = 10000
 const DATA_TTL = new Ttl({ttl: dataTtlSec * 1000})
 let KEY_MAP = {}
@@ -83,46 +83,38 @@ export default {
         tail
             .on('stderr', function(data){
                 const key = tail.sshOpts['key']
-                console.log('data in..', 'stderr ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
-                if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']||0) < new Date().getTime()) {
+                if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']) < new Date().getTime()) {
                     tail.stop()
-                    delete KEY_MAP[key]
                 } else {
                     const value = DATA_TTL.get(key)
-                    if (value === null) {
-                        DATA_TTL.push(key, [ data ], {ttl: dataTtlSec * 1000})
+                    if (value.length > MAX_SIZE) {
+                        let tmpValue = value.slice(Math.floor(MAX_SIZE / 2))
+                        tmpValue.push(data)
+                        DATA_TTL.push(key, tmpValue, {ttl: dataTtlSec * 1000})
                     } else {
-                        if (value.length > MAX_SIZE) {
-                            DATA_TTL.push(key, value.slice(Math.floor(MAX_SIZE / 2)), {ttl: dataTtlSec * 1000})
-                        } else {
-                            DATA_TTL.push(key, value, {ttl: dataTtlSec * 1000})
-                        }
+                        DATA_TTL.push(key, value, {ttl: dataTtlSec * 1000})
                     }
                 }
             })
             .on('stdout', function(data){
                 const key = tail.sshOpts['key']
-                console.log('data in..', 'stdout ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
-                if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']||0) < new Date().getTime()) {
+                if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']) < new Date().getTime()) {
                     tail.stop()
-                    delete KEY_MAP[key]
                 } else {
                     const value = DATA_TTL.get(key)
-                    if (value === null) {
-                        DATA_TTL.push(key, [ data ], {ttl: dataTtlSec * 1000})
+                    console.log(value.length)
+                    if (value.length > MAX_SIZE) {
+                        let tmpValue = value.slice(Math.floor(MAX_SIZE / 2))
+                        tmpValue.push(data)
+                        DATA_TTL.push(key, tmpValue, {ttl: dataTtlSec * 1000})
                     } else {
-                        value.push(data)
-                        if (value.length > MAX_SIZE) {
-                            DATA_TTL.push(key, value.slice(Math.floor(MAX_SIZE / 2)), {ttl: dataTtlSec * 1000})
-                        } else {
-                            DATA_TTL.push(key, value, {ttl: dataTtlSec * 1000})
-                        }
+                        DATA_TTL.push(key, value, {ttl: dataTtlSec * 1000})
                     }
                 }
             })
             .on('disconnected', function(){
                 const key = tail.sshOpts['key']
-                console.log('data in..', 'disconnected ', new Date().getTime(), ((KEY_MAP[key]||{})['expire']||0), key)
+                console.log('data in..', 'disconnected ', new Date().getTime(), KEY_MAP[key], (KEY_MAP[key]||{})['expire'], key)
                 const value = DATA_TTL.get(key)
                 value.push(Buffer.from("disconnected"))
                 DATA_TTL.push(key, value)
@@ -131,7 +123,7 @@ export default {
             })
             .on('connected',    function(){
                 const key = tail.sshOpts['key']
-                DATA_TTL.push(key, [ Buffer.from("connected") ])
+                DATA_TTL.push(key, [ Buffer.from("connected") ], {ttl: dataTtlSec * 1000})
             })
             .on('error',        function(error){
                 const key = tail.sshOpts['key']
@@ -145,23 +137,35 @@ export default {
             expire: KEY_MAP[key]['expire'],
         }
     },
-    async alive({serverId, groupId, serviceId, logId}) {
-        const nowTime = new Date().getTime()
-        const key = `${serverId}_${groupId}_${serviceId}_${logId}`
-        if (KEY_MAP[key] === undefined || KEY_MAP[key] === null) {
-            return false
-        }
-        if (Number(KEY_MAP[key]['expire']) < nowTime) {
-            return false
-        }
-        KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
-        console.log('refresh expire', KEY_MAP[key]['expire'])
-        return {
-            key: key,
-            expire: KEY_MAP[key]['expire'],
-        }
-    },
     async getLogs({serverId, groupId, serviceId, logId}) {
-        return DATA_TTL.get(`${serverId}_${groupId}_${serviceId}_${logId}`)
+        const key = `${serverId}_${groupId}_${serviceId}_${logId}`
+        if (!KEY_MAP[key]) {
+            return null
+        }
+        const logs = DATA_TTL.get(key)
+        const nowTime = new Date().getTime()
+        KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
+
+        console.log(KEY_MAP[key]['expire'], nowTime)
+        return logs
     }
 }
+
+
+
+// async alive({serverId, groupId, serviceId, logId}) {
+//     const nowTime = new Date().getTime()
+//     const key = `${serverId}_${groupId}_${serviceId}_${logId}`
+//     if (KEY_MAP[key] === undefined || KEY_MAP[key] === null) {
+//         return false
+//     }
+//     if (Number(KEY_MAP[key]['expire']) < nowTime) {
+//         return false
+//     }
+//     KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
+//     console.log('refresh expire', KEY_MAP[key]['expire'])
+//     return {
+//         key: key,
+//         expire: KEY_MAP[key]['expire'],
+//     }
+// },

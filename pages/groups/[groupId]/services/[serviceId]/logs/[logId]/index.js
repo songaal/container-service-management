@@ -21,7 +21,6 @@ import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 
 
 let fetchEventCode = null
-let aliveEventCode = null
 function LogDetail() {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
@@ -32,11 +31,7 @@ function LogDetail() {
 
     React.useEffect(() => {
         init()
-        alive()
         return () => {
-            if (!aliveEventCode) {
-                clearTimeout(aliveEventCode)
-            }
             if (!fetchEventCode) {
                 clearTimeout(fetchEventCode)
             }
@@ -67,25 +62,16 @@ function LogDetail() {
             })
         fetchEventCode = setTimeout(() => {
             fetchLogs()
-        }, 5000)
-    }
-
-    const alive = () => {
-        fetch(`/api/groups/${groupId}/services/${serviceId}/logs/${logId}?serverId=${serverId}`, {
-            method: "PUT"
-        }).then(res => res.json())
-
-        aliveEventCode = setTimeout(() => {
-            alive()
-        }, 5000)
+        }, 1000)
     }
 
     return (
         <Box style={{width: "100%", height: "100vh", backgroundColor: "black", color: "white", padding: "20px"}}>
             {logs.map((log, index) => {
+                const key = new Buffer(log).toString('base64').replace("==", "")
                 const str = new Buffer(log).toString()
                 return (
-                    <div key={str}>{str}</div>
+                    <div key={key}>{str}</div>
                 )
             })}
         </Box>

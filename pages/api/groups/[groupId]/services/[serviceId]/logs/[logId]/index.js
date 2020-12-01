@@ -22,11 +22,6 @@ async function groupsService(req, res) {
                 status: "success",
                 logs: await TailLogsService.getLogs({serverId, groupId, serviceId, logId})
             })
-        } else if (req.method === "PUT") {
-            res.send({
-                status: "success",
-                result: await TailLogsService.alive({serverId, groupId, serviceId, logId})
-            })
         } else if (req.method === "POST") {
             res.send({
                 status: "success",
