@@ -83,7 +83,7 @@ export default {
             const client = new SshClient(server['ip'], server['port'], server['user'], server['password']);
             return {
                 status: "success",
-                result: await client.exec(cmd, {timeout: 3000})
+                result: await client.exec(cmd)
             }
         } catch (error) {
             return {
