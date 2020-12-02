@@ -96,11 +96,12 @@ function Service() {
                                     :
                                     viewServices.map((service, index) => {
                                         return (
-                                            <TableRow key={index}>
+                                            <TableRow key={index}
+                                                      onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}
+                                                      style={{cursor: "pointer"}}
+                                            >
                                                 <TableCell>{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <Link href={"#none"} onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}>{service['name']}</Link>
-                                                </TableCell>
+                                                <TableCell>{service['name']}</TableCell>
                                                 <TableCell>{service['server_name']}</TableCell>
                                                 <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
                                             </TableRow>

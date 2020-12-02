@@ -102,11 +102,12 @@ function Server() {
                                     :
                                     viewServers.map((server, index) => {
                                         return (
-                                            <TableRow key={server['id']}>
+                                            <TableRow key={server['id']}
+                                                      onClick={() => router.push(`/servers/${server['id']}`)}
+                                                      style={{cursor: "pointer"}}
+                                            >
                                                 <TableCell>{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <Link href={"#none"} onClick={() => router.push(`/servers/${server['id']}`)}>{server['name']}</Link>
-                                                </TableCell>
+                                                <TableCell>{server['name']}</TableCell>
                                                 <TableCell>{server['user']}</TableCell>
                                                 <TableCell>{server['ip']}</TableCell>
                                             </TableRow>

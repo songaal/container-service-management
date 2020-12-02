@@ -298,7 +298,7 @@ function AdminGroup(server) {
             }
         }
         return true
-    }).map(group => ({id: group['id'], name: group['name']}))
+    })
 
     return (
         <React.Fragment>
@@ -311,19 +311,17 @@ function AdminGroup(server) {
                             options={groupOptions}
                             disableCloseOnSelect
                             getOptionLabel={(option) => option.name}
-                            renderOption={(option, { selected }) => {
-                                return (
-                                    <React.Fragment>
-                                        <Checkbox
-                                            icon={icon}
-                                            checkedIcon={checkedIcon}
-                                            style={{ marginRight: 8 }}
-                                            checked={selected}
-                                        />
-                                        {option.name}
-                                    </React.Fragment>
-                                )
-                            }}
+                            renderOption={(option, { selected }) => (
+                                <React.Fragment>
+                                    <Checkbox
+                                        icon={icon}
+                                        checkedIcon={checkedIcon}
+                                        style={{ marginRight: 8 }}
+                                        checked={selected}
+                                    />
+                                    {option.name}
+                                </React.Fragment>
+                            )}
                             style={{display: "inline"}}
                             renderInput={(params) => (
                                 <TextField {...params} variant="outlined" label="그룹 추가" placeholder="" style={{minWidth: 300}} />

@@ -1,21 +1,7 @@
 import React from 'react';
-import Container from '@material-ui/core/Container';
-import Grid from '@material-ui/core/Grid';
-import Typography from '@material-ui/core/Typography';
-import {Box, MenuItem, useTheme, CircularProgress, Card, CardContent } from "@material-ui/core";
-import CssBaseline from "@material-ui/core/CssBaseline";
-import {makeStyles} from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
-import Menu from "@material-ui/core/Menu";
-import Divider from '@material-ui/core/Divider';
-import Link from '@material-ui/core/Link';
+import {Box, useTheme} from "@material-ui/core";
 import {useRouter} from "next/router"
 import fetch from "isomorphic-unfetch"
-import DialogTitle from "@material-ui/core/DialogTitle";
-import DialogContent from "@material-ui/core/DialogContent";
-import DialogActions from "@material-ui/core/DialogActions";
-import Dialog from "@material-ui/core/Dialog";
 import {useSnackbar} from "notistack";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 
@@ -31,12 +17,16 @@ function LogDetail() {
 
     React.useEffect(() => {
         init()
+
         return () => {
             if (!fetchEventCode) {
                 clearTimeout(fetchEventCode)
+                fetchEventCode = null
             }
         }
     }, [])
+
+
 
     const init = () => {
         fetch(`/api/groups/${groupId}/services/${serviceId}/logs/${logId}?serverId=${serverId}`, {
@@ -45,7 +35,9 @@ function LogDetail() {
             .then(res => res.json())
             .then(body => {
                 if (body['status'] === 'success') {
-                    fetchLogs()
+                    setTimeout(()=>{
+                        fetchLogs()
+                    }, 2000)
                 }
             })
     }
@@ -60,20 +52,32 @@ function LogDetail() {
                     setLogs(body['logs'])
                 }
             })
+        if (fetchEventCode !== null) {
+            clearTimeout(fetchEventCode)
+            fetchEventCode = null
+        }
         fetchEventCode = setTimeout(() => {
             fetchLogs()
-        }, 1000)
+        }, 2000)
     }
 
+    const viewLogs = logs.map(log => new Buffer(log).toString().replace("\n", "")).join("\n")
+
     return (
-        <Box style={{width: "100%", height: "100vh", backgroundColor: "black", color: "white", padding: "20px"}}>
-            {logs.map((log, index) => {
-                const key = new Buffer(log).toString('base64').replace("==", "").substring(0, 30)
-                const str = new Buffer(log).toString()
-                return (
-                    <div key={key}>{str}</div>
-                )
-            })}
+        <Box style={{backgroundColor: "black", width: "100%", height: "100vh", overflow: "auto"}}>
+            <textarea
+                      style={{
+                          backgroundColor: "black",
+                          color: "white",
+                          width: "100%",
+                          height: '99%',
+                          overflow: "auto",
+                          border: '0px',
+                          padding: '20px'
+                      }}
+                      value={viewLogs}
+                      readOnly={true}
+            />
         </Box>
     );
 }

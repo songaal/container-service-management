@@ -1,4 +1,4 @@
-const { Groups, GroupServer, Servers, Services, sequelize } = require("../models")
+const { Users, Groups, GroupServer, GroupAuth, Servers, Services, sequelize } = require("../models")
 
 export default {
     getServerList: async () => {
@@ -112,10 +112,18 @@ export default {
                         )`),
                         "server_name"
                     ]
-
-
                 ]
             }
         })
-    }
+    },
+    async getUsers() {
+        return await Users.findAll({
+            include: [
+                {
+                    model: GroupAuth
+                }
+            ],
+        })
+    },
+
 }

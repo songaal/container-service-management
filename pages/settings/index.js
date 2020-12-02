@@ -20,7 +20,6 @@ import SettingsServer from "../../components/settingsServer"
 import SettingsService from "../../components/settingsService"
 import SettingsUser from "../../components/settingsUser"
 
-
 const useStyles = makeStyles( theme => ({
     root: {
         flexGrow: 1,
@@ -61,7 +60,6 @@ function Settings() {
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const [tabIndex, setTabIndex] = React.useState(0);
     const [editOpen, setEditOpen] = React.useState(false);
-
 
     return (
         <Box className={classes.root}>

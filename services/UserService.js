@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import Mail from "../utils/Mail"
-const { Users } = require("../models")
+import GroupAuthService from "./GroupAuthService";
+const { Users, GroupAuth, Groups, GroupServer, Servers, Services, Sequelize, sequelize} = require("../models")
 const crypt = require('bcryptjs')
-
 
 export default {
     newUser: async (user) => {
@@ -69,21 +69,14 @@ export default {
             }
         }
     },
-    findByUserId: async (userId) => {
-        return await Users.findOne({where: {userId: userId}})
-
+    removeUser: async (id) => {
+        await GroupAuth.destroy({where: {userId: id}})
+        await Users.destroy({where: {id: id}})
+        return true
     },
+    findAll: async () => {
+        return await Users.findAll({
+            attributes: ['id', 'userId', 'name', 'createdAt', 'updatedAt'],
+        })
+    }
 }
-
-
-
-// const user = {name: "aaa", admin: true, password: "pass"};
-// console.log('1>>>', body, Sample)
-//
-// const newUser = await Users.create(user);
-// console.log('newUser >>>', newUser)
-//
-// let s = await Sample.findOne({where: {key: body['key']}});
-// console.log('>>>', s)
-//
-// await newUser.destroy();

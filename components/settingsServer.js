@@ -22,6 +22,7 @@ import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import Autocomplete from "@material-ui/lab/Autocomplete/Autocomplete";
 import {makeStyles} from "@material-ui/core/styles";
 import fetch from "isomorphic-unfetch";
+import {useRouter} from "next/router";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -35,6 +36,7 @@ function SettingsServer() {
     const classes = useStyles();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const theme = useTheme();
+    const router = useRouter()
     const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
     const [open, setOpen] = React.useState(false);
     const [sampleHidden, setSampleHidden] = React.useState(false)
@@ -269,9 +271,12 @@ function SettingsServer() {
                                     :
                                     viewServers.map((server, index) => {
                                         return (
-                                            <TableRow key={server['id']}>
+                                            <TableRow key={server['id']}
+                                                      onClick={() => router.push(`/settings/servers/${server['id']}`)}
+                                                      style={{cursor: "pointer"}}
+                                            >
                                                 <TableCell>{index + 1}</TableCell>
-                                                <TableCell><Link href={`/settings/servers/${server['id']}`}>{server['name']}</Link></TableCell>
+                                                <TableCell>{server['name']}</TableCell>
                                                 <TableCell>{server['ip']}</TableCell>
                                                 <TableCell>{server['port']}</TableCell>
                                                 <TableCell>{server['user']}</TableCell>

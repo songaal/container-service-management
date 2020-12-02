@@ -23,9 +23,7 @@ const useStyles = makeStyles((theme) => ({
     // toolbarTitle: {
     //     flexGrow: 1,
     // },
-    link: {
-        margin: theme.spacing(1, 1.5),
-    },
+    link: {},
     heroContent: {
         padding: theme.spacing(8, 0, 6),
     },
@@ -34,9 +32,13 @@ const useStyles = makeStyles((theme) => ({
             theme.palette.type === 'light' ? theme.palette.grey[200] : theme.palette.grey[700],
     },
     active: {
-        margin: theme.spacing(1, 1.5),
-        borderBottom: "2px solid",
-        paddingBottom: "2px"
+        // margin: theme.spacing(1, 1.5),
+        // borderBottom: "2px solid",
+        // paddingBottom: "2px"
+
+        fontWeight: 'bold',
+        borderBottom: "2px solid black",
+        borderRadius: "0px"
     }
 }));
 
@@ -88,15 +90,24 @@ export default function Header({active}) {
                                 운영관리
                             </Typography>
                             <nav style={{display: "inline", marginLeft: '20px'}}>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/home")} className={ active === 0 ? classes.active : classes.link}>
+                                <Button size={"small"} style={{display: "inline-block", width: "50px"}} onClick={() => router.push("/home")} className={ active === 0 ? classes.active : classes.link}>
                                     홈
-                                </Link>
-                                <Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>
+                                </Button>
+                                <Button size={"small"} style={{display: "inline-block", width: "50px"}} onClick={() => router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>
                                     그룹
-                                </Link>
-                                <Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
+                                </Button>
+                                <Button size={"small"} style={{display: "inline-block", width: "50px"}} onClick={() => router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
                                     설정
-                                </Link>
+                                </Button>
+                                {/*<Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/home")} className={ active === 0 ? classes.active : classes.link}>*/}
+                                {/*    홈*/}
+                                {/*</Link>*/}
+                                {/*<Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>*/}
+                                {/*    그룹*/}
+                                {/*</Link>*/}
+                                {/*<Link style={{display}} underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>*/}
+                                {/*    설정*/}
+                                {/*</Link>*/}
                             </nav>
                         </Grid>
                         <Grid item  xs={3}>
@@ -110,7 +121,7 @@ export default function Header({active}) {
                                     open={Boolean(anchorEl)}
                                     onClose={handleClose}
                                 >
-                                    <MenuItem  onClick={() => router.push("/my")}>개인정보</MenuItem>
+                                    <MenuItem onClick={() => router.push("/my")}>개인정보</MenuItem>
                                     <MenuItem onClick={logout}>로그아웃</MenuItem>
                                 </Menu>
                             </Box>

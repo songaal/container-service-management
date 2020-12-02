@@ -34,6 +34,11 @@ export default {
         if (serverId === '' || serverId === '-1' || !server) {
             throw new Error("할당된 서버가 없습니다.")
         }
+        const key = `${serverId}_${groupId}_${serviceId}_${logId}`
+        if (KEY_MAP[key]) {
+            console.log('이미 로그 수집을 진행하고있습니다.', key, KEY_MAP[key])
+            return false
+        }
 
         let mode = ""
         let targets = []
@@ -49,7 +54,7 @@ export default {
             targets = (await dockerClient.getContainerIds()).map(id => id.substring(0, 12))
         } else if (regService['type'] === 'process') {
             const resultLogFile = await Variable.findOne({ where: {id: logId} })
-            if (!resultLogFile) {
+            if (resultLogFile['value']) {
                 targets.push(resultLogFile['value'])
             }
             mode = "file"
@@ -57,20 +62,8 @@ export default {
             throw new Error("타입이 잘못되었습니다.")
         }
 
-
         if (!targets || targets.length === 0) {
             throw new Error("수집할 로그 대상이 없습니다.")
-        }
-
-        const key = `${serverId}_${groupId}_${serviceId}_${logId}`
-        if (KEY_MAP[key]) {
-            return false
-        }
-        const nowTime = new Date().getTime()
-        KEY_MAP[key] = {
-            params: { serverId, groupId, serviceId, logId, ip, port, user, password, mode, targets },
-            start: nowTime,
-            expire: nowTime + (keyMapTTLSec * 1000)
         }
 
         const tail = new SshTail({
@@ -97,6 +90,7 @@ export default {
                 }
             })
             .on('stdout', function(data){
+                console.log('available logs count:', Object.keys(KEY_MAP).length)
                 const key = tail.sshOpts['key']
                 if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']) < new Date().getTime()) {
                     tail.stop()
@@ -113,6 +107,7 @@ export default {
             })
             .on('disconnected', function(){
                 const key = tail.sshOpts['key']
+                tail.stop()
                 const value = DATA_TTL.get(key)
                 value.push(Buffer.from("disconnected"))
                 DATA_TTL.push(key, value)
@@ -129,6 +124,15 @@ export default {
             })
             .start(targets)
 
+
+        const nowTime = new Date().getTime()
+        KEY_MAP[key] = {
+            params: { serverId, groupId, serviceId, logId, ip, port, user, password, mode, targets },
+            start: nowTime,
+            expire: nowTime + (keyMapTTLSec * 1000),
+            tail: tail
+        }
+
         return {
             key: key,
             start: KEY_MAP[key]['start'],
@@ -137,14 +141,11 @@ export default {
     },
     async getLogs({serverId, groupId, serviceId, logId}) {
         const key = `${serverId}_${groupId}_${serviceId}_${logId}`
-        if (!KEY_MAP[key]) {
-            return null
-        }
         const logs = DATA_TTL.get(key)
-        const nowTime = new Date().getTime()
-        KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
-
-        console.log(KEY_MAP[key]['expire'], nowTime)
+        if (KEY_MAP[key]) {
+            const nowTime = new Date().getTime()
+            KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
+        }
         return logs
     }
 }

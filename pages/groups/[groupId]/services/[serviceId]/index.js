@@ -116,7 +116,7 @@ function ContainerState({index, name, container, service}) {
             <CardContent>
                 <Grid container>
                     <Grid item xs={6}>
-                        <ShowField label={"서비스명"} val={name} />
+                        <ShowField label={"컨테이너명"} val={name} />
 
                         <ShowField label={"네트워크"} val={networkMode} />
 
@@ -255,6 +255,7 @@ function ServicesDetail() {
                         setDisabledAction(false)
                         fetchState()
                     } else {
+                        setLoading(false)
                         setDisabledAction(true)
                     }
                 } else {
@@ -407,6 +408,12 @@ function ServicesDetail() {
                     </Grid>
                 </Box>
 
+                <Box my={3}>
+                    <Typography variant="h5" gutterBottom>
+                        설정
+                    </Typography>
+                </Box>
+
                 <Box align={"center"}>
                     <Grid container>
                         <Grid item xs={12} sm={12} md={6}>
@@ -423,7 +430,7 @@ function ServicesDetail() {
                             <Box my={3}>
                                 <Grid container>
                                     <Grid item xs={3} sm={3}>
-                                        <Box align={"right"} className={classes.label}> 실행 </Box>
+                                        <Box align={"right"} className={classes.label}> 명령 </Box>
                                     </Grid>
 
                                     <Grid item xs={9} sm={9}>
@@ -460,7 +467,9 @@ function ServicesDetail() {
                 </Box>
 
                 <Box my={3}>
-                    <Divider />
+                    <Typography variant="h5" gutterBottom>
+                        상태
+                    </Typography>
                 </Box>
 
                 {/*  컨테이너  */}

@@ -171,13 +171,12 @@ function Groups() {
                                     :
                                     list.map((group, index) => {
                                         return (
-                                            <TableRow key={group['name']}>
+                                            <TableRow key={group['name']}
+                                                      onClick={() => {router.push(`/groups/${group['id']}`)}}
+                                                      style={{cursor: "pointer"}}
+                                            >
                                                 <TableCell>{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <Link href="#" onClick={event => {router.push(`/groups/${group['id']}`)}}>
-                                                        {group['name']}
-                                                    </Link>
-                                                </TableCell>
+                                                <TableCell> {group['name']}</TableCell>
                                                 <TableCell>{group['server_count']}</TableCell>
                                                 <TableCell>{group['service_count']}</TableCell>
                                                 <TableCell>{group['user_count']}</TableCell>
