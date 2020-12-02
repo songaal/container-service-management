@@ -63,8 +63,8 @@ function Page() {
     const [resetEmail, setResetEmail] = React.useState("");
     const [invalid, setInvalid] = React.useState({});
     const [disabled, setDisabled] = React.useState({});
-    const [userId, setUserId] = React.useState("admin@example.com");
-    const [password, setPassword] = React.useState("admin");
+    const [userId, setUserId] = React.useState("");
+    const [password, setPassword] = React.useState("");
     const [loginCheck, setLoginCheck] = React.useState(false);
 
     React.useEffect(() => {
