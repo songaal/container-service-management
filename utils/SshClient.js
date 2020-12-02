@@ -45,7 +45,7 @@ class SshClient {
                 port: this.port,
                 username: this.username,
                 password: this.password,
-                readyTimeout: timeout||99999
+                readyTimeout: Number(timeout||999999)
             });
         })
     }
