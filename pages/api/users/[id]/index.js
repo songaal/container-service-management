@@ -1,10 +1,15 @@
+import UserService from "../../../../services/UserService"
+
+import JsonUtil from "../../../../utils/JsonUtil";
+import AuthService from "../../../../services/AuthService";
 
 export default async (req, res) => {
-    try {
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json')
-        if (req.method === 'POST') {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json')
+    await AuthService.validate(req, res);
 
+    try {
+        if (req.method === 'POST') {
             res.end()
         } else {
             res.statusCode = 404;

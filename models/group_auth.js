@@ -17,7 +17,8 @@ module.exports = (sequelize, DataTypes) => {
   };
   group_auth.init({
     userId: DataTypes.STRING,
-    groupId: DataTypes.STRING
+    groupId: DataTypes.STRING,
+    favorites: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'group_auth',

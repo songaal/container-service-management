@@ -28,7 +28,7 @@ module.exports = {
     await queryInterface.bulkInsert('group_auths', [
       {
         id: 1, createdAt: new Date(), updatedAt: new Date(),
-        userId: "1", groupId: 1
+        userId: "1", groupId: 1, favorites: 0
       }
     ]);
 

@@ -151,7 +151,7 @@ function Authentication() {
                                             return null
                                         }
                                         return (
-                                            <TableRow>
+                                            <TableRow key={index}>
                                                 <TableCell>{index + 1}</TableCell>
                                                 <TableCell>{user['name']}</TableCell>
                                                 <TableCell>{user['userId']}</TableCell>

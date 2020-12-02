@@ -3,7 +3,7 @@ const { GroupAuth } = require("../models")
 
 export default {
     newGroupAuth: async (groupId, userId) => {
-        return await GroupAuth.create({ groupId, userId })
+        return await GroupAuth.create({ groupId, userId, favorites: "0" })
     },
     findByGroupId: async (groupId) => {
         return await GroupAuth.findAll({where: {groupId: groupId}})
@@ -20,10 +20,7 @@ export default {
         let results = []
         for (let i = 0; i < userIds.length; i++) {
             try {
-                results.push(await GroupAuth.create({
-                    groupId: groupId,
-                    userId: userIds[i]
-                }))
+                results.push(await GroupAuth.create({ groupId: groupId, userId: userIds[i], favorites: "0" }))
             } catch (err) {
                 console.error('err', err)
             }
@@ -53,4 +50,14 @@ export default {
         }
         return results
     },
+    async updateFavorites(userId, groupId, favorites) {
+        return await GroupAuth.update({
+            favorites: favorites
+        }, {
+            where: {
+                userId: userId,
+                groupId: groupId
+            }
+        })
+    }
 }

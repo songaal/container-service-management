@@ -21,6 +21,10 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
+      },
+      favorites: {
+        allowNull: false,
+        type: Sequelize.STRING,
       }
     });
   },
