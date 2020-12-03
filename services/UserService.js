@@ -38,12 +38,13 @@ export default {
         let registerUser = await Users.findOne({where: {userId: userId}})
         if (registerUser) {
             const tempPassword = uuidv4().slice(0, 4)
-            await registerUser.update({password: (await crypt.hash(tempPassword, 12))})
+            const password = (await crypt.hash(tempPassword, 12))
             await Mail.sendText({
                 to: userId,
                 subject: "[운영관리] 비밀번호 초기화",
                 text: "임시비밀번호: " + tempPassword
             })
+            await registerUser.update({password: password})
         }
     },
     updatePassword: async (id, password, updatePassword) => {

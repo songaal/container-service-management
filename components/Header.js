@@ -77,7 +77,7 @@ export default function Header({active}) {
         await router.replace("/sign-in")
     }
 
-    const display = user['admin'] === true ? 'inline' : 'none'
+    const display = user['admin'] === true ? 'inline-block' : 'none'
 
     return (
         <React.Fragment>
@@ -96,7 +96,7 @@ export default function Header({active}) {
                                 <Button size={"small"} style={{display: "inline-block", width: "50px"}} onClick={() => router.push("/groups")} className={ active === 1 ? classes.active : classes.link}>
                                     그룹
                                 </Button>
-                                <Button size={"small"} style={{display: "inline-block", width: "50px"}} onClick={() => router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
+                                <Button size={"small"} style={{display: display, width: "50px"}} onClick={() => router.push("/settings")} className={ active === 2 ? classes.active : classes.link}>
                                     설정
                                 </Button>
                                 {/*<Link underline={'none'} variant="button" color="textPrimary" href="#none" onClick={() => router.push("/home")} className={ active === 0 ? classes.active : classes.link}>*/}

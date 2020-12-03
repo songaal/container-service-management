@@ -145,51 +145,56 @@ function Home() {
                 <Grid container>
 
                     {
-                        viewGroupAuthList.map((ga, index) => {
-                            const group = ga['group']
-                            return (
-                                <Grid key={index} item xs={12} md={6} xl={4} style={{padding: "5px"}}>
-                                    <Card>
-                                        <CardContent mt={2}
-                                                     style={{maxHeight: "170px", cursor: "pointer"}}
-                                                     onClick={() => router.push(`/groups/${group['id']}`)}
-                                        >
-                                            <Grid container>
-                                                <Grid item xs={8}>
-                                                    <Typography component={"h6"} style={{fontWeight: "bold"}}>
-                                                        {group['name']}
-                                                    </Typography>
-                                                </Grid>
-                                                <Grid item xs={4} align={"right"} >
-                                                    <IconButton onClick={event => handleFavorites(event, group['id'], ga['favorites'], ga['favorites'] === "1" ? "0" : "1")}>
-                                                        <StarIcon style={{color: '#ffeb3b', display: ga['favorites'] === "1" ? "block" : "none"}} />
-                                                        <StarBorderIcon style={{color: '#000', display: ga['favorites'] === "1" ? "none" : "block"}} />
+                        viewGroupAuthList.length === 0 ?
+                            <Box style={{textAlign: "center"}}>
+                                서비스가 없습니다.
+                            </Box>
+                            :
+                            viewGroupAuthList.map((ga, index) => {
+                                const group = ga['group']
+                                return (
+                                    <Grid key={index} item xs={12} md={6} xl={4} style={{padding: "5px"}}>
+                                        <Card>
+                                            <CardContent mt={2}
+                                                         style={{maxHeight: "170px", cursor: "pointer"}}
+                                                         onClick={() => router.push(`/groups/${group['id']}`)}
+                                            >
+                                                <Grid container>
+                                                    <Grid item xs={8}>
+                                                        <Typography component={"h6"} style={{fontWeight: "bold"}}>
+                                                            {group['name']}
+                                                        </Typography>
+                                                    </Grid>
+                                                    <Grid item xs={4} align={"right"} >
+                                                        <IconButton onClick={event => handleFavorites(event, group['id'], ga['favorites'], ga['favorites'] === "1" ? "0" : "1")}>
+                                                            <StarIcon style={{color: '#ffeb3b', display: ga['favorites'] === "1" ? "block" : "none"}} />
+                                                            <StarBorderIcon style={{color: '#000', display: ga['favorites'] === "1" ? "none" : "block"}} />
 
-                                                    </IconButton>
+                                                        </IconButton>
+                                                    </Grid>
                                                 </Grid>
-                                            </Grid>
-                                            <p style={{textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", height: "20px"}}>
-                                                {group['description']}
-                                            </p>
-                                            <Grid container align={"center"}>
-                                                <Grid item xs={6} mt={1}>
-                                                    서비스 {group['service_count']||0}
-                                                </Grid>
-                                                <Grid item xs={6} mt={1}>
-                                                    서버 {group['server_count']||0}
-                                                </Grid>
-                                                <Grid item xs={6} mt={1}>
-                                                    사용자 {group['user_count']||0}
-                                                </Grid>
-                                                <Grid item xs={6} mt={1}>
+                                                <p style={{textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", height: "20px"}}>
+                                                    {group['description']}
+                                                </p>
+                                                <Grid container align={"center"}>
+                                                    <Grid item xs={6} mt={1}>
+                                                        서비스 {group['service_count']||0}
+                                                    </Grid>
+                                                    <Grid item xs={6} mt={1}>
+                                                        서버 {group['server_count']||0}
+                                                    </Grid>
+                                                    <Grid item xs={6} mt={1}>
+                                                        사용자 {group['user_count']||0}
+                                                    </Grid>
+                                                    <Grid item xs={6} mt={1}>
 
+                                                    </Grid>
                                                 </Grid>
-                                            </Grid>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-                            )
-                        })
+                                            </CardContent>
+                                        </Card>
+                                    </Grid>
+                                )
+                            })
                     }
                 </Grid>
 

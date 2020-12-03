@@ -13,6 +13,12 @@ async function groups(req, res) {
     await AuthService.validate(req, res);
 
     try {
+        if (!req.session.auth) {
+            res.send({
+                status: "error",
+                message: "에러가 발생하였습니다."
+            })
+        }
         const id = req.session.auth.user.id;
 
         if(req.method === "GET") {
