@@ -427,7 +427,7 @@ fi
                                             <ListItem key={index}>
                                                 <Grid container>
                                                     <Grid item xs={1}>
-                                                        <Box align={"right"} className={classes.label}>키</Box>
+                                                        <Box align={"right"} className={classes.label}>라벨</Box>
                                                     </Grid>
                                                     <Grid item xs={4}>
                                                         <TextField fullWidth
@@ -446,7 +446,7 @@ fi
                                                         />
                                                     </Grid>
                                                     <Grid item xs={1}>
-                                                        <Box align={"right"} className={classes.label}>값</Box>
+                                                        <Box align={"right"} className={classes.label}>경로</Box>
                                                     </Grid>
                                                     <Grid item xs={4}>
                                                         <TextField fullWidth

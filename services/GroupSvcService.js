@@ -6,6 +6,8 @@ import SshClient from '../utils/SshClient'
 
 const dockerDefaultPort = process.env.docker_default_api||2375
 
+let sync = {}
+
 export default {
     async findServiceById(id) {
         const regService = await Services.findOne({
@@ -213,9 +215,21 @@ export default {
         }
         return result
     },
-    async startServices(groupId, serviceId) {
+    async startServices(user, groupId, serviceId) {
+        const syncKey = `${groupId}_${serviceId}`
+        if (sync[syncKey]) {
+            return sync[syncKey]
+        } else {
+            sync[syncKey] = {
+                start: new Date().getTime(),
+                action: "start",
+                user: user
+            }
+        }
+
         try {
             let result = {}
+
             const service = await this.findServiceById(serviceId)
 
             if (!service['serverId'] || Number(service['serverId']) < 0) {
@@ -241,9 +255,22 @@ export default {
                 errMsh = err
             }
             throw new Error(errMsh)
+        } finally {
+            delete sync[syncKey]
         }
     },
-    async stopServices(groupId, serviceId) {
+    async stopServices(user, groupId, serviceId) {
+        const syncKey = `${groupId}_${serviceId}`
+        if (sync[syncKey]) {
+            return sync[syncKey]
+        } else {
+            sync[syncKey] = {
+                start: new Date().getTime(),
+                action: "stop",
+                user: user
+            }
+        }
+
         try {
             let result = {}
             const service = await this.findServiceById(serviceId)
@@ -271,9 +298,22 @@ export default {
                 errMsh = err
             }
             throw new Error(errMsh)
+        } finally {
+            delete sync[syncKey]
         }
     },
-    async updateServices(groupId, serviceId) {
+    async updateServices(user, groupId, serviceId) {
+        const syncKey = `${groupId}_${serviceId}`
+        if (sync[syncKey]) {
+            return sync[syncKey]
+        } else {
+            sync[syncKey] = {
+                start: new Date().getTime(),
+                action: "stop",
+                user: user
+            }
+        }
+
         try {
             let result = {}
             const service = await this.findServiceById(serviceId)
@@ -302,6 +342,8 @@ export default {
                 errMsh = err
             }
             throw new Error(errMsh)
+        } finally {
+            delete sync[syncKey]
         }
     },
 }

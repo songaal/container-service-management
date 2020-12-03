@@ -38,6 +38,8 @@ import { SnackbarProvider, useSnackbar } from 'notistack';
 import Menu from "@material-ui/core/Menu";
 import MenuItem from "@material-ui/core/MenuItem";
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
+import LaunchIcon from '@material-ui/icons/Launch';
+import ServerTerminal from "./../../servers/[id]/terminal";
 
 const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
 const checkedIcon = <CheckBoxIcon fontSize="small" />;
@@ -123,8 +125,10 @@ function SystemStatus({server}) {
     const classes = useStyles();
     const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
     const [cmdResult, setCmdResult] = React.useState("")
+    const [openTerminal, setOpenTerminal] = React.useState(false)
 
     const execCmd = (cmd, name) => {
+        setOpenTerminal(false)
         setCmdResult("")
         setCmdName("조회 중입니다.")
 
@@ -171,11 +175,19 @@ function SystemStatus({server}) {
                                     <Button onClick={() => execCmd("netstat -tnlp", "NetStat 조회")}
                                     >NetStat 조회</Button>
                                 </Tooltip>
-                                {/*<Tooltip title="who">*/}
-                                {/*    <Button onClick={() => execCmd("who", "사용자 조회")}*/}
-                                {/*    >사용자 조회</Button>*/}
-                                {/*</Tooltip>*/}
+                                <Tooltip title="who">
+                                    <Button onClick={() => execCmd("w", "사용자 조회")}
+                                    >사용자 조회</Button>
+                                </Tooltip>
                             </ButtonGroup>
+
+                            <ButtonGroup color="primary" style={{marginLeft: "10px"}}>
+                                <Tooltip title="who">
+                                    <Button onClick={() => setOpenTerminal(true)}
+                                    >터미널 열기</Button>
+                                </Tooltip>
+                            </ButtonGroup>
+
                         </Grid>
 
                         <Grid item xs={12} sm={4}>
@@ -184,25 +196,40 @@ function SystemStatus({server}) {
                                         color={"primary"}
                                         target="_blank"
                                         href={`/servers/${server['id']}/terminal`}
-                                >터미널 열기</Button>
+                                >
+                                    터미널 열기 <LaunchIcon color={"primary"} />
+                                </Button>
                             </Box>
                         </Grid>
                     </Grid>
                 </Box>
 
                 <Box my={3}>
-                    <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
-                                      readOnly={true}
-                                      style={{
-                                          width: '100%',
-                                          height: "500px",
-                                          backgroundColor: "black",
-                                          color: "white",
-                                          padding: '10px',
-                                          overflow: "scroll"
-                                      }}
-                                      value={cmdResult || cmdName}
-                    />
+                    {
+                        openTerminal ?
+                            <iframe src={`/servers/${server['id']}/terminal`}
+                                    style={{
+                                        width: "100%",
+                                        height: "600px",
+                                        backgroundColor: "black",
+                                        color: "white",
+                                    }}>
+
+                            </iframe>
+                            :
+                            <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
+                                              readOnly={true}
+                                              style={{
+                                                  width: '100%',
+                                                  height: "600px",
+                                                  backgroundColor: "black",
+                                                  color: "white",
+                                                  padding: '10px',
+                                                  overflow: "scroll"
+                                              }}
+                                              value={cmdResult || cmdName}
+                            />
+                    }
                 </Box>
             </CardContent>
         </Card>
@@ -617,7 +644,7 @@ function AdminServerDetail() {
                         <Grid item xs={6}>
                             <Box>
                                 <Typography variant="h4" gutterBottom>
-                                    서버 조회
+                                    서버 설정 조회
                                 </Typography>
                             </Box>
                         </Grid>

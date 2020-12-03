@@ -14,6 +14,7 @@ function LogDetail() {
     const router = useRouter()
     const [logs, setLogs] = React.useState([])
     const { serverId, groupId, serviceId, logId } = router.query
+    const logRef = React.useRef(null)
 
     React.useEffect(() => {
         init()
@@ -25,6 +26,7 @@ function LogDetail() {
             }
         }
     }, [])
+
 
 
 
@@ -61,11 +63,18 @@ function LogDetail() {
         }, 2000)
     }
 
-    const viewLogs = logs.map(log => new Buffer(log).toString().replace("\n", "")).join("\n")
-
+    const viewLogs = logs.map(log => new Buffer(log).toString().replace("\n", "")).join("\n") + "\n\n\n\n"
+    if (logRef.current) {
+        const y = Math.floor(logRef.current.scrollHeight - logRef.current.scrollTop)
+        if ( logRef.current.offsetHeight < y + 300 && logRef.current.offsetHeight > y - 300) {
+            console.log("down", logs.length * 20,logRef.current.offsetHeight, Math.floor(logRef.current.scrollHeight - logRef.current.scrollTop))
+            logRef.current.scrollTop = 99999999
+        }
+    }
     return (
         <Box style={{backgroundColor: "black", width: "100%", height: "100vh", overflow: "auto"}}>
             <textarea
+                    ref={logRef}
                       style={{
                           backgroundColor: "black",
                           color: "white",

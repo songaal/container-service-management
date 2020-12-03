@@ -13,6 +13,7 @@ import ButtonGroup from '@material-ui/core/ButtonGroup';
 import fetch from "isomorphic-unfetch";
 import {useRouter} from "next/router";
 import ServerTerminal from "./terminal";
+import LaunchIcon from '@material-ui/icons/Launch';
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -72,6 +73,7 @@ function ServerDetail() {
     const [server, setServer] = React.useState({})
     const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
     const [cmdResult, setCmdResult] = React.useState("")
+    const [openTerminal, setOpenTerminal] = React.useState(false)
 
     React.useEffect(() => {
         init()
@@ -89,6 +91,7 @@ function ServerDetail() {
     }
 
     const execCmd = (cmd, name) => {
+        setOpenTerminal(false)
         setCmdResult("")
         setCmdName("조회 중입니다.")
 
@@ -174,6 +177,14 @@ function ServerDetail() {
                                 {/*    >사용자 조회</Button>*/}
                                 {/*</Tooltip>*/}
                             </ButtonGroup>
+
+                            <ButtonGroup color="primary" style={{marginLeft: "10px"}}>
+                                <Tooltip title="who">
+                                    <Button onClick={() => setOpenTerminal(true)}
+                                    >터미널 열기</Button>
+                                </Tooltip>
+                            </ButtonGroup>
+
                         </Grid>
                         <Grid item xs={12} sm={4}>
                             <Box align={"right"}>
@@ -181,32 +192,39 @@ function ServerDetail() {
                                         color={"primary"}
                                         target="_blank"
                                         href={`/servers/${server['id']}/terminal`}
-                                >터미널 열기</Button>
+                                >
+                                    터미널 열기 <LaunchIcon color={"primary"} />
+                                </Button>
                             </Box>
                         </Grid>
                     </Grid>
                 </Box>
 
                 <Box my={3}>
-                    <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
-                                      readOnly={true}
-                                      style={{
-                                          width: '100%',
-                                          backgroundColor: "black",
-                                          color: "white",
-                                          padding: '10px',
-                                          fontSize: "12pt",
-                                          overflow: 'auto',
-                                      }}
-                                      value={cmdResult || cmdName}
-                    />
-
-                {/*    width: '100%',
-                                          height: "500px",
-                                          backgroundColor: "black",
-                                          color: "white",
-                                          padding: '10px',
-                                          overflow: "scroll"*/}
+                    {
+                        openTerminal ?
+                            <iframe src={`/servers/${server['id']}/terminal`}
+                                    style={{
+                                        width: "100%",
+                                        height: "600px",
+                                        backgroundColor: "black",
+                                        color: "white",
+                                    }}>
+                            </iframe>
+                            :
+                            <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
+                                              readOnly={true}
+                                              style={{
+                                                  width: '100%',
+                                                  backgroundColor: "black",
+                                                  color: "white",
+                                                  padding: '10px',
+                                                  fontSize: "12pt",
+                                                  overflow: 'auto',
+                                              }}
+                                              value={cmdResult || cmdName}
+                            />
+                    }
                 </Box>
             </Container>
         </Box>

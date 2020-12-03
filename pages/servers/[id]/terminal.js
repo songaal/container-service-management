@@ -13,11 +13,12 @@ function ServerTerminal({webSshHost}) {
             })
     }, [])
 
+    console.log(webSshHost)
     if (Object.keys(server).length < 3) {
         return null
     }
     return (
-        <Box>
+        <Box style={{width: "100%", height: "100vh", backgroundColor: "black"}}>
             <iframe src={`${webSshHost}?hostname=${server['ip']}&port=${server['port']||22}&username=${server['user']||'root'}&password=${server['password'].replace("==","")}`}
                          style={{
                              display: "flex",

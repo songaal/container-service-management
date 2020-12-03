@@ -35,9 +35,19 @@ export default {
             throw new Error("할당된 서버가 없습니다.")
         }
         const key = `${serverId}_${groupId}_${serviceId}_${logId}`
-        if (KEY_MAP[key]) {
-            console.log('이미 로그 수집을 진행하고있습니다.', key, KEY_MAP[key])
-            return false
+        if (typeof KEY_MAP[key] === 'object') {
+            let alive = false
+            try {
+                if(KEY_MAP[key]['tail']['state'] === "connected" || KEY_MAP[key]['tail']['state'] === "tailing") {
+                    console.log('이미 로그 수집을 진행하고있습니다.', key)
+                    alive = true
+                }
+            } catch (err) {
+                console.log('err', err)
+            }
+            if (alive) {
+                return false
+            }
         }
 
         let mode = ""
@@ -65,9 +75,9 @@ export default {
         if (!targets || targets.length === 0) {
             throw new Error("수집할 로그 대상이 없습니다.")
         }
-
         const tail = new SshTail({
             host:       ip,
+            port:       port,
             username:   user,
             password:   password,
             mode:       mode,
@@ -90,7 +100,6 @@ export default {
                 }
             })
             .on('stdout', function(data){
-                console.log('available logs count:', Object.keys(KEY_MAP).length)
                 const key = tail.sshOpts['key']
                 if ( KEY_MAP[key] === undefined || KEY_MAP[key] === null || Number(KEY_MAP[key]['expire']) < new Date().getTime()) {
                     tail.stop()
@@ -106,21 +115,26 @@ export default {
                 }
             })
             .on('disconnected', function(){
-                const key = tail.sshOpts['key']
-                tail.stop()
-                const value = DATA_TTL.get(key)
-                value.push(Buffer.from("disconnected"))
-                DATA_TTL.push(key, value)
-                delete KEY_MAP[key]
-                KEY_MAP[key] = undefined
+                try {
+                    const key = tail.sshOpts['key']
+                    delete KEY_MAP[key]
+                    KEY_MAP[key] = undefined
+                }catch (e) {
+                    console.log(e)
+                }
             })
             .on('connected',    function(){
                 const key = tail.sshOpts['key']
                 DATA_TTL.push(key, [ Buffer.from("connected") ], {ttl: dataTtlSec * 1000})
             })
             .on('error',        function(error){
-                const key = tail.sshOpts['key']
-                console.log('ERR:' + error)
+                console.log('Client Error:' + error)
+                try {
+                    const key = tail.sshOpts['key']
+                    delete KEY_MAP[key]
+                }catch (err) {
+                    console.log('error : ', err)
+                }
             })
             .start(targets)
 
@@ -142,29 +156,14 @@ export default {
     async getLogs({serverId, groupId, serviceId, logId}) {
         const key = `${serverId}_${groupId}_${serviceId}_${logId}`
         const logs = DATA_TTL.get(key)
-        if (KEY_MAP[key]) {
-            const nowTime = new Date().getTime()
-            KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
+        if (typeof KEY_MAP[key] === "object") {
+            try {
+                const nowTime = new Date().getTime()
+                KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
+            } catch(err) {
+                // ignore
+            }
         }
         return logs
     }
 }
-
-
-
-// async alive({serverId, groupId, serviceId, logId}) {
-//     const nowTime = new Date().getTime()
-//     const key = `${serverId}_${groupId}_${serviceId}_${logId}`
-//     if (KEY_MAP[key] === undefined || KEY_MAP[key] === null) {
-//         return false
-//     }
-//     if (Number(KEY_MAP[key]['expire']) < nowTime) {
-//         return false
-//     }
-//     KEY_MAP[key]['expire'] = nowTime + (keyMapTTLSec * 1000)
-//     console.log('refresh expire', KEY_MAP[key]['expire'])
-//     return {
-//         key: key,
-//         expire: KEY_MAP[key]['expire'],
-//     }
-// },

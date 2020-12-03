@@ -92,9 +92,9 @@ function Home() {
     }
 
     const viewGroupAuthList = groupAuthList.sort((g1, g2) => {
-        return Number(g2['favorites']||'0') - Number(g1['favorites']||'0')
+        return (g1['group']||{})['name']||'' - (g2['group']||{})['name']||''
     }).sort((g1, g2) => {
-        return (g2['group']||{})['name']||'' - (g1['group']||{})['name']||''
+        return Number(g2['favorites']||'0') - Number(g1['favorites']||'0')
     }).map(groupAuth => {
         const groupId = groupAuth['groupId']
         if (tmpFavorites[groupId]) {

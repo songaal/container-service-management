@@ -12,6 +12,7 @@ async function groupsService(req, res) {
     await AuthService.validate(req, res);
 
     try {
+        const user = req.session.auth.user
         const groupId = req.query['groupId'];
         const serviceId = req.query['serviceId'];
         const type = req.query['type'];
@@ -26,17 +27,17 @@ async function groupsService(req, res) {
             if (type === 'start') {
                 res.send({
                     status: "success",
-                    result: await GroupSvcService.startServices(groupId, serviceId)
+                    result: await GroupSvcService.startServices(user, groupId, serviceId)
                 })
             } else if (type === 'stop') {
                 res.send({
                     status: "success",
-                    result: await GroupSvcService.stopServices(groupId, serviceId)
+                    result: await GroupSvcService.stopServices(user, groupId, serviceId)
                 })
             } else if (type === 'update') {
                 res.send({
                     status: "success",
-                    result: await GroupSvcService.updateServices(groupId, serviceId)
+                    result: await GroupSvcService.updateServices(user, groupId, serviceId)
                 })
             }
         }
