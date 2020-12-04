@@ -2,8 +2,7 @@ FROM node:12
 
 ENV PORT 3000
 
-RUN apt update &&  apt install -y \
-    && docker-compose
+RUN apt update && apt install -y docker-compose
 
 WORKDIR /app
 
