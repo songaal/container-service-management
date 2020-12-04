@@ -2,6 +2,7 @@ const compose = require('docker-compose')
 const Docker = require('dockerode')
 
 const _exec = async ({cmd, ip, port, path, log=false, commandOptions, composeOptions}) => {
+    console.log(ip, port, path)
     return await compose[cmd]({
         cwd: path,
         log: log,
