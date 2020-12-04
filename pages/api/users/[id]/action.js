@@ -9,7 +9,9 @@ export default async (req, res) => {
         if (req.method === 'PUT') {
             if (req.query['type'] && req.query['type'] === 'resetPassword') {
                 await UserService.resetPassword(req.query['id']);
-                res.end()
+                res.send({
+                    status: "success"
+                })
             } else if (req.query['type'] && req.query['type'] === 'updatePassword') {
 
                 const body = JsonUtil.parse(req.body);

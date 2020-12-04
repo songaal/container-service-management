@@ -9,7 +9,9 @@ import {
     TableHead,
     TableRow, TextareaAutosize,
     TextField,
-    useTheme
+    useTheme,
+    FormControlLabel,
+    Switch
 } from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 import Button from "@material-ui/core/Button";
@@ -48,6 +50,7 @@ function SettingsUser() {
     const [tmpKeyword, setTmpKeyword] = React.useState("")
     const [selectedUser, setSelectedUser] = React.useState({})
     const [open, setOpen] = React.useState(false);
+    const [editAdmin, setEditAdmin] = React.useState({});
 
     React.useEffect(() => {
         init()
@@ -89,7 +92,7 @@ function SettingsUser() {
                     setOpen(false)
                     enqueueSnackbar("사용자를 삭제하였습니다.", {variant: "success"})
                 } else {
-                    enqueueSnackbar("사용자 삭제를 실패하였습니다..", {variant: "error"})
+                    enqueueSnackbar("사용자 삭제를 실패하였습니다.", {variant: "error"})
                 }
             })
     }
@@ -97,8 +100,47 @@ function SettingsUser() {
         setKeyword(tmpKeyword)
     }
 
+    const handleEditAdmin = (event, userId, flag) => {
+        fetch(`/api/settings/users/${userId}`, {
+            method: "PUT",
+            body: JSON.stringify({
+                admin: flag
+            })
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setEditAdmin({
+                        ...editAdmin,
+                        [userId]: flag
+                    })
+                    enqueueSnackbar("사용자 정보를 수정하였습니다.", {variant: "success"})
+                } else {
+                    enqueueSnackbar("사용자 정보 수정을 실패하였습니다.", {variant: "error"})
+                }
+            })
+    }
+
+    const handleResetPassword = (userId) => {
+        fetch(`/api/users/${userId}/action?type=resetPassword`, {
+            method: "PUT",
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    enqueueSnackbar("비밀번호 초기화 메일을 전송하였습니다.", {variant: "success"})
+                } else {
+                    enqueueSnackbar("비밀번호 초기화 메일 전송 실패하였습니다.", {variant: "error"})
+                }
+            })
+    }
     const viewUsers = users.filter(user => {
         return user['name'].includes(keyword) || user['userId'].includes(keyword)
+    }).map(user => {
+        return {
+            ...user,
+            admin: editAdmin[user['id']] !== undefined ? editAdmin[user['id']] : user['admin']
+        }
     })
 
     return (
@@ -134,6 +176,9 @@ function SettingsUser() {
                                 <TableCell align={"center"}>이름</TableCell>
                                 <TableCell align={"center"}>아이디</TableCell>
                                 <TableCell align={"center"}>가입일</TableCell>
+                                <TableCell align={"center"}>그룹 수</TableCell>
+                                <TableCell align={"center"}>어드민</TableCell>
+                                <TableCell align={"center"}>비밀번호 초기화</TableCell>
                                 <TableCell align={"center"}>삭제</TableCell>
                             </TableRow>
                         </TableHead>
@@ -142,7 +187,7 @@ function SettingsUser() {
                             {
                                 viewUsers.length === 0 ?
                                     <TableRow>
-                                        <TableCell colSpan={5} style={{textAlign: "center"}}>
+                                        <TableCell colSpan={8} style={{textAlign: "center"}}>
                                             조회된 사용자가 없습니다.
                                         </TableCell>
                                     </TableRow>
@@ -173,6 +218,25 @@ function SettingsUser() {
                                                         {user.createdAt}
                                                     </TableCell>
                                                     <TableCell style={{textAlign: "center", borderBottom: groupOpenMap[no] ? "1px" : "0px"}}
+                                                               onClick={() => {handleGroupOpen(no)}}
+                                                    >
+                                                        {groupAuthList.length}
+                                                    </TableCell>
+                                                    <TableCell style={{textAlign: "center", borderBottom: groupOpenMap[no] ? "1px" : "0px"}}>
+                                                        <Switch checked={user.admin}
+                                                                onChange={event => handleEditAdmin(event, user['id'], event.target.checked)}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell style={{textAlign: "center", borderBottom: groupOpenMap[no] ? "1px" : "0px"}}
+                                                    >
+                                                        <Button variant={"contained"}
+                                                                style={{color: "white", backgroundColor: "orange"}}
+                                                                onClick={() => {handleResetPassword(user['userId'])}}
+                                                        >
+                                                            초기화
+                                                        </Button>
+                                                    </TableCell>
+                                                    <TableCell style={{textAlign: "center", borderBottom: groupOpenMap[no] ? "1px" : "0px"}}
                                                     >
                                                         <Button variant={"contained"}
                                                                 style={{color: "white", backgroundColor: "red"}}
@@ -183,7 +247,7 @@ function SettingsUser() {
                                                     </TableCell>
                                                 </TableRow>
                                                 <TableRow style={{display: groupOpenMap[no] ? "table-row" : "none"}}>
-                                                    <TableCell colSpan={"5"}>
+                                                    <TableCell colSpan={"8"}>
                                                         <Grid container style={{border: "1px solid silver", paddingTop: "20px", paddingBottom: "20px"}}>
                                                             <Grid item xs={1} style={{verticalAlign: "middle", margin: "auto"}}>
                                                                 <Box style={{fontSize: "16pt", textAlign: "center"}}> 그룹 </Box>

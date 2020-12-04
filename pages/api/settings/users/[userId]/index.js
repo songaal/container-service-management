@@ -23,6 +23,12 @@ async function settingsServices(req, res) {
                 status: "success",
                 result: await UserService.removeUser(userId),
             })
+        } else if (req.method === 'PUT') {
+            const reqUserInfo = JSON.parse(req.body)
+            res.send({
+                status: "success",
+                result: await UserService.editUser(userId, reqUserInfo),
+            })
         }
     } catch (error) {
         console.error(error);

@@ -45,6 +45,8 @@ export default {
                 text: "임시비밀번호: " + tempPassword
             })
             await registerUser.update({password: password})
+        } else {
+            console.log("메일전송 안함. 등록되지 않은 사용자입니다.")
         }
     },
     updatePassword: async (id, password, updatePassword) => {
@@ -78,6 +80,15 @@ export default {
     findAll: async () => {
         return await Users.findAll({
             attributes: ['id', 'userId', 'name', 'createdAt', 'updatedAt'],
+        })
+    },
+    editUser: async (id, reqUser) => {
+        return await Users.update({
+            admin: reqUser['admin']
+        }, {
+            where: {
+                id: id
+            }
         })
     }
 }
