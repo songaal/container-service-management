@@ -317,7 +317,7 @@ function Services() {
                                     height={"400px"}
                                     width="100%"
                                     tabSize={2}
-                                    placeholder={`version: '3.7'
+                                    placeholder={`version: "2"
 services: 
   nginx:
     image: \${image}
