@@ -24,9 +24,9 @@ export default {
             }
         })
     },
-    async addServerInfo({name, groups, ip, port, user, password}) {
+    async addServerInfo({name, groups, ip, port, user, password, dockerPort}) {
         try {
-            let newServer = await Servers.create({name, user, password, ip, port})
+            let newServer = await Servers.create({name, user, password, ip, port, dockerPort})
             if (groups && groups.length > 0) {
                 const groupIdMap = {};
                 groups.map(group => group['id']).forEach(groupId => groupIdMap[groupId] = null)

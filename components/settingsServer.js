@@ -54,6 +54,7 @@ function SettingsServer() {
     const [user, setUser] = React.useState("");
     const [password, setPassword] = React.useState("");
     const [process, setProcess] = React.useState(false);
+    const [dockerPort, setDockerPort] = React.useState("2375");
 
     React.useEffect(() => {
         init()
@@ -95,6 +96,7 @@ function SettingsServer() {
         setPort('22')
         setUser('')
         setPassword('')
+        setDockerPort('')
     }
 
     const handleClickOpen = () => {
@@ -166,11 +168,17 @@ function SettingsServer() {
         if (port.trim() === '') {
             tmpInvalid['port'] = '포트를 입력하세요.'
         }
+        if (!/[0-9]+/g.test(port.trim())) {
+            tmpInvalid['port'] = '포트는 숫자만 입력해주세요.'
+        }
         if (user.trim() === '') {
             tmpInvalid['user'] = '계정을 입력하세요.'
         }
         if (password.trim() === '') {
             tmpInvalid['password'] = '비밀번호를 입력하세요.'
+        }
+        if (!/[0-9]+/g.test(dockerPort.trim())) {
+            tmpInvalid['dockerPort'] = '도커 포트는 숫자만 입력해주세요.'
         }
 
         if (Object.keys(tmpInvalid).length > 0) {
@@ -181,7 +189,7 @@ function SettingsServer() {
 
         fetch(`/api/settings/servers`, {
             method: "POST",
-            body: JSON.stringify({name, groups: selectedGroup, ip, port, user, password})
+            body: JSON.stringify({name, groups: selectedGroup, ip, port, user, password, dockerPort})
         })
             .then(res => res.json())
             .then(body => {
@@ -256,6 +264,7 @@ function SettingsServer() {
                                 <TableCell>서버</TableCell>
                                 <TableCell>아이피</TableCell>
                                 <TableCell>포트</TableCell>
+                                <TableCell>도커 포트</TableCell>
                                 <TableCell>계정</TableCell>
                                 <TableCell>할당그룹</TableCell>
                                 <TableCell>할당서비스</TableCell>
@@ -279,6 +288,7 @@ function SettingsServer() {
                                                 <TableCell>{server['name']}</TableCell>
                                                 <TableCell>{server['ip']}</TableCell>
                                                 <TableCell>{server['port']}</TableCell>
+                                                <TableCell>{server['dockerPort']}</TableCell>
                                                 <TableCell>{server['user']}</TableCell>
                                                 <TableCell>{server['group_server_count']}</TableCell>
                                                 <TableCell>{server['service_count']}</TableCell>
@@ -366,10 +376,30 @@ function SettingsServer() {
                                 <TextField fullWidth={true}
                                            label={""}
                                            required={true}
+                                           placeholder={"22"}
                                            value={port}
                                            onChange={event => setPort(event.target.value)}
                                            error={inValid['port']}
                                            helperText={inValid['port']}
+                                />
+                            </Grid>
+                        </Grid>
+                    </Box>
+
+                    <Box my={3}>
+                        <Grid container>
+                            <Grid item xs={4}>
+                                도커포트
+                            </Grid>
+                            <Grid item xs={8}>
+                                <TextField fullWidth={true}
+                                           label={""}
+                                           required={true}
+                                           placeholder={"2375"}
+                                           value={dockerPort}
+                                           onChange={event => setDockerPort(event.target.value)}
+                                           error={inValid['dockerPort']}
+                                           helperText={inValid['dockerPort']}
                                 />
                             </Grid>
                         </Grid>

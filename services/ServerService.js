@@ -102,7 +102,8 @@ export default {
             name: reqServer['name'],
             ip: reqServer['ip'],
             port: reqServer['port'],
-            user: reqServer['user']
+            user: reqServer['user'],
+            dockerPort: reqServer['dockerPort']||"2375"
         }, {where: { id }})
         return regServer
     },

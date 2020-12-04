@@ -462,6 +462,7 @@ function AdminServerDetail() {
     const [name, setName] = React.useState("");
     const [ip, setIp] = React.useState("");
     const [port, setPort] = React.useState("");
+    const [dockerPort, setDockerPort] = React.useState("");
     const [user, setUser] = React.useState("");
     const [inValid, setInValid] = React.useState({});
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -492,6 +493,7 @@ function AdminServerDetail() {
         setName(server['name'])
         setIp(server['ip'])
         setPort(server['port'])
+        setDockerPort(server['dockerPort'])
         setUser(server['user'])
         setEditOpen(true)
     }
@@ -510,6 +512,9 @@ function AdminServerDetail() {
         if (port.trim() === '') {
             tmpInvalid['port'] = '포트를 입력하세요.'
         }
+        if (!/[0-9]+/g.test(port.trim())) {
+            tmpInvalid['port'] = '포트는 숫자만 입력해주세요.'
+        }
         if (user.trim() === '') {
             tmpInvalid['user'] = '계정을 입력하세요.'
         }
@@ -517,9 +522,13 @@ function AdminServerDetail() {
             setInValid(tmpInvalid)
             return false
         }
+        if (!/[0-9]+/g.test(dockerPort.trim())) {
+            tmpInvalid['dockerPort'] = '도커 포트는 숫자만 입력해주세요.'
+        }
+
         fetch(location.pathname.replace("/settings", "/api"), {
             method: "PUT",
-            body: JSON.stringify({ id: server['id'], name, ip, port, user})
+            body: JSON.stringify({ id: server['id'], name, ip, port, user, dockerPort})
         })
             .then(res => res.json())
             .then(body => {
@@ -673,6 +682,8 @@ function AdminServerDetail() {
                 <ShowField label={"아이피"} val={server['ip']} />
 
                 <ShowField label={"포트"} val={server['port']} />
+
+                <ShowField label={"도커포트"} val={server['dockerPort']} />
 
                 <ShowField label={"계정"} val={server['user']} />
 
@@ -845,6 +856,25 @@ function AdminServerDetail() {
                                                onChange={event => setPort(event.target.value)}
                                                error={inValid['port']}
                                                helperText={inValid['port']}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+
+                        <Box my={3}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                    도커포트
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextField fullWidth={true}
+                                               label={""}
+                                               required={true}
+                                               placeholder={"2375"}
+                                               value={dockerPort}
+                                               onChange={event => setDockerPort(event.target.value)}
+                                               error={inValid['dockerPort']}
+                                               helperText={inValid['dockerPort']}
                                     />
                                 </Grid>
                             </Grid>
