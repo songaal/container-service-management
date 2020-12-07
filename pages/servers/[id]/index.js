@@ -145,6 +145,8 @@ function ServerDetail() {
                 <ShowField label={"아이피"} val={server['ip']} />
 
                 <ShowField label={"포트"} val={server['port']} />
+        
+                <ShowField label={"도커포트"} val={server['dockerPort']||''} />
 
                 <ShowField label={"계정"} val={server['user']} />
 
