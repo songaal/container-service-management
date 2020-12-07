@@ -211,6 +211,13 @@ export default {
                 }
                 result['stat'] = (await sshClient.exec(`cat /proc/${pid}/stat`)).join("").trim().split(" ")
                 result['ports'] = (await sshClient.exec(`netstat -tnlp|grep ${pid}/|awk '{print $4}'`))
+                try {
+                    for (let i = 0; i < result['ports'].length; i++) {
+                        result['ports'][i] = result['ports'].replace(/[a-z,()-]/gi, "").trim()
+                    }
+                } catch (e) {
+                    console.log("parse error", e)
+                }
             }
         }
         return result
