@@ -281,7 +281,13 @@ function ServicesDetail() {
                     setState(body['state'])
                 } else {
                     setDisabledAction(true)
-                    enqueueSnackbar("서비스 조회를 실패하였습니다. \n" + body['message'], {
+                    let errMsg = ""
+                    try {
+                        errMsg = body['error']['err']
+                    } catch (e) {
+                        errMsg = body['message']
+                    }
+                    enqueueSnackbar("서비스 조회를 실패하였습니다. \n" + errMsg, {
                         variant: "error",
                         autoHideDuration: 6000,
                         style: { whiteSpace: 'pre-line' }
