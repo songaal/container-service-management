@@ -1,5 +1,7 @@
 FROM node:12
 
+ENV NODE_ENV=production
+
 ENV PORT 3000
 
 RUN apt update && apt install -y docker-compose
