@@ -87,7 +87,12 @@ function ContainerState({index, name, container, service}) {
     let memUsage = ''
     if (container && !!container['id'] && ((container['inspect']||{})['State']||{})['Status'] === 'running') {
         up = "UP"
-        networkMode = container['inspect']['HostConfig']['NetworkMode'].split("_")[1]
+        let tmpNetworkModeArr = container['inspect']['HostConfig']['NetworkMode'].split("_")
+        if (tmpNetworkModeArr.length >= 2) {
+            networkMode = container['inspect']['HostConfig']['NetworkMode'].split("_")[1]
+        } else {
+            networkMode = container['inspect']['HostConfig']['NetworkMode']
+        }
         image = container['inspect']['Config']['Image']
         PortBindings = Object
             .keys(container['inspect']['HostConfig']['PortBindings'])
