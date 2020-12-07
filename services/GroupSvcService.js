@@ -213,7 +213,7 @@ export default {
                 result['ports'] = (await sshClient.exec(`netstat -tnlp|grep ${pid}/|awk '{print $4}'`))
                 try {
                     for (let i = 0; i < result['ports'].length; i++) {
-                        result['ports'][i] = result['ports'].replace(/[a-z,()-]/gi, "").trim()
+                        result['ports'][i] = result['ports'][i].replace(/[a-z,()-]/gi, "").trim()
                     }
                 } catch (e) {
                     console.log("parse error", e)
