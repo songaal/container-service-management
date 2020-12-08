@@ -161,14 +161,17 @@ function ProcessState({process, service}) {
     let threadSize = ""
     let ports = ""
     let logs = []
+    let exeCwd = ""
+
     if (process['pid'] && process['pid'] !== "" && /[0-9]/gi.test(process['pid'])) {
         up = "UP"
         upTime = new Date(process["startTime"]||'').toLocaleString()
         cpuUsage = process["cpuUsage"]||''
         memUsage = process["memUsage"]||''
         threadSize = (process['stat']||[])[19]||''
-        ports = process["ports"].join(", ")
+        ports = process["ports"].filter(port => String(port) !== ".").join(", ")
         logs = service['logFiles']||[]
+        exeCwd = (process['exeCwd']||[]).join("")
     }
 
     return (
@@ -185,6 +188,8 @@ function ProcessState({process, service}) {
                         <ShowField label={"사용 MEM(%)"} val={memUsage} />
 
                         {/*<ShowField label={"쓰레드"} val={threadSize} />*/}
+
+                        <ShowField label={"명령어"} val={exeCwd} />
 
                     </Grid>
                     <Grid item xs={6}>

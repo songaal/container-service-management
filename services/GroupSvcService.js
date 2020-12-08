@@ -211,6 +211,7 @@ export default {
                 }
                 result['stat'] = (await sshClient.exec(`cat /proc/${pid}/stat`)).join("").trim().split(" ")
                 result['ports'] = (await sshClient.exec(`netstat -tnlp|grep ${pid}/|awk '{print $4}'`))
+                result['exeCwd'] = (await sshClient.exec(`readlink /proc/${pid}/cwd && cat /proc/${pid}/cmdline | sed -e "s/\\x00/ /g"; echo`))
                 try {
                     for (let i = 0; i < result['ports'].length; i++) {
                         result['ports'][i] = result['ports'][i].replace(/[a-z,()-]/gi, "").trim()
