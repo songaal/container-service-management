@@ -317,7 +317,7 @@ export default {
         } else {
             sync[syncKey] = {
                 start: new Date().getTime(),
-                action: "stop",
+                action: "update",
                 user: user
             }
         }
@@ -353,5 +353,5 @@ export default {
         } finally {
             delete sync[syncKey]
         }
-    },
+    }
 }
