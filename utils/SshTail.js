@@ -40,7 +40,7 @@ SshTail.prototype.start = function(logFiles){
             if (Array.isArray(logFiles)) {
                 logFiles = logFiles.join('|');
             }
-            cmd = 'docker ps -q|grep -E "' + logFiles + '" | xargs -L 1 -P `docker ps | wc -l` docker logs --tail 0 -f & read; kill $!'
+            cmd = 'docker ps -q|grep -E "' + logFiles + '" | xargs -L 1 -P `docker ps | wc -l` docker logs --tail 10 -f & read; kill $!'
         } else if (self.sshOpts['mode'] === "file") {
             if (Array.isArray(logFiles)) {
                 logFiles = logFiles.join(' ');
