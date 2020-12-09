@@ -1,7 +1,9 @@
 
 import React from 'react';
 import GroupSvcService from "../../../../../../services/GroupSvcService";
+import SHA256 from "../../../../../../utils/Sha256";
 
+const secretKey = process.env.secret_key
 
 async function remoteUpdateService(req, res) {
     res.statusCode = 200;
@@ -12,9 +14,14 @@ async function remoteUpdateService(req, res) {
         const serviceId = req.query['serviceId'];
 
         if (req.method === "PUT") {
+            const token = String(SHA256(secretKey + "::" + groupId + "::" + serviceId)).substring(0, 10)
+            if (!req.headers['x-auth-token'] || req.headers['x-auth-token'] !== token) {
+                res.statusCode = 401
+                res.end()
+            }
             const user = {
                 remote: true,
-                headers: req.headers||{}
+                headers: req.headers
             }
             res.send({
                 status: "success",

@@ -49,10 +49,10 @@ const useStyles = makeStyles( theme => ({
 //
 // `;
 
-function ShowField({label, val, url, target}) {
+function ShowField({label, val, url, target, style}) {
     const classes = useStyles();
     return (
-        <Box my={3}>
+        <Box my={3} style={style}>
             <Grid container>
                 <Grid item xs={3} sm={3}>
                     <Box align={"right"} className={classes.label}>{ label }</Box>
@@ -235,6 +235,7 @@ function ServicesDetail() {
     const { groupId, serviceId } = router.query
     const [processing, setProcessing] = React.useState(false)
     const [disabledAction, setDisabledAction] = React.useState(false)
+    const [token, setToken] = React.useState("")
 
     React.useEffect(() => {
         init()
@@ -260,7 +261,7 @@ function ServicesDetail() {
                 setProcessing(false)
                 if (body['status'] === 'success') {
                     setService(body['service']);
-
+                    setToken(body['token']||"")
                     if (body['service']["serverId"] !== '-1') {
                         setDisabledAction(false)
                         fetchState()
@@ -477,6 +478,9 @@ function ServicesDetail() {
                                     </Grid>
                                 </Grid>
                             </Box>
+
+
+                            <ShowField label={"토큰"} val={token} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
 
                         </Grid>
                     </Grid>
