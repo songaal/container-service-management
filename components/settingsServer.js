@@ -23,6 +23,7 @@ import Autocomplete from "@material-ui/lab/Autocomplete/Autocomplete";
 import {makeStyles} from "@material-ui/core/styles";
 import fetch from "isomorphic-unfetch";
 import {useRouter} from "next/router";
+import LaunchIcon from "@material-ui/icons/Launch";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -268,6 +269,7 @@ function SettingsServer() {
                                 <TableCell>계정</TableCell>
                                 <TableCell>할당그룹</TableCell>
                                 <TableCell>할당서비스</TableCell>
+                                <TableCell>액션</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -275,7 +277,7 @@ function SettingsServer() {
                             {
                                 viewServers.length === 0 ?
                                     <TableRow>
-                                        <TableCell align={"center"} colSpan={"7"}>등록된 서버가 없습니다.</TableCell>
+                                        <TableCell align={"center"} colSpan={"9"}>등록된 서버가 없습니다.</TableCell>
                                     </TableRow>
                                     :
                                     viewServers.map((server, index) => {
@@ -292,6 +294,15 @@ function SettingsServer() {
                                                 <TableCell>{server['user']}</TableCell>
                                                 <TableCell>{server['group_server_count']}</TableCell>
                                                 <TableCell>{server['service_count']}</TableCell>
+                                                <TableCell>
+                                                    <Button variant={"outlined"}
+                                                            color={"primary"}
+                                                            target="_blank"
+                                                            href={`/servers/${server['id']}/terminal`}
+                                                    >
+                                                        터미넗 열기 <LaunchIcon color={"primary"} />
+                                                    </Button>
+                                                </TableCell>
                                             </TableRow>
                                         )
                                     })

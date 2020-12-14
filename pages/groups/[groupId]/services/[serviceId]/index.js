@@ -3,7 +3,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../../../components/Header";
-import {Box, MenuItem, useTheme, CircularProgress, Card, CardContent } from "@material-ui/core";
+import {Box, MenuItem, useTheme, CircularProgress, Card, CardContent, Breadcrumbs } from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -395,6 +395,17 @@ function ServicesDetail() {
             <Header  active={1} />
 
             <Container maxWidth={"xl"}>
+                <br/>
+                <Breadcrumbs aria-label="breadcrumb">
+                    <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
+                        그룹목록
+                    </Link>
+                    <Link color="inherit" onClick={() => router.push("/groups/" + groupId)} style={{cursor: "pointer"}}>
+                        그룹정보
+                    </Link>
+                    <Typography color="textPrimary">서비스</Typography>
+                </Breadcrumbs>
+
                 <Box my={2}>
                     <Grid container>
                         <Grid item xs={6}>

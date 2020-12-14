@@ -16,7 +16,7 @@ async function groupsService(req, res) {
         if (req.method === "GET") {
             res.send({
                 status: "success",
-                services: await GroupSvcService.findServiceByGroupId(groupId)
+                services: await GroupSvcService.findSummaryServiceByGroupId(groupId)
             })
         } else if(req.method === "POST") {
             res.send({

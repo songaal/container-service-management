@@ -3,7 +3,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../../components/Header";
-import {Box, FormControl, MenuItem, Select, TextField} from "@material-ui/core";
+import {Box, FormControl, MenuItem, Select, TextField, Breadcrumbs} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -23,6 +23,7 @@ const AceEditor = dynamic(import("react-ace"), {ssr: false})
 import {OptionsObject, SnackbarMessage, SnackbarProvider, useSnackbar} from 'notistack';
 import fetch from "isomorphic-unfetch"
 import {useRouter} from "next/router";
+import Link from '@material-ui/core/Link';
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -141,6 +142,16 @@ function Services() {
             <Header  active={1} />
 
             <Container maxWidth={"xl"}>
+                <br/>
+                <Breadcrumbs aria-label="breadcrumb">
+                    <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
+                        그룹목록
+                    </Link>
+                    <Link color="inherit" onClick={() => router.push("/groups/" + groupId)} style={{cursor: "pointer"}}>
+                        그룹정보
+                    </Link>
+                    <Typography color="textPrimary">서비스</Typography>
+                </Breadcrumbs>
                 <br/>
                 <Grid container>
                     <Grid item xs={6}>

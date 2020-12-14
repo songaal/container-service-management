@@ -353,5 +353,83 @@ export default {
         } finally {
             delete sync[syncKey]
         }
+    },
+    async findSummaryServiceByGroupId(groupId) {
+        const services  = await this.findServiceByGroupId(groupId)
+        let results = []
+        for (let i = 0; i < services.length; i++) {
+            try {
+                const service = Object.assign({}, services[i]['dataValues'])
+                const serviceId = service['id']
+                const serverId = service['serverId']
+                const type = service['type']
+
+                if (!serverId || serverId === '-1') {
+                    continue
+                }
+
+                const serverInfo = await ServerService.findServerById(serverId)
+
+                if (type === 'container') {
+                    const serviceNames = await FileUtil.getServiceNameList({groupId, serviceId})
+
+                    const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
+                    const client = new DockerClient(serverInfo['ip'], serverInfo['dockerPort']||dockerDefaultPort, servicePath)
+                    const containerIds = await client.getContainerIds()
+                    let stats = {}
+                    for (let j = 0; j < containerIds.length; j++ ) {
+                        try {
+                            const containerId = containerIds[j].substring(0, 12)
+                            stats[containerId] = await client.stats(containerId)
+                        } catch (e) {
+                            console.log("stopped container")
+                        }
+                    }
+
+                    results.push({
+                        ...service,
+                        health: {
+                            serviceNames: serviceNames,
+                            stats: stats
+                        }
+                    })
+                } else if (type === 'process') {
+                    const sshClient = new SshClient( serverInfo['ip'], serverInfo['port'], serverInfo['user'], serverInfo['password'])
+                    const pidResult = await sshClient.exec(service['pidCmd'], {})
+                    const pid = pidResult.join("").replace("\n", "")
+
+                    if (/[^0-9]+/.test(pid)) {
+                        results.push({
+                            ...service,
+                            health: {
+                                running: false,
+                                stats: {}
+                            }
+                        })
+                    } else {
+
+                        let tmpPs = (await sshClient.exec(`ps -p ${pid} -o %cpu,%mem,lstart|tail -n 1`)).join("")
+                        if (!tmpPs.includes("%CPU") || !tmpPs.includes("%MEM")) {
+                            const tmpPsArr = tmpPs.split(" ").filter(p => p.length !== 0)
+                            results.push({
+                                ...service,
+                                health: {
+                                    running: true,
+                                    stats: {
+                                        cpuUsage: tmpPsArr[0]||"",
+                                        memUsage: tmpPsArr[1]||"",
+                                    }
+                                }
+                            })
+                        }
+                    }
+                } else {
+                    // ignore
+                }
+            } catch (err) {
+                console.log("조회 실패.", err)
+            }
+        }
+        return results
     }
 }

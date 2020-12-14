@@ -4,7 +4,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../components/Header";
-import {Box, TextareaAutosize, TextField, useTheme} from "@material-ui/core";
+import {Box, TextareaAutosize, TextField, useTheme, Breadcrumbs} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Tabs from '@material-ui/core/Tabs';
@@ -25,6 +25,7 @@ import Server from "../../../components/server";
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
 import {useRouter} from "next/router";
+import Link from '@material-ui/core/Link';
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -167,6 +168,13 @@ function GroupDetail() {
             <CssBaseline />
             <Header  active={1} />
             <Container maxWidth={"xl"} >
+                <br/>
+                <Breadcrumbs aria-label="breadcrumb">
+                    <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
+                        그룹목록
+                    </Link>
+                    <Typography color="textPrimary">그룹정보</Typography>
+                </Breadcrumbs>
                 <br/>
                 <Grid container>
                     <Grid item xs={8}>

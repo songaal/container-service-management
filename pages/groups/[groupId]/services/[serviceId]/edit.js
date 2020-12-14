@@ -3,7 +3,16 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../../../components/Header";
-import {Box, FormControl, MenuItem, Select, TextareaAutosize, TextField, useTheme} from "@material-ui/core";
+import {
+    Box,
+    Breadcrumbs,
+    FormControl,
+    MenuItem,
+    Select,
+    TextareaAutosize,
+    TextField,
+    useTheme
+} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -26,6 +35,7 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
+import Link from "@material-ui/core/Link";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -127,7 +137,8 @@ function ServiceEdit() {
             .then(body => {
                 if (body['status'] === 'success') {
                     enqueueSnackbar("서비스를 수정하였습니다.", {variant: "success"})
-                    router.push(`/groups/${groupId}/services/${serviceId}`)
+                    // router.push(`/groups/${groupId}/services/${serviceId}`)
+                    router.replace(`/groups/${groupId}/services/${serviceId}`)
                 } else {
                     enqueueSnackbar("서비스 수정 실패하였습니다.", {variant: "error"})
                 }
@@ -140,6 +151,19 @@ function ServiceEdit() {
             <Header  active={1} />
 
             <Container maxWidth={"xl"}>
+                <br/>
+                <Breadcrumbs aria-label="breadcrumb">
+                    <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
+                        그룹목록
+                    </Link>
+                    <Link color="inherit" onClick={() => router.push("/groups/" + groupId)} style={{cursor: "pointer"}}>
+                        그룹정보
+                    </Link>
+                    <Link color="inherit" onClick={() => router.push("/groups/" + groupId + "/services/" + serviceId)} style={{cursor: "pointer"}}>
+                        서비스
+                    </Link>
+                    <Typography color="textPrimary">수정</Typography>
+                </Breadcrumbs>
                 <br/>
                 <Grid container>
                     <Grid item xs={6}>

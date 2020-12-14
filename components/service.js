@@ -1,7 +1,18 @@
 import React from 'react';
 import Link from '@material-ui/core/Link';
 import Grid from '@material-ui/core/Grid';
-import {Box, Card, CardContent, Table, TableBody, TableCell, TableHead, TableRow, TextField} from "@material-ui/core";
+import {
+    Box,
+    Card,
+    CardContent,
+    CircularProgress,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
+    TextField
+} from "@material-ui/core";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import { SnackbarProvider, useSnackbar } from 'notistack';
@@ -23,6 +34,7 @@ function Service() {
     const [services, setServices] = React.useState([])
     const [keyword, setKeyword] = React.useState("")
     const [tmpKeyword, setTmpKeyword] = React.useState("")
+    const [ready, setReady] = React.useState(true)
 
     React.useEffect(() => {
         init()
@@ -32,6 +44,7 @@ function Service() {
         fetch(`/api${location.pathname}/services`)
             .then(res => res.json())
             .then(body => {
+                setReady(false)
                 if (body['status'] === 'error') {
                     console.error(body)
                     enqueueSnackbar('조회 중 에러가 발생하였습니다.', {
@@ -47,7 +60,7 @@ function Service() {
         setKeyword(tmpKeyword)
     }
 
-    const viewServices = (services||[]).filter(server => {
+    const viewServices = (services||{}).filter(server => {
         return server['name'].includes(keyword) || server['server_name'].includes(keyword)
     })
 
@@ -85,16 +98,66 @@ function Service() {
                                 <TableCell>서비스명</TableCell>
                                 <TableCell>서버</TableCell>
                                 <TableCell>타입</TableCell>
+                                <TableCell>실행여부</TableCell>
+                                <TableCell>CPU(%)</TableCell>
+                                <TableCell>MEM(%)</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {
                                 viewServices.length === 0 ?
                                     <TableRow>
-                                        <TableCell colSpan={4} align={"center"}>등록된 서비스가 없습니다.</TableCell>
+                                        <TableCell colSpan={7} align={"center"}>
+                                            <Box align={"center"}>
+                                                <CircularProgress style={{display: ready ? "block" : "none"}}/>
+                                            </Box>
+                                            <Box style={{display: ready ? "none" : "block"}}> 등록된 서비스가 없습니다. </Box>
+                                        </TableCell>
                                     </TableRow>
                                     :
                                     viewServices.map((service, index) => {
+                                        const type = service['type']
+                                        let runMessage = "종료"
+                                        let cpuUsage = ""
+                                        let memUsage = ""
+                                        try {
+                                            if (type === 'container') {
+                                                const health = service['health']
+                                                const allCount = health['serviceNames'].length
+                                                const runCount = Object.keys(health['stats']).length
+                                                if (runCount === allCount) {
+                                                    runMessage = `실행 중`
+                                                } else if (runCount < allCount) {
+                                                    runMessage = `실행 중 (${runCount}/${allCount})`
+                                                }
+
+                                                let tmpCpuUsage = []
+                                                let tmpMemUsage = []
+                                                const keys = Object.keys(health['stats'])
+                                                for (let i = 0; i < keys.length; i++) {
+                                                    const stats = health['stats'][keys[i]]
+                                                    let cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+                                                    let system_cpu_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+                                                    let number_cpus = stats['cpu_stats']['online_cpus']
+                                                    tmpCpuUsage.push(Number((cpu_delta / system_cpu_delta) * number_cpus * 100.0).toFixed(2))
+
+                                                    let used_memory = stats['memory_stats']['usage'] - stats['memory_stats']['stats']['cache']
+                                                    let available_memory = stats['memory_stats']['limit']
+                                                    tmpMemUsage.push(Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2))
+                                                }
+                                                cpuUsage = tmpCpuUsage.reduce((a, c) => a+c)
+                                                memUsage = tmpMemUsage.reduce((a, c) => a+c)
+
+                                            } else if (type === 'process') {
+                                                const health = service['health']
+                                                runMessage = health['running'] ? '실행 중' : "종료"
+                                                cpuUsage = health['stats']['cpuUsage']
+                                                memUsage = health['stats']['memUsage']
+                                            }
+                                        } catch(e) {
+                                            runMessage = "조회 실패"
+                                            console.log(e)
+                                        }
                                         return (
                                             <TableRow key={index}
                                                       onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}
@@ -104,6 +167,9 @@ function Service() {
                                                 <TableCell>{service['name']}</TableCell>
                                                 <TableCell>{service['server_name']}</TableCell>
                                                 <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
+                                                <TableCell>{runMessage}</TableCell>
+                                                <TableCell>{cpuUsage}</TableCell>
+                                                <TableCell>{memUsage}</TableCell>
                                             </TableRow>
                                         )
                                     })

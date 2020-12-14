@@ -3,7 +3,7 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../components/Header";
-import {Box, TextareaAutosize, Tooltip} from "@material-ui/core";
+import {Box, TextareaAutosize, Tooltip, Breadcrumbs} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -74,6 +74,7 @@ function ServerDetail() {
     const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
     const [cmdResult, setCmdResult] = React.useState("")
     const [openTerminal, setOpenTerminal] = React.useState(false)
+    const { groupId } = router.query
 
     React.useEffect(() => {
         init()
@@ -120,7 +121,16 @@ function ServerDetail() {
             <CssBaseline />
             <Header />
             <Container maxWidth={"xl"} >
-
+                <br/>
+                <Breadcrumbs aria-label="breadcrumb">
+                    <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
+                        그룹목록
+                    </Link>
+                    <Link color="inherit" onClick={() => router.push(groupId ? "/groups/" + groupId : "/groups")} style={{cursor: "pointer"}}>
+                        그룹정보
+                    </Link>
+                    <Typography color="textPrimary">서버</Typography>
+                </Breadcrumbs>
                 <Box my={2}>
                     <Grid container>
                         <Grid item xs={6}>

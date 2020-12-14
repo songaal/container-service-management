@@ -7,6 +7,7 @@ import Button from '@material-ui/core/Button';
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
 import {useRouter} from "next/router"
+import LaunchIcon from "@material-ui/icons/Launch";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -23,6 +24,7 @@ function Server() {
     const [servers, setServers] = React.useState([]);
     const [tmpKeyword, setTmpKeyword] = React.useState("");
     const [keyword, setKeyword] = React.useState("");
+    const { groupId } = router.query
 
     React.useEffect(() => {
         init()
@@ -90,6 +92,8 @@ function Server() {
                                 <TableCell>서버</TableCell>
                                 <TableCell>계정</TableCell>
                                 <TableCell>아이피</TableCell>
+                                <TableCell>서비스 수</TableCell>
+                                <TableCell>액션</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -97,19 +101,28 @@ function Server() {
                             {
                                 viewServers.length === 0 ?
                                     <TableRow>
-                                        <TableCell colSpan={4} align={"center"}>등록된 서버가 없습니다.</TableCell>
+                                        <TableCell colSpan={6} align={"center"}>등록된 서버가 없습니다.</TableCell>
                                     </TableRow>
                                     :
                                     viewServers.map((server, index) => {
                                         return (
                                             <TableRow key={server['id']}
-                                                      onClick={() => router.push(`/servers/${server['id']}`)}
                                                       style={{cursor: "pointer"}}
                                             >
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell>{server['name']}</TableCell>
-                                                <TableCell>{server['user']}</TableCell>
-                                                <TableCell>{server['ip']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/servers/${server['id']}?groupId=${groupId}`)}>{index + 1}</TableCell>
+                                                <TableCell onClick={() => router.push(`/servers/${server['id']}?groupId=${groupId}`)}>{server['name']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/servers/${server['id']}?groupId=${groupId}`)}>{server['user']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/servers/${server['id']}?groupId=${groupId}`)}>{server['ip']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/servers/${server['id']}?groupId=${groupId}`)}>{server['service_count']}</TableCell>
+                                                <TableCell>
+                                                    <Button variant={"outlined"}
+                                                            color={"primary"}
+                                                            target="_blank"
+                                                            href={`/servers/${server['id']}/terminal`}
+                                                    >
+                                                        터미넗 열기 <LaunchIcon color={"primary"} />
+                                                    </Button>
+                                                </TableCell>
                                             </TableRow>
                                         )
                                     })

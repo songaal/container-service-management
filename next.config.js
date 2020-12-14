@@ -1,7 +1,7 @@
 module.exports = {
     distDir: 'dist',
     webpack: (config, {
-        isServer
+        buildId, dev, isServer, defaultLoaders, webpack
     }) => {
         // Fixes npm packages that depend on `fs, net, tls` module
         if (!isServer) {

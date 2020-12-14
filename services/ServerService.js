@@ -23,7 +23,24 @@ export default {
     async findServerByGroupId(groupId) {
         return await Servers.findAll(
             {
-                attributes: ['id', 'name', 'user', 'ip', 'port', 'createdAt', 'updatedAt'],
+                // attributes: [
+                //     'id', 'name', 'user', 'ip', 'port', 'createdAt', 'updatedAt',
+                //
+                // ],
+                attributes: {
+                    exclude: ["password"],
+                    include: [
+                        [
+                            sequelize.literal(`(
+                            SELECT count(*)
+                              FROM services a
+                             WHERE a.serverId = server.id
+                               AND a.groupId = ${groupId}
+                        )`),
+                            "service_count"
+                        ]
+                    ]
+                },
                 where: {
                     id: {
                         [Sequelize.Op.in]: sequelize.literal(`(
@@ -34,6 +51,21 @@ export default {
                     }
                 }
             })
+
+
+        // attributes: {
+        //     include: [
+        //         [
+        //             sequelize.literal(`(
+        //                     SELECT name
+        //                       FROM servers a
+        //                      WHERE a.id = service.serverId
+        //                 )`),
+        //             "server_name"
+        //         ]
+        //     ]
+        // }
+
     },
     async isRead(id, req, res) {
         try {
