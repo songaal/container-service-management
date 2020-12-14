@@ -66,7 +66,8 @@ export default {
                     }
                 }
             })
-            results = [].concat(servers, shareServers)
+
+            results = [].concat(servers, shareServers.map(server => ({...server['dataValues'], shared: true})))
         } else {
             results = servers
         }

@@ -528,7 +528,9 @@ function ServicesDetail() {
 
                             <ShowField label={"서비스타입"} val={service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']} />
 
-                            <ShowField label={"서버"} val={ selectedServer['id'] ? `${selectedServer['name']||''} (${selectedServer['user']||''}@${selectedServer['ip']||''})` : "할당된 서버가 없습니다."} url={selectedServer['id'] ? `/servers/${service['serverId']}` : undefined }/>
+                            <ShowField label={"서버"}
+                                       val={ selectedServer['id'] ? `${selectedServer['name']||''} (${selectedServer['user']||''}@${selectedServer['ip']||''})` : "할당된 서버가 없습니다."}
+                                       url={selectedServer['shared'] === undefined && selectedServer['id'] ? `/servers/${service['serverId']}` : undefined }/>
 
                         </Grid>
                         <Grid item xs={12} sm={12} md={6}>
