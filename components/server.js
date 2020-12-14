@@ -118,6 +118,7 @@ function Server() {
                                                     <Button variant={"outlined"}
                                                             color={"primary"}
                                                             target="_blank"
+                                                            size={"small"}
                                                             href={`/servers/${server['id']}/terminal`}
                                                     >
                                                         터미넗 열기 <LaunchIcon color={"primary"} />

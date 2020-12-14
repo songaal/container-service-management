@@ -39,6 +39,12 @@ async function groupsService(req, res) {
                     status: "success",
                     result: await GroupSvcService.updateServices(user, groupId, serviceId)
                 })
+            } else if (type === 'share') {
+                const reqShare = JSON.parse(req.body)
+                res.send({
+                    status: "success",
+                    results: await GroupSvcService.shareServices(serviceId, groupId, reqShare['shareGroupIds'])
+                })
             }
         }
     } catch (error) {

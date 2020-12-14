@@ -98,7 +98,7 @@ function GroupDetail() {
                     setGroup(body['group'])
                 } else {
                     enqueueSnackbar(body['message'], {variant: "error"})
-                    router.back()
+                    router.replace("/")
                 }
             })
     }

@@ -17,10 +17,11 @@ async function groupsService(req, res) {
         const groupId = req.query['groupId'];
         const serviceId = req.query['serviceId'];
         if (req.method === "GET") {
-            const token = String(SHA256(secretKey + "::" + groupId + "::" + serviceId)).substring(0, 10)
+            const service = await GroupSvcService.findServiceById(serviceId)
+            const token = String(SHA256(secretKey + "::" + service['groupId'] + "::" + serviceId)).substring(0, 10)
             res.send({
                 status: "success",
-                service: await GroupSvcService.findServiceById(serviceId),
+                service: service,
                 token: token
             })
         } else if (req.method === "PUT") {

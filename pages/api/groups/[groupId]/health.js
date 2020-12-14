@@ -14,9 +14,10 @@ async function groupsService(req, res) {
     try {
         const groupId = req.query['groupId'];
         if (req.method === "GET") {
+            const services = [].concat(await GroupSvcService.findServiceByGroupId(groupId), await GroupSvcService.findShareServiceByGroupId(groupId))
             res.send({
                 status: "success",
-                health: await GroupSvcService.findServiceHealthByGroupId(groupId)
+                health: await GroupSvcService.findServiceHealth(services)
             })
         }
     } catch (error) {

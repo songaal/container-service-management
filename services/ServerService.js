@@ -1,4 +1,4 @@
-const { Services, Servers, GroupServer, GroupAuth, Sequelize, sequelize } = require("../models")
+const { Services, Servers, GroupServer, GroupAuth, Sequelize, sequelize, ShareService } = require("../models")
 import SshClient from '../utils/SshClient'
 
 export default {
@@ -21,7 +21,8 @@ export default {
         }
     },
     async findServerByGroupId(groupId) {
-        return await Servers.findAll(
+        let results = []
+        const servers = await Servers.findAll(
             {
                 // attributes: [
                 //     'id', 'name', 'user', 'ip', 'port', 'createdAt', 'updatedAt',
@@ -52,20 +53,24 @@ export default {
                 }
             })
 
-
-        // attributes: {
-        //     include: [
-        //         [
-        //             sequelize.literal(`(
-        //                     SELECT name
-        //                       FROM servers a
-        //                      WHERE a.id = service.serverId
-        //                 )`),
-        //             "server_name"
-        //         ]
-        //     ]
-        // }
-
+        const shareServices = await ShareService.findAll({where: { toGroupId: groupId }})
+        if (shareServices.length > 0) {
+            const serviceIds = shareServices.map(ss => ss['serviceId'])
+            const services = await Services.findAll({where: {id: { [Sequelize.Op.in]: serviceIds }}})
+            const shareServerIds = services.filter(svc => !servers.find(server => server[id] === svc['serverId'])).map(svc => svc['serverId'])
+            const shareServers = await Servers.findAll({
+                attributes: { exclude: ["password"] },
+                where: {
+                    id: {
+                        [Sequelize.Op.in]: shareServerIds
+                    }
+                }
+            })
+            results = [].concat(servers, shareServers)
+        } else {
+            results = servers
+        }
+        return results
     },
     async isRead(id, req, res) {
         try {

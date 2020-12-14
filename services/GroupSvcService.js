@@ -1,5 +1,5 @@
 import ServerService from "./ServerService"
-const { Sequelize, sequelize, Services, Variable} = require("../models")
+const { Sequelize, sequelize, Services, Variable, ShareService} = require("../models")
 import FileUtil from "../utils/FileUtil"
 import DockerClient from "../utils/DockerClient"
 import SshClient from '../utils/SshClient'
@@ -140,17 +140,20 @@ export default {
         return tmp
     },
     async removeService(groupId, serviceId) {
-        const regService = await this.findServiceById(serviceId)
+        let regService = await this.findServiceById(serviceId)
+        if (String(regService['groupId']) === String(groupId)) {
+            const dockerComposeFilePath = await FileUtil.getDockerComposeServicePath({
+                groupId: groupId,
+                serviceId: serviceId
+            })
+            await FileUtil.cleanDockerComposeFile(dockerComposeFilePath)
 
-        const dockerComposeFilePath = await FileUtil.getDockerComposeServicePath({
-            groupId: groupId,
-            serviceId: serviceId
-        })
-        await FileUtil.cleanDockerComposeFile(dockerComposeFilePath)
-
-        await Variable.destroy({ where: { serviceId: serviceId } })
-        await Services.destroy({ where: { id: serviceId } })
-        return regService
+            await Variable.destroy({ where: { serviceId: serviceId } })
+            await Services.destroy({ where: { id: serviceId } })
+            return regService
+        } else {
+            return await ShareService.destroy({where: { serviceId: serviceId, toGroupId: groupId }})
+        }
     },
     async getState(groupId, serviceId) {
         let result = {}
@@ -159,6 +162,10 @@ export default {
         if (!service['serverId'] || Number(service['serverId']) < 0) {
             return result
         }
+
+        result['shared'] = service['groupId'] !== groupId
+        groupId = service['groupId']
+
         const server = await ServerService.findServerById(service['serverId'])
 
         if(service['type'] === 'container') {
@@ -243,6 +250,7 @@ export default {
             if (!service['serverId'] || Number(service['serverId']) < 0) {
                 return result
             }
+            groupId = service['groupId']
             const server = await ServerService.findServerById(service['serverId'])
 
             if(service['type'] === 'container') {
@@ -286,6 +294,7 @@ export default {
             if (!service['serverId'] || Number(service['serverId']) < 0) {
                 return result
             }
+            groupId = service['groupId']
             const server = await ServerService.findServerById(service['serverId'])
 
             if(service['type'] === 'container') {
@@ -329,6 +338,7 @@ export default {
             if (!service['serverId'] || Number(service['serverId']) < 0) {
                 return result
             }
+            groupId = service['groupId']
             const server = await ServerService.findServerById(service['serverId'])
 
             if(service['type'] === 'container') {
@@ -354,8 +364,7 @@ export default {
             delete sync[syncKey]
         }
     },
-    async findServiceHealthByGroupId(groupId) {
-        const services  = await this.findServiceByGroupId(groupId)
+    async findServiceHealth(services) {
         let results = []
         for (let i = 0; i < services.length; i++) {
             try {
@@ -371,9 +380,9 @@ export default {
                 const serverInfo = await ServerService.findServerById(serverId)
 
                 if (type === 'container') {
-                    const serviceNames = await FileUtil.getServiceNameList({groupId, serviceId})
+                    const serviceNames = await FileUtil.getServiceNameList({groupId: service['groupId'], serviceId})
 
-                    const servicePath = await FileUtil.getDockerComposeServicePath({groupId, serviceId})
+                    const servicePath = await FileUtil.getDockerComposeServicePath({groupId: service['groupId'], serviceId})
                     const client = new DockerClient(serverInfo['ip'], serverInfo['dockerPort']||dockerDefaultPort, servicePath)
                     const containerIds = await client.getContainerIds()
                     let stats = {}
@@ -431,5 +440,60 @@ export default {
             }
         }
         return results
+    },
+    async shareServices(serviceId, fromGroupId, toGroupIds) {
+        let results = []
+        const size = toGroupIds.length
+        for (let i = 0; i <size; i++) {
+            const cnt = await ShareService.count({
+                where: {
+                    serviceId: serviceId,
+                    fromGroupId: fromGroupId,
+                    toGroupId: toGroupIds[i]
+                }
+            })
+            if (cnt === 0) {
+                results.push(await ShareService.create({
+                    serviceId: serviceId,
+                    fromGroupId: fromGroupId,
+                    toGroupId: toGroupIds[i]
+                }))
+            }
+        }
+        return results
+    },
+    async findShareServiceByGroupId(groupId) {
+        let results = []
+        const share = await ShareService.findAll({
+            where: {
+                toGroupId: groupId
+            }
+        })
+
+        const services = await this.findServiceByGroupId(groupId)
+        const shareSvcIds = share.filter(svc => !services.find(s => s['id'] === svc['id'])).map(svc => svc['serviceId'])
+
+        if (shareSvcIds.length > 0) {
+            results = await Services.findAll({
+                where: { id: {
+                        [Sequelize.Op.in]: shareSvcIds
+                    }},
+                attributes: {
+                    include: [
+                        [
+                            sequelize.literal(`(
+                            SELECT name
+                              FROM servers a
+                             WHERE a.id = service.serverId
+                        )`),
+                            "server_name"
+                        ]
+                    ]
+                }
+            })
+        }
+
+        return results
     }
+
 }

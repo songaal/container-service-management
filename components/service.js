@@ -32,11 +32,12 @@ function Service() {
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const classes = useStyles();
     const [services, setServices] = React.useState([])
+    const [shareServices, setShareServices] = React.useState([])
     const [keyword, setKeyword] = React.useState("")
     const [tmpKeyword, setTmpKeyword] = React.useState("")
     const [ready, setReady] = React.useState(true)
     const [health, setHealth] = React.useState([])
-
+    const [checkedHealth, setCheckedHealth] = React.useState(false)
     React.useEffect(() => {
         init()
     }, [])
@@ -53,6 +54,7 @@ function Service() {
                     });
                 } else {
                     setServices(body['services'])
+                    setShareServices(body['shareServices'])
                 }
             })
         fetch(`/api${location.pathname}/health`)
@@ -66,6 +68,7 @@ function Service() {
                 } else {
                     setHealth(body['health'])
                 }
+                setCheckedHealth(true)
             })
     }
 
@@ -73,8 +76,12 @@ function Service() {
         setKeyword(tmpKeyword)
     }
 
-    const viewServices = (services||{}).filter(server => {
-        return server['name'].includes(keyword) || server['server_name'].includes(keyword)
+    const viewServices = (services||[]).filter(service => {
+        return service['name'].includes(keyword) || service['server_name'].includes(keyword)
+    })
+
+    const viewShareServices = (shareServices||[]).filter(service => {
+        return service['name'].includes(keyword) || service['server_name'].includes(keyword)
     })
 
     return (
@@ -118,7 +125,7 @@ function Service() {
                         </TableHead>
                         <TableBody>
                             {
-                                viewServices.length === 0 ?
+                                viewServices.length === 0 && viewShareServices.length === 0 ?
                                     <TableRow>
                                         <TableCell colSpan={7} align={"center"}>
                                             <Box align={"center"}>
@@ -174,6 +181,10 @@ function Service() {
                                                     cpuUsage = tmpHealth['running'] ? tmpHealth['stats']['cpuUsage'] : "-"
                                                     memUsage = tmpHealth['running'] ? tmpHealth['stats']['memUsage'] : "-"
                                                 }
+                                            } else if (checkedHealth) {
+                                                runMessage = "-"
+                                                cpuUsage = "-"
+                                                memUsage = "-"
                                             }
                                         } catch(e) {
                                             runMessage = "조회 실패"
@@ -195,8 +206,87 @@ function Service() {
                                         )
                                     })
                             }
+
+
+                            {
+                                viewShareServices.length === 0 ?
+                                    null
+                                    :
+                                    viewShareServices.map((service, index) => {
+                                        const type = service['type']
+                                        let runMessage = "조회 중..."
+                                        let cpuUsage = ""
+                                        let memUsage = ""
+                                        try {
+                                            const tmpHealth = (health.find(h => h['id'] === service['id'])||{})['health']
+                                            if (tmpHealth) {
+                                                if (type === 'container') {
+                                                    const allCount = tmpHealth['serviceNames'].length
+                                                    const runCount = Object.keys(tmpHealth['stats']).length
+                                                    if (runCount === allCount) {
+                                                        runMessage = `실행 중`
+                                                    } else if (runCount > 0 && runCount < allCount) {
+                                                        runMessage = `실행 중 (${runCount}/${allCount})`
+                                                    } else {
+                                                        runMessage = "종료"
+                                                        cpuUsage = "-"
+                                                        memUsage = "-"
+                                                    }
+
+                                                    let tmpCpuUsage = []
+                                                    let tmpMemUsage = []
+                                                    const keys = Object.keys(tmpHealth['stats'])
+                                                    for (let i = 0; i < keys.length; i++) {
+                                                        const stats = tmpHealth['stats'][keys[i]]
+                                                        let cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+                                                        let system_cpu_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+                                                        let number_cpus = stats['cpu_stats']['online_cpus']
+                                                        tmpCpuUsage.push(Number((cpu_delta / system_cpu_delta) * number_cpus * 100.0).toFixed(2))
+
+                                                        let used_memory = stats['memory_stats']['usage'] - stats['memory_stats']['stats']['cache']
+                                                        let available_memory = stats['memory_stats']['limit']
+                                                        tmpMemUsage.push(Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2))
+                                                    }
+                                                    if (tmpCpuUsage.length > 0) {
+                                                        cpuUsage = Number(tmpCpuUsage.reduce((a, c) => Number(a)+Number(c))).toFixed(1)
+                                                    }
+                                                    if (tmpMemUsage.length > 0) {
+                                                        memUsage = Number(tmpMemUsage.reduce((a, c) => Number(a)+Number(c))).toFixed(1)
+                                                    }
+                                                } else if (type === 'process') {
+                                                    runMessage = tmpHealth['running'] ? '실행 중' : "종료"
+                                                    cpuUsage = tmpHealth['running'] ? tmpHealth['stats']['cpuUsage'] : "-"
+                                                    memUsage = tmpHealth['running'] ? tmpHealth['stats']['memUsage'] : "-"
+                                                }
+                                            } else if (checkedHealth) {
+                                                runMessage = "-"
+                                                cpuUsage = "-"
+                                                memUsage = "-"
+                                            }
+                                        } catch(e) {
+                                            runMessage = "조회 실패"
+                                            console.log(e)
+                                        }
+                                        return (
+                                            <TableRow key={index}
+                                                      onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}
+                                                      style={{cursor: "pointer"}}
+                                            >
+                                                <TableCell>{viewShareServices.length + index }</TableCell>
+                                                <TableCell>(공유됨) {service['name']}</TableCell>
+                                                <TableCell>{service['server_name']}</TableCell>
+                                                <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
+                                                <TableCell>{runMessage}</TableCell>
+                                                <TableCell>{cpuUsage}</TableCell>
+                                                <TableCell>{memUsage}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                            }
+
                         </TableBody>
                     </Table>
+
                 </CardContent>
             </Card>
         </Box>

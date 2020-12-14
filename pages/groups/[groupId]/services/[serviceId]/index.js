@@ -3,7 +3,17 @@ import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import Header from "../../../../../components/Header";
-import {Box, MenuItem, useTheme, CircularProgress, Card, CardContent, Breadcrumbs } from "@material-ui/core";
+import {
+    Box,
+    MenuItem,
+    useTheme,
+    CircularProgress,
+    Card,
+    CardContent,
+    Breadcrumbs,
+    IconButton,
+    Tooltip, TextField
+} from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -20,6 +30,8 @@ import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import {useSnackbar} from "notistack";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
+import ShareIcon from '@material-ui/icons/Share';
+import Autocomplete from "@material-ui/lab/Autocomplete/Autocomplete";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -201,8 +213,8 @@ function ProcessState({process, service}) {
 
                                 return (
                                     <ShowField key={index}
-                                               label={`log-${index + 1}`}
-                                               val={up === 'UP' ? `${log['key']}` : ""}
+                                               label={log['key']||"로그"}
+                                               val={up === 'UP' ? `로그 보기` : ""}
                                                url={up === 'UP' ? `/groups/${service['groupId']}/services/${service['id']}/logs/${log['id']}?serverId=${service['serverId']}` : undefined}
                                                target={"_blank"}
                                     />
@@ -232,10 +244,17 @@ function ServicesDetail() {
     const [removeServiceOpen, setRemoveServiceOpen] = React.useState(false)
     const [state, setState] = React.useState([])
     const [loading, setLoading] = React.useState(false)
-    const { groupId, serviceId } = router.query
     const [processing, setProcessing] = React.useState(false)
     const [disabledAction, setDisabledAction] = React.useState(false)
     const [token, setToken] = React.useState("")
+    const [openServiceShare, setOpenServiceShare] = React.useState(false)
+    const [groups, setGroups] = React.useState([]);
+    const [selectedGroup, setSelectedGroup] = React.useState([]);
+    const [shared, setShared] = React.useState(false);
+
+
+
+    const { groupId, serviceId } = router.query
 
     React.useEffect(() => {
         init()
@@ -260,6 +279,7 @@ function ServicesDetail() {
             .then(body => {
                 setProcessing(false)
                 if (body['status'] === 'success') {
+                    setShared(groupId !== (body['service']||{})['groupId'])
                     setService(body['service']);
                     setToken(body['token']||"")
                     if (body['service']["serverId"] !== '-1') {
@@ -271,6 +291,15 @@ function ServicesDetail() {
                     }
                 } else {
                     setDisabledAction(true)
+                }
+            })
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
                 }
             })
     }
@@ -387,6 +416,35 @@ function ServicesDetail() {
             })
     }
 
+    const handleServicesShare = () => {
+        if (selectedGroup.length === 0) {
+            enqueueSnackbar("공유할 그룹을 선택하세요.", { variant: "warning" })
+            return false
+        }
+
+
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=share`, {
+            method: "PUT",
+            body: JSON.stringify({
+                shareGroupIds: selectedGroup.map(g => g['id'])
+            }),
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    enqueueSnackbar("서비스를 공유하였습니다.", { variant: "success" })
+                    setOpenServiceShare(false)
+                } else {
+                        enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                            variant: "error",
+                            autoHideDuration: 6000,
+                            style: { whiteSpace: 'pre-line' }
+                        })
+                }
+            })
+    }
+
+
     const selectedServer = (servers||[]).find(server => String(server['id']) === service['serverId'])||{}
 
     return (
@@ -411,13 +469,28 @@ function ServicesDetail() {
                         <Grid item xs={6}>
                             <Box>
                                 <Typography variant="h4" gutterBottom>
-                                    서비스 조회
+                                    서비스 조회 {shared ? "(공유)" : ""}
                                 </Typography>
                             </Box>
                         </Grid>
                         <Grid item xs={6}>
                             <Box style={{textAlign: "right"}}>
-                                <Button size={"small"} onClick={event => setAnchorEl(event.currentTarget)} variant={"contained"} color={"primary"}>
+
+                                <Tooltip title={"서비스 공유하기"}>
+                                    <IconButton size={"small"}
+                                                style={{marginLeft: "20px", marginRight: "20px", display: shared ? "none" : "inline-flex"}}
+                                                onClick={() => setOpenServiceShare(true)}
+                                    >
+                                        <ShareIcon/>
+                                    </IconButton>
+                                </Tooltip>
+
+
+                                <Button size={"small"}
+                                        onClick={event => setAnchorEl(event.currentTarget)}
+                                        variant={"contained"}
+                                        color={"primary"}
+                                >
                                     설정 <ArrowDropDownIcon/>
                                 </Button>
 
@@ -428,9 +501,14 @@ function ServicesDetail() {
                                     keepMounted
                                     onClose={() => setAnchorEl(null)}
                                 >
-                                    <MenuItem onClick={() => router.push(`${location.pathname}/edit`)}>서비스 수정</MenuItem>
+
+                                    <MenuItem onClick={() => router.push(`${location.pathname}/edit`)}
+                                              style={{display:  shared ? "none" : "inline-flex"}}
+                                    >서비스 수정</MenuItem>
                                     <MenuItem onClick={() => setRemoveServiceOpen(true)}>서비스 삭제</MenuItem>
                                 </Menu>
+
+
                             </Box>
                         </Grid>
                     </Grid>
@@ -446,7 +524,7 @@ function ServicesDetail() {
                     <Grid container>
                         <Grid item xs={12} sm={12} md={6}>
 
-                            <ShowField label={"서비스명"} val={service['name']} />
+                            <ShowField label={"서비스명"} val={`${service['name']}`} />
 
                             <ShowField label={"서비스타입"} val={service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']} />
 
@@ -491,7 +569,7 @@ function ServicesDetail() {
                             </Box>
 
 
-                            <ShowField label={"API"} val={`/api/groups/${groupId}/services/${serviceId}/update`} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
+                            <ShowField label={"API"} val={`/api/groups/${service['groupId']}/services/${serviceId}/update`} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
 
                             <ShowField label={"토큰"} val={token} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
 
@@ -567,6 +645,70 @@ function ServicesDetail() {
                     </DialogActions>
                 </Dialog>
 
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={openServiceShare}
+                    onClose={() => setOpenServiceShare(false)}
+                >
+                    <DialogTitle>
+                        서비스 공유
+                    </DialogTitle>
+                    <DialogContent>
+
+
+                        <Box my={3}>
+                            <Grid container >
+                                <Grid item xs={4}>
+                                    그룹 선택
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <Autocomplete
+                                        size="small"
+                                        multiple
+                                        options={groups.filter(g => String(g['id']) !== String(groupId)).map(group => ({id: group['id'], title: group['name']}))}
+                                        getOptionLabel={(option) => option.title}
+                                        onChange={(event, value) => setSelectedGroup(value||[])}
+                                        renderInput={(params) => (
+                                            <TextField {...params}
+                                                       variant="standard"
+                                                       fullWidth={true}
+                                                       onChange={e => console.log(e.target.value)}
+
+                                            />
+                                        )}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+
+                    </DialogContent>
+                    <DialogActions>
+                        <Grid container>
+                            <Grid item xs="6">
+
+                            </Grid>
+                            <Grid item xs="6">
+                                <Box align="right">
+                                    <Button autoFocus
+                                            variant={"outlined"}
+                                            color="primary"
+                                            onClick={() => handleServicesShare()}
+                                    >
+                                        공유
+                                    </Button>
+                                    <Button style={{marginLeft: "5px"}}
+                                            variant={"outlined"}
+                                            onClick={() => setOpenServiceShare(false)}
+                                    >
+                                        취소
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </DialogActions>
+                </Dialog>
             </Container>
         </Box>
     );
