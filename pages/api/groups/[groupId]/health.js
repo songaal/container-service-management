@@ -2,8 +2,8 @@
 import React from 'react';
 import fetch from "isomorphic-unfetch";
 import { withSession } from 'next-session';
-import AuthService from "../../../../../services/AuthService";
-import GroupSvcService from "../../../../../services/GroupSvcService";
+import AuthService from "../../../../services/AuthService";
+import GroupSvcService from "../../../../services/GroupSvcService";
 
 
 async function groupsService(req, res) {
@@ -16,12 +16,7 @@ async function groupsService(req, res) {
         if (req.method === "GET") {
             res.send({
                 status: "success",
-                services: await GroupSvcService.findServiceByGroupId(groupId)
-            })
-        } else if(req.method === "POST") {
-            res.send({
-                status: "success",
-                service: await GroupSvcService.addService(groupId, JSON.parse(req.body))
+                health: await GroupSvcService.findServiceHealthByGroupId(groupId)
             })
         }
     } catch (error) {

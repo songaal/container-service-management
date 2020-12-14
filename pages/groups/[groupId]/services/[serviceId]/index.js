@@ -491,6 +491,8 @@ function ServicesDetail() {
                             </Box>
 
 
+                            <ShowField label={"API"} val={`/api/groups/${groupId}/services/${serviceId}/update`} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
+
                             <ShowField label={"토큰"} val={token} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
 
                         </Grid>

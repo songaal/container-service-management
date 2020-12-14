@@ -354,7 +354,7 @@ export default {
             delete sync[syncKey]
         }
     },
-    async findSummaryServiceByGroupId(groupId) {
+    async findServiceHealthByGroupId(groupId) {
         const services  = await this.findServiceByGroupId(groupId)
         let results = []
         for (let i = 0; i < services.length; i++) {

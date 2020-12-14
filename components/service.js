@@ -35,6 +35,7 @@ function Service() {
     const [keyword, setKeyword] = React.useState("")
     const [tmpKeyword, setTmpKeyword] = React.useState("")
     const [ready, setReady] = React.useState(true)
+    const [health, setHealth] = React.useState([])
 
     React.useEffect(() => {
         init()
@@ -52,6 +53,18 @@ function Service() {
                     });
                 } else {
                     setServices(body['services'])
+                }
+            })
+        fetch(`/api${location.pathname}/health`)
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'error') {
+                    console.error(body)
+                    enqueueSnackbar('상태 조회 중 에러가 발생하였습니다.', {
+                        variant: "error"
+                    });
+                } else {
+                    setHealth(body['health'])
                 }
             })
     }
@@ -117,46 +130,50 @@ function Service() {
                                     :
                                     viewServices.map((service, index) => {
                                         const type = service['type']
-                                        let runMessage = "종료"
+                                        let runMessage = "조회 중..."
                                         let cpuUsage = ""
                                         let memUsage = ""
                                         try {
-                                            if (type === 'container') {
-                                                const health = service['health']
-                                                const allCount = health['serviceNames'].length
-                                                const runCount = Object.keys(health['stats']).length
-                                                if (runCount === allCount) {
-                                                    runMessage = `실행 중`
-                                                } else if (runCount > 0 && runCount < allCount) {
-                                                    runMessage = `실행 중 (${runCount}/${allCount})`
-                                                }
+                                            const tmpHealth = (health.find(h => h['id'] === service['id'])||{})['health']
+                                            if (tmpHealth) {
+                                                if (type === 'container') {
+                                                    const allCount = tmpHealth['serviceNames'].length
+                                                    const runCount = Object.keys(tmpHealth['stats']).length
+                                                    if (runCount === allCount) {
+                                                        runMessage = `실행 중`
+                                                    } else if (runCount > 0 && runCount < allCount) {
+                                                        runMessage = `실행 중 (${runCount}/${allCount})`
+                                                    } else {
+                                                        runMessage = "종료"
+                                                        cpuUsage = "-"
+                                                        memUsage = "-"
+                                                    }
 
-                                                let tmpCpuUsage = []
-                                                let tmpMemUsage = []
-                                                const keys = Object.keys(health['stats'])
-                                                for (let i = 0; i < keys.length; i++) {
-                                                    const stats = health['stats'][keys[i]]
-                                                    let cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
-                                                    let system_cpu_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
-                                                    let number_cpus = stats['cpu_stats']['online_cpus']
-                                                    tmpCpuUsage.push(Number((cpu_delta / system_cpu_delta) * number_cpus * 100.0).toFixed(2))
+                                                    let tmpCpuUsage = []
+                                                    let tmpMemUsage = []
+                                                    const keys = Object.keys(tmpHealth['stats'])
+                                                    for (let i = 0; i < keys.length; i++) {
+                                                        const stats = tmpHealth['stats'][keys[i]]
+                                                        let cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+                                                        let system_cpu_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+                                                        let number_cpus = stats['cpu_stats']['online_cpus']
+                                                        tmpCpuUsage.push(Number((cpu_delta / system_cpu_delta) * number_cpus * 100.0).toFixed(2))
 
-                                                    let used_memory = stats['memory_stats']['usage'] - stats['memory_stats']['stats']['cache']
-                                                    let available_memory = stats['memory_stats']['limit']
-                                                    tmpMemUsage.push(Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2))
+                                                        let used_memory = stats['memory_stats']['usage'] - stats['memory_stats']['stats']['cache']
+                                                        let available_memory = stats['memory_stats']['limit']
+                                                        tmpMemUsage.push(Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2))
+                                                    }
+                                                    if (tmpCpuUsage.length > 0) {
+                                                        cpuUsage = Number(tmpCpuUsage.reduce((a, c) => Number(a)+Number(c))).toFixed(1)
+                                                    }
+                                                    if (tmpMemUsage.length > 0) {
+                                                        memUsage = Number(tmpMemUsage.reduce((a, c) => Number(a)+Number(c))).toFixed(1)
+                                                    }
+                                                } else if (type === 'process') {
+                                                    runMessage = tmpHealth['running'] ? '실행 중' : "종료"
+                                                    cpuUsage = tmpHealth['running'] ? tmpHealth['stats']['cpuUsage'] : "-"
+                                                    memUsage = tmpHealth['running'] ? tmpHealth['stats']['memUsage'] : "-"
                                                 }
-                                                if (tmpCpuUsage.length > 0) {
-                                                    cpuUsage = tmpCpuUsage.reduce((a, c) => a+c)
-                                                }
-                                                if (tmpMemUsage.length > 0) {
-                                                    memUsage = tmpMemUsage.reduce((a, c) => a+c)
-                                                }
-
-                                            } else if (type === 'process') {
-                                                const health = service['health']
-                                                runMessage = health['running'] ? '실행 중' : "종료"
-                                                cpuUsage = health['stats']['cpuUsage']
-                                                memUsage = health['stats']['memUsage']
                                             }
                                         } catch(e) {
                                             runMessage = "조회 실패"
