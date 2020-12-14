@@ -127,7 +127,7 @@ function Service() {
                                                 const runCount = Object.keys(health['stats']).length
                                                 if (runCount === allCount) {
                                                     runMessage = `실행 중`
-                                                } else if (runCount < allCount) {
+                                                } else if (runCount > 0 && runCount < allCount) {
                                                     runMessage = `실행 중 (${runCount}/${allCount})`
                                                 }
 
@@ -145,8 +145,12 @@ function Service() {
                                                     let available_memory = stats['memory_stats']['limit']
                                                     tmpMemUsage.push(Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2))
                                                 }
-                                                cpuUsage = tmpCpuUsage.reduce((a, c) => a+c)
-                                                memUsage = tmpMemUsage.reduce((a, c) => a+c)
+                                                if (tmpCpuUsage.length > 0) {
+                                                    cpuUsage = tmpCpuUsage.reduce((a, c) => a+c)
+                                                }
+                                                if (tmpMemUsage.length > 0) {
+                                                    memUsage = tmpMemUsage.reduce((a, c) => a+c)
+                                                }
 
                                             } else if (type === 'process') {
                                                 const health = service['health']

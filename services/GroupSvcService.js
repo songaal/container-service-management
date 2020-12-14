@@ -398,7 +398,7 @@ export default {
                     const pidResult = await sshClient.exec(service['pidCmd'], {})
                     const pid = pidResult.join("").replace("\n", "")
 
-                    if (/[^0-9]+/.test(pid)) {
+                    if (/[^0-9]+/.test(pid) || pid === "") {
                         results.push({
                             ...service,
                             health: {
