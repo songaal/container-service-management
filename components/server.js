@@ -121,7 +121,7 @@ function Server() {
                                                             size={"small"}
                                                             href={`/servers/${server['id']}/terminal`}
                                                     >
-                                                        터미넗 열기 <LaunchIcon color={"primary"} />
+                                                        터미널 열기 <LaunchIcon color={"primary"} />
                                                     </Button>
                                                 </TableCell>
                                             </TableRow>
