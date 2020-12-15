@@ -38,11 +38,13 @@ function Service() {
     const [ready, setReady] = React.useState(true)
     const [health, setHealth] = React.useState([])
     const [checkedHealth, setCheckedHealth] = React.useState(false)
+    const [processing, setProcessing] = React.useState({})
+
     React.useEffect(() => {
         init()
     }, [])
 
-    const init = () => {
+    const init = (serviceId) => {
         fetch(`/api${location.pathname}/services`)
             .then(res => res.json())
             .then(body => {
@@ -60,6 +62,9 @@ function Service() {
         fetch(`/api${location.pathname}/health`)
             .then(res => res.json())
             .then(body => {
+                if (serviceId) {
+                    setProcessing({...processing, [serviceId]: undefined})
+                }
                 if (body['status'] === 'error') {
                     console.error(body)
                     enqueueSnackbar('상태 조회 중 에러가 발생하였습니다.', {
@@ -75,6 +80,75 @@ function Service() {
     const handleSearch = () => {
         setKeyword(tmpKeyword)
     }
+
+
+    const handleStartService = (groupId, serviceId) => {
+        setProcessing({...processing, [serviceId]: true})
+
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=start`, {
+            method: "PUT"
+        })
+            .then(res => res.json())
+            .then(body => {
+                setProcessing({...processing, [serviceId]: undefined})
+                if (body['status'] === 'success') {
+                    init()
+                    enqueueSnackbar("서비스를 시작하였습니다.", { variant: "success" })
+                } else {
+                    enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                        variant: "error",
+                        autoHideDuration: 6000,
+                        style: { whiteSpace: 'pre-line' }
+                    })
+                }
+            })
+    }
+
+    const handleStopService = (groupId, serviceId) => {
+        setProcessing({...processing, [serviceId]: true})
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=stop`, {
+            method: "PUT"
+        })
+            .then(res => res.json())
+            .then(body => {
+                setProcessing({...processing, [serviceId]: undefined})
+                if (body['status'] === 'success') {
+                    init()
+                    enqueueSnackbar("서비스를 종료하였습니다.", { variant: "success" })
+                } else {
+                    enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                        variant: "error",
+                        autoHideDuration: 6000,
+                        style: { whiteSpace: 'pre-line' }
+                    })
+                }
+            })
+    }
+
+    const handleUpdateService = (groupId, serviceId) => {
+        setProcessing({...processing, [serviceId]: true})
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=update`, {
+            method: "PUT"
+        })
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    init(serviceId)
+                    enqueueSnackbar("서비스를 업데이트 후 재시작하였습니다.", { variant: "success" })
+                } else {
+                    enqueueSnackbar("오류가 발생하였습니다. \n" + body['message'], {
+                        variant: "error",
+                        autoHideDuration: 6000,
+                        style: { whiteSpace: 'pre-line' }
+                    })
+                }
+            })
+    }
+
+
+
+
+
 
     const viewServices = (services||[]).filter(service => {
         return service['name'].includes(keyword) || service['server_name'].includes(keyword)
@@ -121,13 +195,14 @@ function Service() {
                                 <TableCell>실행여부</TableCell>
                                 <TableCell>CPU(%)</TableCell>
                                 <TableCell>MEM(%)</TableCell>
+                                <TableCell style={{textAlign: "center"}}>액션</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
                             {
                                 viewServices.length === 0 && viewShareServices.length === 0 ?
                                     <TableRow>
-                                        <TableCell colSpan={7} align={"center"}>
+                                        <TableCell colSpan={8} align={"center"}>
                                             <Box align={"center"}>
                                                 <CircularProgress style={{display: ready ? "block" : "none"}}/>
                                             </Box>
@@ -191,17 +266,42 @@ function Service() {
                                             console.log(e)
                                         }
                                         return (
-                                            <TableRow key={index}
-                                                      onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}
-                                                      style={{cursor: "pointer"}}
-                                            >
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell>{service['name']}</TableCell>
-                                                <TableCell>{service['server_name']}</TableCell>
-                                                <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
-                                                <TableCell>{runMessage}</TableCell>
-                                                <TableCell>{cpuUsage}</TableCell>
-                                                <TableCell>{memUsage}</TableCell>
+                                            <TableRow key={index} style={{cursor: "pointer"}}>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{index + 1}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['name']}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['server_name']}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{runMessage}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{cpuUsage}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{memUsage}</TableCell>
+                                                <TableCell align={"center"} style={{width: "350px"}}>
+                                                    <Box align={"center"} style={{display: processing[service['id']] ? "inline-flex" : "none"}}>
+                                                        <CircularProgress />
+                                                    </Box>
+                                                    <Box style={{display: !processing[service['id']] ? "inline-flex" : "none"}}>
+                                                        <Button size={"small"}
+                                                                variant={"outlined"}
+                                                                color={"primary"}
+                                                                style={{marginLeft: "5px", marginRight: "5px"}}
+                                                                onClick={() => handleStartService(service['groupId'], service['id'])}
+                                                                disabled={processing[service['id']]}
+                                                        >시작</Button>
+                                                        <Button size={"small"}
+                                                                variant={"outlined"}
+                                                                color={"secondary"}
+                                                                style={{marginLeft: "5px", marginRight: "5px"}}
+                                                                onClick={() => handleStopService(service['groupId'], service['id'])}
+                                                                disabled={processing[service['id']]}
+                                                        >종료</Button>
+                                                        <Button size={"small"}
+                                                                variant={"outlined"}
+                                                                color={"primary"}
+                                                                style={{marginLeft: "5px", marginRight: "5px", display: type === "container" ? "inline-flex" : "none"}}
+                                                                onClick={() => handleUpdateService(service['groupId'], service['id'])}
+                                                                disabled={processing[service['id']]}
+                                                        >업데이트 후 재시작</Button>
+                                                    </Box>
+                                                </TableCell>
                                             </TableRow>
                                         )
                                     })
@@ -268,17 +368,43 @@ function Service() {
                                             console.log(e)
                                         }
                                         return (
-                                            <TableRow key={index}
-                                                      onClick={() => router.push(`${location.pathname}/services/${service['id']}`)}
-                                                      style={{cursor: "pointer"}}
-                                            >
-                                                <TableCell>{viewShareServices.length + index }</TableCell>
-                                                <TableCell>(공유됨) {service['name']}</TableCell>
-                                                <TableCell>{service['server_name']}</TableCell>
-                                                <TableCell>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
-                                                <TableCell>{runMessage}</TableCell>
-                                                <TableCell>{cpuUsage}</TableCell>
-                                                <TableCell>{memUsage}</TableCell>
+                                            <TableRow key={index} style={{cursor: "pointer"}}>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{viewShareServices.length + index }(공유됨)</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['name']}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['server_name']}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{runMessage}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{cpuUsage}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{memUsage}</TableCell>
+                                                <TableCell align={"center"} style={{width: "350px"}}>
+                                                    <Box align={"center"} style={{display: processing[service['id']] ? "inline-flex" : "none"}}>
+                                                        <CircularProgress />
+                                                    </Box>
+                                                    <Box style={{display: !processing[service['id']] ? "inline-flex" : "none"}}>
+                                                        <Button size={"small"}
+                                                                variant={"outlined"}
+                                                                color={"primary"}
+                                                                style={{marginLeft: "5px", marginRight: "5px"}}
+                                                                onClick={() => handleStartService(service['groupId'], service['id'])}
+                                                                disabled={processing[service['id']]}
+                                                        >시작</Button>
+                                                        <Button size={"small"}
+                                                                variant={"outlined"}
+                                                                color={"secondary"}
+                                                                style={{marginLeft: "5px", marginRight: "5px"}}
+                                                                onClick={() => handleStopService(service['groupId'], service['id'])}
+                                                                disabled={processing[service['id']]}
+                                                        >종료</Button>
+                                                        <Button size={"small"}
+                                                                variant={"outlined"}
+                                                                color={"primary"}
+                                                                style={{marginLeft: "5px", marginRight: "5px", display: type === "container" ? "inline-flex" : "none"}}
+                                                                onClick={() => handleUpdateService(service['groupId'], service['id'])}
+                                                                disabled={processing[service['id']]}
+                                                        >업데이트 후 재시작</Button>
+                                                    </Box>
+                                                </TableCell>
+
                                             </TableRow>
                                         )
                                     })
