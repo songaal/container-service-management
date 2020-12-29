@@ -119,7 +119,7 @@ function ContainerState({index, name, container, service}) {
         let number_cpus = container['stats']['cpu_stats']['online_cpus']
         cpuUsage = Number((cpu_delta / system_cpu_delta) * number_cpus * 100.0).toFixed(2)
 
-        let used_memory = container['stats']['memory_stats']['usage'] - container['stats']['memory_stats']['stats']['cache']
+        let used_memory = (container['stats']['memory_stats']['usage']||0) - ((((container['stats']||{})['memory_stats']||{})['stats']||{})['cache']||0)
         let available_memory = container['stats']['memory_stats']['limit']
         memUsage = Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2)
     }
