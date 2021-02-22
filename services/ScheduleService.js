@@ -3,8 +3,13 @@ const { Services, Servers } = require("../models")
 
 const dockerDefaultPort = 2375
 
+let sync = {}
 async function TaskJob(service) {
     try {
+        if (sync[`${service['groupId']}_${service['id']}`] !== undefined) {
+            return false;
+        }
+        sync[`${service['groupId']}_${service['id']}`] = true
         const Path = require("path")
         const compose = require('docker-compose')
         const Client = require('ssh2').Client;
@@ -35,6 +40,7 @@ async function TaskJob(service) {
             })
             // 모든 컨테이너가 Up 없는 상태에서 진행함.
             if (psResult['exitCode'] === 0 && psResult['out'].split("\n").filter(id => id.length > 0).length === 0) {
+
                 await compose.down({
                     cwd: path,
                     log: false,
@@ -83,16 +89,21 @@ async function TaskJob(service) {
         }
     } catch (err) {
         console.error("ERROR Schedule. Service: ", service, ", ERROR : " , err)
+    } finally {
+        delete sync[`${service['groupId']}_${service['id']}`]
+        sync[`${service['groupId']}_${service['id']}`] = undefined
     }
 }
 
+let registryJobs = {}
+
 class ScheduleService {
     constructor() {
-        this.registryJobs = {}
+
     }
 
     async init() {
-        const keys = Object.keys(this.registryJobs)||[]
+        const keys = Object.keys(registryJobs)||[]
         for (let i=0; i < keys.length; i++) {
             this.cancelJob(keys[i])
         }
@@ -109,13 +120,13 @@ class ScheduleService {
         console.log("schedule Service Count: ", services.length)
     }
     createJob(key, cron, service) {
-        if (!this.registryJobs[key]) {
+        if (!registryJobs[key]) {
             this.cancelJob(key)
         }
         try {
             const task = Schedule.schedule(cron, () => TaskJob(service), { scheduled: true, timezone: "Asia/Seoul"}).start()
-            this.registryJobs[key] = { key, cron, service, task }
-            console.log("started JOB >>> GroupId: " + key.split("_")[0], ", ServiceId: ", key.split("_")[1], " cron: ", cron)
+            registryJobs[key] = { key, cron, service, task }
+            console.log("Registry Schedule JOB >>> GroupId: " + key.split("_")[0], ", ServiceId: ", key.split("_")[1], " cron: ", cron)
             return true
         } catch(e) {
             console.error('create job failed. ', e)
@@ -125,10 +136,10 @@ class ScheduleService {
 
     cancelJob(key) {
         try {
-            if (this.registryJobs[key]) {
-                this.registryJobs[key].task.stop()
-                this.registryJobs[key].task.destroy()
-                delete this.registryJobs[key]
+            if (registryJobs[key]) {
+                registryJobs[key].task.stop()
+                registryJobs[key].task.destroy()
+                delete registryJobs[key]
             }
             return true
         } catch(e) {
@@ -138,7 +149,7 @@ class ScheduleService {
     }
 
     getScheduleJob(key) {
-        return Object.assign({}, this.registryJobs[key]||{})
+        return Object.assign({}, registryJobs[key]||{})
     }
 }
 module.exports = new ScheduleService()
