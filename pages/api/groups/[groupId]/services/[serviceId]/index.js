@@ -25,9 +25,10 @@ async function groupsService(req, res) {
                 token: token
             })
         } else if (req.method === "PUT") {
+            const user = req.session.auth.user
             res.send({
                 status: "success",
-                service: await GroupSvcService.editService(serviceId, JSON.parse(req.body))
+                service: await GroupSvcService.editService(user, serviceId, JSON.parse(req.body))
             })
         } else if (req.method === "DELETE") {
             res.send({

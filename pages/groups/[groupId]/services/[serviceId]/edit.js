@@ -27,7 +27,7 @@ import AddBoxIcon from '@material-ui/icons/AddBox';
 import IndeterminateCheckBoxIcon from '@material-ui/icons/IndeterminateCheckBox';
 import dynamic from 'next/dynamic'
 const AceEditor = dynamic(import("react-ace"), {ssr: false})
-import {OptionsObject, SnackbarMessage, SnackbarProvider, useSnackbar} from 'notistack';
+import {useSnackbar} from 'notistack';
 import fetch from "isomorphic-unfetch"
 import {useRouter} from "next/router";
 import DialogTitle from "@material-ui/core/DialogTitle";
@@ -36,6 +36,7 @@ import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import Link from "@material-ui/core/Link";
+const schedule = require("node-cron")
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -53,7 +54,7 @@ const useStyles = makeStyles( theme => ({
     }
 }));
 
-let tmpYaml = ""
+
 function ServiceEdit() {
     const classes = useStyles();
     const router = useRouter();
@@ -67,6 +68,8 @@ function ServiceEdit() {
     const [type, setType] = React.useState('container');
     const [invalid, setInvalid] = React.useState({})
     const [editConfirmOpen, setEditConfirmOpen] = React.useState(false)
+    const [cron, setCron] = React.useState('');
+    const [isSchedule, setSchedule] = React.useState(false);
 
     // 컨테이너
     const [variables, setVariables] = React.useState([{}]);
@@ -100,6 +103,8 @@ function ServiceEdit() {
                     const service = body['service'];
                     setName(service['name'])
                     setServer(service['serverId'])
+                    setCron(service['cron'])
+                    setSchedule(Boolean(service['isSchedule']))
                     setType(service['type'])
                     setVariables(service['variables'].length === 0 ? [{}] : service['variables'])
                     setPidCmd(service['pidCmd'])
@@ -117,6 +122,9 @@ function ServiceEdit() {
         if(name.trim() === "") {
             tmpInvalid['name'] = "이름을 입력해주세요."
         }
+        if (!schedule.validate(cron)) {
+            tmpInvalid['cron'] = "형식을 확인해주세요. (ex: 0 14 * * * // 오후 2시)"
+        }
 
         if (Object.keys(tmpInvalid).length > 0) {
             setInvalid(tmpInvalid)
@@ -126,7 +134,7 @@ function ServiceEdit() {
         fetch(`/api/groups/${groupId}/services/${serviceId}`, {
             method: "PUT",
             body: JSON.stringify({
-                name, server, type,
+                name, server, type, isSchedule, cron,
                 variables: variables.filter(variable => variable['key'] && variable['value']),
                 yaml,
                 pidCmd, startScript, stopScript,
@@ -220,6 +228,30 @@ function ServiceEdit() {
                                     }
                                 </Select>
                             </FormControl>
+                        </Box>
+                    </Grid>
+                </Grid>
+
+                <br/>
+
+                <Grid container>
+                    <Grid item xs={3} sm={1}>
+                        <Box align={"right"} className={classes.label}>스케줄 주기</Box>
+                    </Grid>
+                    <Grid item xs={9} sm={11}>
+                        <Box>
+                            <TextField value={cron}
+                                       onChange={e => setCron(e.target.value)}
+                               autoFocus={true}
+                               fullWidth
+                               size={"small"}
+                               variant={"outlined"}
+                               color={"primary"}
+                               required={true}
+                               placeholder={"0 14 * * *"}
+                               error={invalid['cron']}
+                               helperText={invalid['cron']}
+                            />
                         </Box>
                     </Grid>
                 </Grid>

@@ -24,6 +24,8 @@ module.exports = (sequelize, DataTypes) => {
     startScript: DataTypes.TEXT,
     stopScript: DataTypes.TEXT,
     yaml: DataTypes.TEXT,
+    isSchedule: DataTypes.BOOLEAN,
+    cron: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'service',

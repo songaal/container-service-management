@@ -4,9 +4,9 @@
   "description": "",
   "private": true,
   "scripts": {
-    "dev": "next",
+    "dev": "node server.js",
     "build": "next build",
-    "start": "next start"
+    "start": "NODE_ENV=production node server.js"
   },
   "author": "",
   "license": "ISC",
@@ -30,6 +30,7 @@
     "@material-ui/pickers": "3.2.10",
     "@material-ui/styles": "4.9.0",
     "@material-ui/system": "4.9.3",
+    "@types/cron": "^1.7.2",
     "ace-builds": "latest",
     "axios": "^0.20.0",
     "bcryptjs": "^2.4.3",
@@ -51,6 +52,7 @@
     "next": "^10.0.3",
     "next-cookies": "^2.0.3",
     "next-session": "^3.3.2",
+    "node-cron": "^2.0.3",
     "nodemailer": "^6.4.11",
     "notistack": "^1.0.0",
     "pg-hstore": "^2.3.3",

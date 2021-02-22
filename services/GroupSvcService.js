@@ -1,14 +1,13 @@
-import ServerService from "./ServerService"
 const { Sequelize, sequelize, Services, Variable, ShareService} = require("../models")
+import ServerService from "./ServerService"
 import FileUtil from "../utils/FileUtil"
 import DockerClient from "../utils/DockerClient"
 import SshClient from '../utils/SshClient'
-
+const ScheduleService = require('./ScheduleService')
 const dockerDefaultPort = process.env.docker_default_api||2375
 
 let sync = {}
-
-export default {
+const GroupSvcService = {
     async findServiceById(id) {
         const regService = await Services.findOne({
             where: { id }
@@ -17,11 +16,10 @@ export default {
         const variables = await Variable.findAll({
             where: {serviceId: id}
         })
-
         return {
             ...regService.dataValues,
             variables: variables.filter(variable => variable['type'] === 'container'),
-            logFiles: variables.filter(variable => variable['type'] === 'process')
+            logFiles: variables.filter(variable => variable['type'] === 'process'),
         }
     },
     async findServiceByGroupId(groupId) {
@@ -49,6 +47,8 @@ export default {
                 name: reqService['name'], groupId,
                 serverId: reqService['server'],
                 type: reqService['type'],
+                isSchedule: false,
+                cron: reqService['cron'],
                 yaml: reqService['type'] === 'container' ? reqService['yaml'] : "",
                 pidCmd: reqService['type'] === 'process' ? reqService['pidCmd'] : "",
                 startScript: reqService['type'] === 'process' ? reqService['startScript'] : "",
@@ -90,11 +90,17 @@ export default {
         }
         return service;
     },
-    async editService(id, reqService) {
+    async editService(user, id, reqService) {
+        const registryService = await Services.findOne({
+            where: { id }
+        })
+
         await Services.update({
             name: reqService['name'],
             serverId: reqService['server'],
             type: reqService['type'],
+            isSchedule: Boolean(reqService['isSchedule']),
+            cron: reqService['cron'],
             yaml: reqService['type'] === 'container' ? reqService['yaml'] : "",
             pidCmd: reqService['type'] === 'process' ? reqService['pidCmd'] : "",
             startScript: reqService['type'] === 'process' ? reqService['startScript'] : "",
@@ -120,6 +126,17 @@ export default {
             await FileUtil.writeDockerCompose({dockerComposeServicePath, yaml, variables})
         } else if (type === 'process') {
             // TODO 프로세스 처리 필요시 사용.
+        }
+
+        // 스케줄 주기 변경
+        if (registryService['isSchedule']) {
+            if (registryService['cron'] !== reqService['cron']) {
+                // 기존 스케줄 제거
+                ScheduleService.cancelJob(`${groupId}_${id}`)
+
+                // 신규 스케줄 등록
+                ScheduleService.createJob(`${groupId}_${id}`, reqService['cron'], regService)
+            }
         }
 
         return {
@@ -150,6 +167,8 @@ export default {
 
             await Variable.destroy({ where: { serviceId: serviceId } })
             await Services.destroy({ where: { id: serviceId } })
+
+            await ScheduleService.cancelJob(`${groupId}_${serviceId}`)
             return regService
         } else {
             return await ShareService.destroy({where: { serviceId: serviceId, toGroupId: groupId }})
@@ -228,6 +247,7 @@ export default {
                 }
             }
         }
+
         return result
     },
     async startServices(user, groupId, serviceId) {
@@ -475,9 +495,11 @@ export default {
 
         if (shareSvcIds.length > 0) {
             results = await Services.findAll({
-                where: { id: {
+                where: {
+                    id: {
                         [Sequelize.Op.in]: shareSvcIds
-                    }},
+                    }
+                },
                 attributes: {
                     include: [
                         [
@@ -492,8 +514,20 @@ export default {
                 }
             })
         }
-
         return results
-    }
+    },
+    async editSchedule(id, groupId, schedule) {
+        const service = await this.findServiceById(id)
 
+        if (schedule === 'true') {
+            ScheduleService.createJob(`${groupId}_${id}`, service['cron'], service['dataValues'])
+        } else {
+            ScheduleService.cancelJob(`${groupId}_${id}`)
+        }
+
+        await Services.update({ isSchedule: schedule === "true" }, {
+            where: { id }
+        })
+    }
 }
+export default GroupSvcService

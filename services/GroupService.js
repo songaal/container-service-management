@@ -1,4 +1,5 @@
 const { Sequelize, sequelize, Groups, GroupAuth, GroupServer, Services, Variable} = require("../models")
+const ScheduleService = require("./ScheduleService")
 import FileUtil from "../utils/FileUtil"
 import path from "path"
 
@@ -107,6 +108,7 @@ export default {
             const svcListSize = svcList.length
             for (let i = 0; i < svcListSize; i++) {
                 try {
+                    await ScheduleService.cancelJob(`${id}_${svcList[i]['id']}`)
                     await Variable.destroy({where: {serviceId: svcList[i]['dataValues']['id']}})
                 } catch (err) {
                     console.error("error", err, svcList[i])

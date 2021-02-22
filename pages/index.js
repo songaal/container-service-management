@@ -27,18 +27,25 @@ function Page() {
     );
 }
 Page.getInitialProps = async (ctx) => {
-    if (ctx.req.session.auth) {
-        ctx.res.writeHead(301, {
-            Location: '/home'
-        });
-    } else {
-        ctx.res.writeHead(301, {
-            Location: '/sign-in'
-        });
-
+    let path = "/sign-in"
+    if (ctx && ctx.res) {
+        if (ctx.req.session && ctx.req.session.auth) {
+            ctx.res.writeHead(301, {
+                Location: '/home'
+            });
+            path = "/home"
+        } else {
+            ctx.res.writeHead(301, {
+                Location: '/sign-in'
+            });
+        }
+        ctx.res.end();
     }
-    ctx.res.end();
-    return {}
+
+
+    return {
+        Location: path
+    }
 }
 
 

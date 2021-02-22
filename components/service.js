@@ -193,6 +193,7 @@ function Service() {
                                 <TableCell>서버</TableCell>
                                 <TableCell>타입</TableCell>
                                 <TableCell>실행여부</TableCell>
+                                <TableCell>스케줄</TableCell>
                                 <TableCell>CPU(%)</TableCell>
                                 <TableCell>MEM(%)</TableCell>
                                 <TableCell style={{textAlign: "center"}}>액션</TableCell>
@@ -272,6 +273,7 @@ function Service() {
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['server_name']}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{runMessage}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['isSchedule'] ? '동작 중' : '정지'}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{cpuUsage}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{memUsage}</TableCell>
                                                 <TableCell align={"center"} style={{width: "350px"}}>
@@ -374,6 +376,7 @@ function Service() {
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['server_name']}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['type'] === 'container' ? '컨테이너' : service['type'] === 'process' ? '프로세스' : service['type']}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{runMessage}</TableCell>
+                                                <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{service['isSchedule'] ? '동작 중' : '정지'}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{cpuUsage}</TableCell>
                                                 <TableCell onClick={() => !processing[service['id']] ? router.push(`${location.pathname}/services/${service['id']}`) : null}>{memUsage}</TableCell>
                                                 <TableCell align={"center"} style={{width: "350px"}}>

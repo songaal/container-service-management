@@ -10,7 +10,6 @@ import fetch from "isomorphic-unfetch";
 
 export default function MyApp(props) {
   const { Component, pageProps } = props;
-
   React.useEffect(() => {
     // Remove the server-side injected CSS.
     const jssStyles = document.querySelector('#jss-server-side');

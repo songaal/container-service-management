@@ -40,6 +40,12 @@ module.exports = {
         allowNull: false,
         type: Sequelize.DATE
       },
+      isSchedule: {
+        type: Sequelize.BOOLEAN,
+      },
+      cron: {
+        type: Sequelize.STRING
+      }
     });
   },
   down: async (queryInterface, Sequelize) => {

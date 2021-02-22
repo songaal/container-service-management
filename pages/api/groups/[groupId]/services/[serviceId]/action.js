@@ -45,6 +45,12 @@ async function groupsService(req, res) {
                     status: "success",
                     results: await GroupSvcService.shareServices(serviceId, groupId, reqShare['shareGroupIds'])
                 })
+            } else if (type === 'schedule') {
+                const schedule = req.query['isSchedule'];
+                res.send({
+                    status: "success",
+                    results: await GroupSvcService.editSchedule(serviceId, groupId, schedule)
+                })
             }
         }
     } catch (error) {

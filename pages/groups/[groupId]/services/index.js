@@ -20,10 +20,12 @@ import dynamic from 'next/dynamic'
 const AceEditor = dynamic(import("react-ace"), {ssr: false})
 // dynamic(import("ace-builds/src-noconflict/mode-yaml"), {ssr: false})
 // dynamic(import("ace-builds/src-noconflict/theme-kuroir"), {ssr: false})
-import {OptionsObject, SnackbarMessage, SnackbarProvider, useSnackbar} from 'notistack';
+import {useSnackbar} from 'notistack';
 import fetch from "isomorphic-unfetch"
 import {useRouter} from "next/router";
 import Link from '@material-ui/core/Link';
+
+const schedule = require("node-cron")
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -59,6 +61,7 @@ function Services() {
     const [server, setServer] = React.useState('-1');
     const [type, setType] = React.useState('container');
     const [invalid, setInvalid] = React.useState({})
+    const [cron, setCron] = React.useState("")
 
     // 컨테이너
     const [variables, setVariables] = React.useState([{}]);
@@ -93,6 +96,9 @@ function Services() {
         if(name.trim() === "") {
             tmpInvalid['name'] = "이름을 입력해주세요."
         }
+        if (!schedule.validate(cron)) {
+            tmpInvalid['cron'] = "형식을 확인해주세요. (ex: 0 14 * * * // 오후 2시)"
+        }
 
         // if (type === "container") {
         //     if (dockerComposeYml.trim() === "") {
@@ -118,7 +124,7 @@ function Services() {
         fetch(`/api/groups/${groupId}/services`, {
             method: "POST",
             body: JSON.stringify({
-                name, server, type,
+                name, server, type, cron,
                 variables: variables.filter(variable => variable['key'] && variable['value']),
                 yaml,
                 pidCmd, startScript, stopScript,
@@ -208,6 +214,30 @@ function Services() {
                                     }
                                 </Select>
                             </FormControl>
+                        </Box>
+                    </Grid>
+                </Grid>
+
+                <br/>
+
+                <Grid container>
+                    <Grid item xs={3} sm={1}>
+                        <Box align={"right"} className={classes.label}>스케줄 주기</Box>
+                    </Grid>
+                    <Grid item xs={9} sm={11}>
+                        <Box>
+                            <TextField value={cron}
+                                       onChange={e => setCron(e.target.value)}
+                                autoFocus={true}
+                                fullWidth
+                                size={"small"}
+                                variant={"outlined"}
+                                color={"primary"}
+                                required={true}
+                                placeholder={"0 14 * * *"}
+                                error={invalid['cron']}
+                                helperText={invalid['cron']}
+                            />
                         </Box>
                     </Grid>
                 </Grid>

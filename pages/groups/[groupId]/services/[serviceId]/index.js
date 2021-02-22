@@ -12,7 +12,8 @@ import {
     CardContent,
     Breadcrumbs,
     IconButton,
-    Tooltip, TextField
+    Tooltip, TextField,
+    Switch
 } from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
@@ -32,6 +33,8 @@ import {useSnackbar} from "notistack";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import ShareIcon from '@material-ui/icons/Share';
 import Autocomplete from "@material-ui/lab/Autocomplete/Autocomplete";
+import {lightBlue, red, yellow} from "@material-ui/core/colors";
+const Schedule = require("node-cron")
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -122,10 +125,6 @@ function ContainerState({index, name, container, service}) {
         let used_memory = (container['stats']['memory_stats']['usage']||0) - ((((container['stats']||{})['memory_stats']||{})['stats']||{})['cache']||0)
         let available_memory = container['stats']['memory_stats']['limit']
         memUsage = Number(((used_memory / available_memory) * 100.0).toFixed(2)).toFixed(2)
-    }
-
-    const aa = () => {
-        window.open("/gorups", "","target=_blank")
     }
 
     return (
@@ -251,7 +250,7 @@ function ServicesDetail() {
     const [groups, setGroups] = React.useState([]);
     const [selectedGroup, setSelectedGroup] = React.useState([]);
     const [shared, setShared] = React.useState(false);
-
+    const [openChangeSchedule, setOpenChangeSchedule] = React.useState(false)
 
 
     const { groupId, serviceId } = router.query
@@ -444,6 +443,18 @@ function ServicesDetail() {
             })
     }
 
+    const handleChangeSchedule =() => {
+
+        fetch(`/api/groups/${groupId}/services/${serviceId}/action?type=schedule&isSchedule=${service['isSchedule'] ? 'false' : 'true'}`, {
+            method: "PUT"
+        })
+            .then(res => res.json())
+            .then(() => {
+                setOpenChangeSchedule(false)
+                init()
+                enqueueSnackbar("스케줄 변경되었습니다.", { variant: "success" })
+            })
+    }
 
     const selectedServer = (servers||[]).find(server => String(server['id']) === service['serverId'])||{}
 
@@ -561,6 +572,12 @@ function ServicesDetail() {
                                                 <MenuItem onClick={handleStopService}>종료</MenuItem>
                                                 <MenuItem onClick={handleUpdateService}
                                                           style={{display: service['type'] === 'container' ? "block" : "none"}}>업데이트후 재시작</MenuItem>
+                                                {
+                                                    service['isSchedule'] ?
+                                                        <MenuItem onClick={() => {setExecEl(null);setOpenChangeSchedule(true)}} style={{backgroundColor: yellow[400]}} >스케줄 중지</MenuItem>
+                                                        :
+                                                        <MenuItem onClick={() => {setExecEl(null);setOpenChangeSchedule(true)}}>스케줄 시작</MenuItem>
+                                                }
                                             </Menu>
                                         </Box>
                                         <Box style={{textAlign: "center", display: processing ? "block" : "none"}}>
@@ -570,6 +587,7 @@ function ServicesDetail() {
                                 </Grid>
                             </Box>
 
+                            <ShowField label={"스케줄"} val={`${service['isSchedule'] ? "동작 중" : "정지"} ( ${service['cron']||'' } )`} />
 
                             <ShowField label={"API"} val={`/api/groups/${service['groupId']}/services/${serviceId}/update`} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
 
@@ -709,6 +727,34 @@ function ServicesDetail() {
                                 </Box>
                             </Grid>
                         </Grid>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={openChangeSchedule}
+                    onClose={() => setOpenChangeSchedule(false)}
+                >
+                    <DialogTitle>
+                        스케쥴 변경
+                    </DialogTitle>
+                    <DialogContent>
+                        스케줄 {service['isSchedule'] ? "정지" : "동작"} 하시겠습니까?
+                    </DialogContent>
+                    <DialogActions>
+                        <Button autoFocus
+                                variant={"outlined"}
+                                color="primary"
+                                onClick={handleChangeSchedule}
+                        >
+                            적용
+                        </Button>
+                        <Button variant={"outlined"}
+                                onClick={() => setOpenChangeSchedule(false)}
+                        >
+                            취소
+                        </Button>
                     </DialogActions>
                 </Dialog>
             </Container>
