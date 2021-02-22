@@ -129,7 +129,7 @@ const GroupSvcService = {
         }
 
         // 스케줄 주기 변경
-        if (registryService['isSchedule']) {
+        if (regService['isSchedule']) {
             if (registryService['cron'] !== reqService['cron']) {
                 // 기존 스케줄 제거
                 ScheduleService.cancelJob(`${groupId}_${id}`)
@@ -517,7 +517,8 @@ const GroupSvcService = {
         return results
     },
     async editSchedule(id, groupId, schedule) {
-        const service = await this.findServiceById(id)
+        // const service = await this.findServiceById(id)
+        const service = await Services.findOne({where: { id: id, groupId: groupId }})
 
         if (schedule === 'true') {
             ScheduleService.createJob(`${groupId}_${id}`, service['cron'], service['dataValues'])
