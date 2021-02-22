@@ -35,23 +35,24 @@ async function TaskJob(service) {
             const psResult = await compose.ps({
                 cwd: path,
                 log: false,
-                commandOptions: ['-q', '--filter', 'status=Up'],
                 env: { DOCKER_HOST: `${ip}:${port}` }
             })
-            // 모든 컨테이너가 Up 없는 상태에서 진행함.
-            if (psResult['exitCode'] === 0 && psResult['out'].split("\n").filter(id => id.length > 0).length === 0) {
 
+            // 모든 컨테이너가 Up 없는 상태에서 진행함.
+            if (psResult['exitCode'] === 0 && !String(psResult['out']).includes(" Up ")) {
                 await compose.down({
                     cwd: path,
                     log: false,
                     env: { DOCKER_HOST: `${ip}:${port}` }
                 })
-                await compose.upAll({
-                    cwd: path,
-                    log: false,
-                    env: { DOCKER_HOST: `${ip}:${port}` }
-                })
-                console.log("[Schedule] serviceId: " + service['id'] + " Action: UP ALL!")
+                setTimeout(async function() {
+                    await compose.upAll({
+                        cwd: path,
+                        log: false,
+                        env: { DOCKER_HOST: `${ip}:${port}` }
+                    })
+                    console.log("[Schedule] serviceId: " + service['id'] + " Action: UP ALL!")
+                }, 500)
             } else {
                 console.log("[Schedule] 이미 컨테이너 실행 중입니다. ", service)
             }

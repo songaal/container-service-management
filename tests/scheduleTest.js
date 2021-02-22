@@ -8,24 +8,25 @@ const Client = require('ssh2').Client;
     const psResult = await compose.ps({
         cwd: path,
         log: false,
-        commandOptions: ['-q', '--filter', 'status=Up'],
         env: { DOCKER_HOST: `kube1.danawa.io:30200` }
     })
-    if (psResult['exitCode'] === 0 && psResult['out'].split("\n").filter(id => id.length > 0).length === 0) {
-        const upResult = await compose.upAll({
-            cwd: path,
-            log: false,
-            env: { DOCKER_HOST: `kube1.danawa.io:30200` }
-        })
-        console.log('up', upResult)
-    } else {
-        const downResult = await compose.down({
-            cwd: path,
-            log: false,
-            env: { DOCKER_HOST: `kube1.danawa.io:30200` }
-        })
-        console.log('down', downResult)
-    }
+    console.log('psResult', psResult)
+    // if (psResult['exitCode'] === 0 && psResult['out'].split("\n").filter(id => id.length > 0).length === 0) {
+    //
+    // }
+
+    const downResult = await compose.down({
+        cwd: path,
+        log: false,
+        env: { DOCKER_HOST: `kube1.danawa.io:30200` }
+    })
+    console.log('down', downResult)
+    const upResult = await compose.upAll({
+        cwd: path,
+        log: false,
+        env: { DOCKER_HOST: `kube1.danawa.io:30200` }
+    })
+    console.log('up', upResult)
 })()
 
 //
