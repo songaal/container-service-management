@@ -61,7 +61,7 @@ function Services() {
     const [server, setServer] = React.useState('-1');
     const [type, setType] = React.useState('container');
     const [invalid, setInvalid] = React.useState({})
-    const [cron, setCron] = React.useState("")
+    const [cron, setCron] = React.useState("0 0 * * *")
 
     // 컨테이너
     const [variables, setVariables] = React.useState([{}]);
