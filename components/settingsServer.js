@@ -299,7 +299,11 @@ function SettingsServer() {
                                                             color={"primary"}
                                                             target="_blank"
                                                             size={"small"}
-                                                            href={`/servers/${server['id']}/terminal`}
+                                                            onClick={e => {
+                                                                e.preventDefault();
+                                                                window.open(`/servers/${server['id']}/terminal`, `${server['name']}(${server['ip']})`)
+                                                            }}
+                                                            // href={`/servers/${server['id']}/terminal`}
                                                     >
                                                         터미널 열기 <LaunchIcon color={"primary"} />
                                                     </Button>
