@@ -384,7 +384,7 @@ function AdminGroup(server) {
                                                 <TableRow key={index}>
                                                     <TableCell>{index + 1}</TableCell>
                                                     <TableCell>
-                                                        <Link href={`/groups/${useGroup['id']||''}`}>{(tmpGroup||{})['name']||""}</Link>
+                                                        <Link href={`/groups/${useGroup['groupId']||''}`}>{(tmpGroup||{})['name']||""}</Link>
                                                     </TableCell>
                                                     <TableCell>{useGroup['service_count']}</TableCell>
                                                     <TableCell>{useGroup['createdAt']}</TableCell>
