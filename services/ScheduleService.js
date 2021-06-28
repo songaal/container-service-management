@@ -80,6 +80,8 @@ async function TaskJob(service) {
                         String(data)
                     })
                 });
+            }).on('error', (err1) => {
+                console.log("Schedule Exec Connection Fail.", err1)
             }).connect({
                 host: ip,
                 port: port,
