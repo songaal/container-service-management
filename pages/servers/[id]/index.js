@@ -203,7 +203,7 @@ function ServerDetail() {
                                 <Button variant={"outlined"}
                                         color={"primary"}
                                         target="_blank"
-                                        href={`/servers/${server['id']}/terminal`}
+                                        href={`/servers/${server['id']}/expTerminal`}
                                 >
                                     터미널 열기 <LaunchIcon color={"primary"} />
                                 </Button>
@@ -215,7 +215,7 @@ function ServerDetail() {
                 <Box my={3}>
                     {
                         openTerminal ?
-                            <iframe src={`/servers/${server['id']}/terminal`}
+                            <iframe src={`/servers/${server['id']}/expTerminal`}
                                     style={{
                                         width: "100%",
                                         height: "600px",
@@ -224,7 +224,8 @@ function ServerDetail() {
                                     }}>
                             </iframe>
                             :
-                            <TextareaAutosize defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
+                            <TextareaAutosize
+                                            //   defaultValue="위 버튼을 누르면 결과를 즉시 확인할 수 있습니다."
                                               readOnly={true}
                                               style={{
                                                   width: '100%',
