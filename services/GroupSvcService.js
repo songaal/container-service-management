@@ -229,18 +229,18 @@ const GroupSvcService = {
                     let tmpPsArr = tmpPs.split(" ").filter(p => p.length !== 0)
                     result['cpuUsage'] = tmpPsArr[0]
                     result['memUsage'] = tmpPsArr[1]
-                    result['startTime'] = String(tmpPs.replace(tmpPsArr[0], "").replace(tmpPsArr[1], "")||"").trim()
+                    result['startTime'] = tmpPs.replace(tmpPsArr[0], "").replace(tmpPsArr[1], "").trim()
                 } else {
                     result['cpuUsage'] = ""
                     result['memUsage'] = ""
                     result['startTime'] = ""
                 }
-                result['stat'] = String((await sshClient.exec(`cat /proc/${pid}/stat`)).join("")||"").trim().split(" ")
+                result['stat'] = (await sshClient.exec(`cat /proc/${pid}/stat`)).join("").trim().split(" ")
                 result['ports'] = (await sshClient.exec(`netstat -tnlp|grep ${pid}/|awk '{print $4}'`))
                 result['exeCwd'] = (await sshClient.exec(`readlink /proc/${pid}/cwd && cat /proc/${pid}/cmdline | sed -e "s/\\x00/ /g"; echo`))
                 try {
                     for (let i = 0; i < result['ports'].length; i++) {
-                        result['ports'][i] = String(result['ports'][i].replace(/[a-z,()-]/gi, "")||"").trim()
+                        result['ports'][i] = result['ports'][i].replace(/[a-z,()-]/gi, "").trim()
                     }
                 } catch (e) {
                     console.log("parse error", e)

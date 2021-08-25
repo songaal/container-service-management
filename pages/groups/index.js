@@ -109,7 +109,7 @@ function Groups() {
         }
     }
 
-    const list = groups.filter(group => searchKeyword.trim().length === 0 ? true : (group['name']||"").includes(searchKeyword))
+    const list = groups.filter(group => searchKeyword.trim().length === 0 ? true : group['name'].includes(searchKeyword))
 
     return (
         <div className={classes.root}>
