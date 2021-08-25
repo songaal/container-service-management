@@ -16,14 +16,7 @@ var process_cmd = (processType, filename, path) => {
     return "curl " + downUrl + filename + " > " + path + filename;
   } else if (processType === "download") {
     return (
-      'curl -F "file=@' +
-      path +
-      filename +
-      '" ' +
-      uploadUrl +
-      " && rm -rf " +
-      path +
-      filename
+      'curl -F "file=@' + path + filename + '" ' + uploadUrl + " && rm -rf " + path + filename
     );
   }
 };
@@ -62,19 +55,16 @@ const saveFile = async (file) => {
 
 // SERVER TO REMOTE
 const processToRemote = async (req, res) => {
-  const processType = req.__NEXT_INIT_QUERY["type"];
-  const filename = req.__NEXT_INIT_QUERY["filename"];
-  const path = req.__NEXT_INIT_QUERY["path"] + "/";
   const sshClient = new SshClient("127.0.0.1", "50000", "ysban", "1234");
 
   try {
     const msg = await sshClient.exec(
-      process_cmd(processType, filename, path),
+      process_cmd(req.__NEXT_INIT_QUERY["type"], req.__NEXT_INIT_QUERY["filename"], req.__NEXT_INIT_QUERY["path"] + "/"),
       {}
     );
 
-    if (processType === "upload") {
-      await fs.rmSync(`./public/tempFiles/` + filename);
+    if (req.__NEXT_INIT_QUERY["type"] === "upload") {
+      await fs.rmSync(`./public/tempFiles/` + req.__NEXT_INIT_QUERY["filename"]);
     }
 
     return res.send({ status: "success", data: msg.join("") });
