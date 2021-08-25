@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 const ExpExample = () => {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState(null);  
 
   const uploadToClient = (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -14,7 +14,7 @@ const ExpExample = () => {
     const filename = file.name;
     const path = "/home/danawa";
     await fetch(
-      "/api/explorer?type=upload&&filename=" + filename + "&&path=" + path,
+      "/api/servers/explorer?type=upload&&filename=" + filename + "&&path=" + path,
       {
         method: "GET",
       }
@@ -31,7 +31,7 @@ const ExpExample = () => {
     body.append("file", file);
 
     // 로컬 -> 서버 파일 업로드
-    await fetch("/api/explorer", {
+    await fetch("/api/servers/explorer", {
       method: "POST",
       body,
     })
@@ -52,7 +52,7 @@ const ExpExample = () => {
     const path = "/home/danawa";
 
     await fetch(
-      "/api/explorer?type=download&&filename=" + filename + "&&path=" + path,
+      "/api/servers/explorer?type=download&&filename=" + filename + "&&path=" + path,
       {
         method: "GET",
       }
@@ -65,7 +65,7 @@ const ExpExample = () => {
         a.remove();
         setTimeout(() => {
           fetch(
-              "/api/explorer?filename=" + filename,
+              "/api/servers/explorer?filename=" + filename,
               {
                 method: "DELETE",
               }

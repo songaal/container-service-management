@@ -8,6 +8,27 @@ export const config = {
   },
 };
 
+const downUrl = "http://192.168.0.144:3000/tempFiles/";
+const uploadUrl = "http://192.168.0.144:3000/api/servers/explorer";
+
+var process_cmd = (processType, filename, path) => {
+  if (processType === "upload") {
+    return "curl " + downUrl + filename + " > " + path + filename;
+  } else if (processType === "download") {
+    return (
+      'curl -F "file=@' +
+      path +
+      filename +
+      '" ' +
+      uploadUrl +
+      " && rm -rf " +
+      path +
+      filename
+    );
+  }
+};
+
+// DELETE FILE
 const deleteFile = async (req, res) => {
   fs.rmSync(`./public/tempFiles/` + req.__NEXT_INIT_QUERY["filename"]);
   return;
@@ -46,29 +67,19 @@ const processToRemote = async (req, res) => {
   const path = req.__NEXT_INIT_QUERY["path"] + "/";
   const sshClient = new SshClient("127.0.0.1", "50000", "ysban", "1234");
 
-  if(processType === 'upload') {    
-    const downUrl = "http://192.168.0.144:3000/tempFiles/";
-    console.log("URL -> curl " + downUrl + filename + " > " + path + filename);
+  try {
+    const msg = await sshClient.exec(
+      process_cmd(processType, filename, path),
+      {}
+    );
 
-    try {
-        const msg = await sshClient.exec("curl " + downUrl + filename + " > " + path + filename, {})
-        await fs.rmSync(`./public/tempFiles/` + req.__NEXT_INIT_QUERY["filename"]);
-        console.log(msg);
-        return res.send({status: "success", data: msg.join("")})
-    } catch (e) {
-      console.log(e);
+    if (processType === "upload") {
+      await fs.rmSync(`./public/tempFiles/` + filename);
     }
-  } else if(processType === 'download'){
-    const uploadUrl = "http://192.168.0.144:3000/api/explorer";
-    console.log("URL -> curl -F \"file=@" + path + filename + "\" " + uploadUrl + ' && rm -rf ' + path + filename);
-    try {
-      const msg = await sshClient.exec("curl -F \"file=@" + path + filename + "\" " + uploadUrl + ' && rm -rf ' + path + filename , {})
-      // await fs.rmSync(`./public/tempFiles/` + req.__NEXT_INIT_QUERY["filename"]);
-      console.log(msg);
-      return res.send({status: "success", data: msg.join("")})
-    } catch (e) {
-      console.log(e);
-    }
+
+    return res.send({ status: "success", data: msg.join("") });
+  } catch (e) {
+    console.log(e);
   }
 };
 
