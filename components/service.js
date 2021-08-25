@@ -37,7 +37,7 @@ function Service() {
     const [tmpKeyword, setTmpKeyword] = React.useState("")
     const [ready, setReady] = React.useState(true)
     const [health, setHealth] = React.useState([])
-    const [checkedHealth, setCheckedHealth] = React.useState(false)
+    const [checkedHealth, setCheckedHealth] = React.useState([])
     const [processing, setProcessing] = React.useState({})
 
     React.useEffect(() => {
@@ -58,29 +58,31 @@ function Service() {
                     setServices(body['services'])
                     setShareServices(body['shareServices'])
                 }
+                return {
+                    services: body['services'],
+                    shareServices: body['shareServices']
+                }
             })
-        fetch(`/api${location.pathname}/health`)
-            .then(res => res.json())
-            .then(body => {
-                if (serviceId) {
-                    setProcessing({...processing, [serviceId]: undefined})
+            .then(async payload => {
+                const healthCheckList = [].concat(payload["services"], payload["shareServices"])
+                setHealth([])
+                for (let i = 0; i < healthCheckList.length; i++) {
+                    const serviceId = healthCheckList[i]["id"]
+                    try {
+                        const result = await (await fetch(`/api${location.pathname}/services/${serviceId}/health`)).json()
+                        console.log("API data: ", serviceId, result)
+                        setHealth(prevState => [...prevState, result["health"]])
+                        setCheckedHealth(prevState => [...prevState, serviceId])
+                    } catch(error) {
+                        console.error(error)
+                    }
                 }
-                if (body['status'] === 'error') {
-                    console.error(body)
-                    enqueueSnackbar('상태 조회 중 에러가 발생하였습니다.', {
-                        variant: "error"
-                    });
-                } else {
-                    setHealth(body['health'])
-                }
-                setCheckedHealth(true)
             })
     }
 
     const handleSearch = () => {
         setKeyword(tmpKeyword)
     }
-
 
     const handleStartService = (groupId, serviceId) => {
         setProcessing({...processing, [serviceId]: true})
@@ -144,11 +146,6 @@ function Service() {
                 }
             })
     }
-
-
-
-
-
 
     const viewServices = (services||[]).filter(service => {
         return service['name'].includes(keyword) || service['server_name'].includes(keyword)
@@ -218,6 +215,7 @@ function Service() {
                                         let memUsage = ""
                                         try {
                                             const tmpHealth = (health.find(h => h['id'] === service['id'])||{})['health']
+                                            console.log("tmpHealth", tmpHealth, health)
                                             if (tmpHealth) {
                                                 if (type === 'container') {
                                                     const allCount = tmpHealth['serviceNames'].length
@@ -257,7 +255,7 @@ function Service() {
                                                     cpuUsage = tmpHealth['running'] ? tmpHealth['stats']['cpuUsage'] : "-"
                                                     memUsage = tmpHealth['running'] ? tmpHealth['stats']['memUsage'] : "-"
                                                 }
-                                            } else if (checkedHealth) {
+                                            } else if (checkedHealth.includes(service['id'])) {
                                                 runMessage = "-"
                                                 cpuUsage = "-"
                                                 memUsage = "-"
@@ -360,7 +358,7 @@ function Service() {
                                                     cpuUsage = tmpHealth['running'] ? tmpHealth['stats']['cpuUsage'] : "-"
                                                     memUsage = tmpHealth['running'] ? tmpHealth['stats']['memUsage'] : "-"
                                                 }
-                                            } else if (checkedHealth) {
+                                            } else if (checkedHealth.includes(service['id'])) {
                                                 runMessage = "-"
                                                 cpuUsage = "-"
                                                 memUsage = "-"

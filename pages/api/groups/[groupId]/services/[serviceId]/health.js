@@ -2,8 +2,8 @@
 import React from 'react';
 import fetch from "isomorphic-unfetch";
 import { withSession } from 'next-session';
-import AuthService from "../../../../services/AuthService";
-import GroupSvcService from "../../../../services/GroupSvcService";
+import AuthService from "../../../../../../services/AuthService";
+import GroupSvcService from "../../../../../../services/GroupSvcService";
 
 
 async function groupsService(req, res) {
@@ -12,12 +12,12 @@ async function groupsService(req, res) {
     await AuthService.validate(req, res);
 
     try {
-        const groupId = req.query['groupId'];
+        const serviceId = req.query['serviceId'];
         if (req.method === "GET") {
-            const services = [].concat(await GroupSvcService.findServiceByGroupId(groupId), await GroupSvcService.findShareServiceByGroupId(groupId))
+            const service = Object.assign({}, await GroupSvcService.findServiceById(serviceId))
             res.send({
                 status: "success",
-                health: await GroupSvcService.findAllServiceHealth(services)
+                health: await GroupSvcService.findOneServiceHealth(service)
             })
         }
     } catch (error) {
