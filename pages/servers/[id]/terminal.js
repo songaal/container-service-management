@@ -33,7 +33,7 @@ function ServerTerminal({webSshHost}) {
 
 ServerTerminal.getInitialProps = async (ctx) => {
     return {
-        webSshHost: "http://localhost:8080/" || "/"
+        webSshHost: process.env.webssh_host || "/"
     }
 }
 
