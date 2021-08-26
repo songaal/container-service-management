@@ -50,16 +50,20 @@ const ServerExplorer = () => {
     await fetch(apiUrl, {
       method: "POST",
       body,
+    }).then((res) => {
+      console.log(res);
+      // created
+      if (res.status === 201) {
+        // 서버 -> 원격 파일 업로드
+        uploadToRemote();
+      }
     })
-      .then((res) => {
-        console.log(res);
-        // created
-        if (res.status === 201) {
-          // 서버 -> 원격 파일 업로드
-          uploadToRemote();
-        }
-      })
-      .catch((error) => console.error("Error:", error));
+    .catch((error) => console.error("Error:", error));
+    // .then(function(response) {
+    //   return response.json();
+    // }).then(function(data) {
+    //   console.log(data);
+    // })
   };
 
   const download = async () => {

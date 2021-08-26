@@ -14,9 +14,11 @@ const downUrl = "http://localhost:3355/tempFiles/";
 var process_cmd = (id, processType, filename, path) => {
   const uploadUrl = `http://localhost:3355/api/servers/${id}/explorer`;
   if (processType === "upload") {
-    return `curl ${downUrl}${filename} > ${path+filename}`;
+    var enc = encodeURI(`${downUrl}${filename}`);
+    return `curl "${enc}" > "${path+filename}"`;
   } else if (processType === "download") {
-    return `curl -F "file=@${path+filename}" ${uploadUrl} && rm -rf ${path+filename}`
+    var enc = encodeURI(`${path+filename}`);
+    return `curl -F "file=@${enc}" ${uploadUrl} && rm -rf "${path+filename}"`
   }
 };
 
@@ -44,7 +46,7 @@ const saveFile = async (file) => {
   console.log("## SAVE AT SERVER ##");
   const data = fs.readFileSync(file.path);
   try {
-    fs.writeFileSync(`./public/tempFiles/${file.name}`, data);
+    fs.writeFileSync(`./public/tempFiles/${decodeURI(file.name)}`, data);
     await fs.unlinkSync(file.path);
     return;
   } catch (e) {
