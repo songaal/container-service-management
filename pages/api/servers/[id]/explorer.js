@@ -1,6 +1,7 @@
 import formidable from "formidable";
 import fs from "fs";
-import SshClient from "../../../utils/SshClient";
+import SshClient from "../../../../utils/SshClient";
+import ServerService from "../../../../services/ServerService"
 
 export const config = {
   api: {
@@ -8,16 +9,14 @@ export const config = {
   },
 };
 
-const downUrl = "http://192.168.0.144:3000/tempFiles/";
-const uploadUrl = "http://192.168.0.144:3000/api/servers/explorer";
+const downUrl = "http://localhost:3355/tempFiles/";
 
-var process_cmd = (processType, filename, path) => {
+var process_cmd = (id, processType, filename, path) => {
+  const uploadUrl = `http://localhost:3355/api/servers/${id}/explorer`;
   if (processType === "upload") {
-    return "curl " + downUrl + filename + " > " + path + filename;
+    return `curl ${downUrl}${filename} > ${path+filename}`;
   } else if (processType === "download") {
-    return (
-      'curl -F "file=@' + path + filename + '" ' + uploadUrl + " && rm -rf " + path + filename
-    );
+    return `curl -F "file=@${path+filename}" ${uploadUrl} && rm -rf ${path+filename}`
   }
 };
 
@@ -36,7 +35,7 @@ const writeFile = async (req, res) => {
     } catch (e) {
       console.log(e);
     }
-    return res.status(201).send("");
+    return res.status(201).json({fileId: "aaaa.afarg.ageeargh"});
   });
 };
 
@@ -55,16 +54,17 @@ const saveFile = async (file) => {
 
 // SERVER TO REMOTE
 const processToRemote = async (req, res) => {
-  const sshClient = new SshClient("127.0.0.1", "50000", "ysban", "1234");
-
+  let server = await ServerService.findServerById(req.query['id']);
+  const sshClient = new SshClient(server.ip, server.port, server.user, server.password);
+  console.log("## PROCESS TO REMOTE ##");
   try {
     const msg = await sshClient.exec(
-      process_cmd(req.__NEXT_INIT_QUERY["type"], req.__NEXT_INIT_QUERY["filename"], req.__NEXT_INIT_QUERY["path"] + "/"),
+      process_cmd(req.query['id'], req.query["type"], req.query["filename"], req.query["path"] + "/"),
       {}
     );
 
-    if (req.__NEXT_INIT_QUERY["type"] === "upload") {
-      await fs.rmSync(`./public/tempFiles/` + req.__NEXT_INIT_QUERY["filename"]);
+    if (req.query["type"] === "upload") {
+      await fs.rmSync(`./public/tempFiles/` + req.query["filename"]);
     }
 
     return res.send({ status: "success", data: msg.join("") });

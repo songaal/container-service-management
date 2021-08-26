@@ -83,6 +83,7 @@
     "ssh2-sftp-client": "^7.0.3",
     "styled-components": "5.0.1",
     "uuid": "^8.3.0",
+    "virtualized": "^0.1.0",
     "yaml-validator": "^3.0.0"
   },
   "devDependencies": {

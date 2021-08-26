@@ -1,7 +1,23 @@
 import React, { useState } from "react";
 
-const ExpExample = () => {
+const ServerExplorer = () => {
   const [file, setFile] = useState(null);  
+  const [server, setServer] = React.useState({})  
+  const apiUrl = `/api/servers/${server['id']}/explorer`;
+
+  React.useEffect(() => {
+      const url = "/api" + location.pathname.replace("/explorer", "")
+      fetch(url)
+          .then(res => res.json())
+          .then(body => {
+              console.log(body['server']);
+              setServer(body['server'])
+          })
+  }, [])
+
+  if (Object.keys(server).length < 3) {
+      return null
+  }
 
   const uploadToClient = (event) => {
     if (event.target.files && event.target.files[0]) {
@@ -12,9 +28,9 @@ const ExpExample = () => {
 
   const uploadToRemote = async () => {
     const filename = file.name;
-    const path = "/home/danawa";
+    const path = "/home/danawa/apps/explorer";
     await fetch(
-      "/api/servers/explorer?type=upload&&filename=" + filename + "&&path=" + path,
+      apiUrl + `?type=upload&&filename=${filename}&&path=${path}`,
       {
         method: "GET",
       }
@@ -31,7 +47,7 @@ const ExpExample = () => {
     body.append("file", file);
 
     // 로컬 -> 서버 파일 업로드
-    await fetch("/api/servers/explorer", {
+    await fetch(apiUrl, {
       method: "POST",
       body,
     })
@@ -47,30 +63,29 @@ const ExpExample = () => {
   };
 
   const download = async () => {
-    console.log("this is download");
     const filename = file.name;
-    const path = "/home/danawa";
+    const path = "/home/danawa/apps/explorer";
 
     await fetch(
-      "/api/servers/explorer?type=download&&filename=" + filename + "&&path=" + path,
+      apiUrl + `?type=download&&filename=${filename}&&path=${path}`,
       {
         method: "GET",
       }
     )
       .then((res) => {
         const a = document.createElement("a");
-        a.href = "http://localhost:3000/tempFiles/" + filename;
+        a.href = "http://localhost:3355/tempFiles/" + filename;
         a.download = file.name;
         a.click();
         a.remove();
-        setTimeout(() => {
-          fetch(
-              "/api/servers/explorer?filename=" + filename,
-              {
-                method: "DELETE",
-              }
-            )     
-        });
+        // setTimeout(() => {
+        //   fetch(
+        //       "/api/servers/explorer?filename=" + filename,
+        //       {
+        //         method: "DELETE",
+        //       }
+        //     )     
+        // });
       })
       .catch((error) => console.error("Error:", error));
   };
@@ -91,4 +106,4 @@ const ExpExample = () => {
   );
 };
 
-export default ExpExample;
+export default ServerExplorer;
