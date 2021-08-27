@@ -2,6 +2,8 @@ import formidable from "formidable";
 import fs from "fs";
 import SshClient from "../../../../utils/SshClient";
 import ServerService from "../../../../services/ServerService"
+import { withSession } from 'next-session';
+import FileService from "../../../../services/FileService"
 
 export const config = {
   api: {
@@ -14,6 +16,19 @@ function getRandomUuid() {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+}
+
+const insertFileDb = async(userId, file, uuid, type, phase) => {
+  return await FileService.newFile({
+    userId : userId,
+    fileName : file.name,
+    initTime : new Date(),
+    fileSize : file.size,
+    phase : phase, // L 로컬, F 운영관리 플랫폼, R 원격지
+    type : type,
+    fileKey : uuid,
+    checkTime : new Date()
+  })
 }
 
 const downUrl = "http://localhost:3355/tempFiles/";
@@ -35,13 +50,12 @@ const deleteFile = async (req, res) => {
 };
 
 // WRITE FILE
-const writeFile = async (req, res) => {
+const writeFile = async (req, res, userId) => {  
   const form = new formidable.IncomingForm();
   form.parse(req, async function (err, fields, files) {
     try {
-      console.log(uuid);
       var uuid = getRandomUuid();
-      await saveFile(files.file, uuid, req.__NEXT_INIT_QUERY["type"]);
+      await saveFile(files.file, uuid, req.__NEXT_INIT_QUERY["type"], userId);
     } catch (e) {
       console.log(e);
     }
@@ -50,13 +64,16 @@ const writeFile = async (req, res) => {
 };
 
 // LOCAL TO SERVER
-const saveFile = async (file, uuid, type) => {
+const saveFile = async (file, uuid, type, userId) => {
   console.log("## SAVE AT SERVER ##");
   const data = fs.readFileSync(file.path);
   try {
     if(type === "upload"){
       fs.writeFileSync(`./public/tempFiles/${uuid}`, data);
-      await fs.unlinkSync(file.path);
+      await fs.unlinkSync(file.path);      
+      // DB에 파일내용 저장
+      var file = await insertFileDb(userId, file, uuid, type, "F");
+      console.log('file : ' + JSON.stringify(file));
       return;
     } else if(type === "download") {
       fs.mkdirSync(`./public/tempFiles/${uuid}`);
@@ -99,14 +116,38 @@ const processToRemote = async (req, res) => {
   }
 };
 
-export default (req, res) => {
+const controlData = async (req, res, userId) => {
+  if(req.query["type"] === "search"){
+    res.send({
+      status: "success",
+      fileList: await FileService.findFiles(userId)
+    }); 
+  } else if(req.query["type"] === "update"){
+    res.send({
+      status: "success",
+      fileList: await FileService.updateFiles(userId)
+    }); 
+  } else if(req.query["type"] === "remove"){
+    await FileService.removeFiles(userId);
+    res.send({
+      status: "success"
+    }); 
+  }
+};
+
+export default withSession(async (req, res) => {
+  // 원격에서 curl로 들어올때 세션처리...??
+  var userId = "";
+  if(req.session.auth !== undefined){
+    userId = req.session.auth.user.userId
+  }
   req.method === "POST"
-    ? writeFile(req, res)
+    ? writeFile(req, res, userId)
     : req.method === "PUT"
-    ? console.log("PUT")
+    ? controlData(req, res, userId)
     : req.method === "DELETE"
     ? deleteFile(req, res)
     : req.method === "GET"
     ? processToRemote(req, res)
     : res.status(404).send("");
-};
+});
