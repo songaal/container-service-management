@@ -49,7 +49,12 @@ export default function Header({active}) {
     const [user, setUser] = React.useState({});
 
     React.useEffect(function() {
-        fetch(`/api/auth/validate`)
+        fetch(`/api/auth/validate`, {
+            headers: {
+                "pragma": "no-cache",
+                "cache-control": "no-cache"
+            }
+        })
             .then(res => res.json())
             .then(body => {
                 if (body.status !== 'success') {

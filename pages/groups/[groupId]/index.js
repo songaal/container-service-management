@@ -74,6 +74,7 @@ function GroupDetail() {
     const [description, setDescription] = React.useState("")
     const [invalid, setInvalid] = React.useState({})
     const [removeOpen, setRemoveOpen] = React.useState(false)
+    const [isReady, setReady] = React.useState(false)
 
     React.useEffect(() => {
         // if (typeof window !== 'undefined') {
@@ -91,11 +92,13 @@ function GroupDetail() {
     }, [])
 
     const init = () => {
+        setReady(false)
         fetch("/api" + location.pathname)
             .then(res => res.json())
             .then(body => {
                 if (body['status'] === 'success') {
                     setGroup(body['group'])
+                    setReady(true)
                 } else {
                     enqueueSnackbar(body['message'], {variant: "error"})
                     router.replace("/")
@@ -162,192 +165,199 @@ function GroupDetail() {
     //         setTabIndex(2)
     //     }
     // }
-
-    return (
-        <Box className={classes.root}>
-            <CssBaseline />
-            <Header  active={1} />
-            <Container maxWidth={"xl"} >
-                <br/>
-                <Breadcrumbs aria-label="breadcrumb">
-                    <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
-                        그룹목록
-                    </Link>
-                    <Typography color="textPrimary">그룹정보</Typography>
-                </Breadcrumbs>
-                <br/>
-                <Grid container>
-                    <Grid item xs={8}>
-                        <Box style={{minHeight: "40px"}}>
-                            <Typography variant="h4" gutterBottom>
-                                {group['name'] || ""}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={4}>
-                        <Box style={{textAlign: "right"}}>
-                            <Button size={"small"} onClick={event => setAnchorEl(event.currentTarget)} variant={"outlined"} color={"primary"}>
-                                설정 <ArrowDropDownIcon/>
-                            </Button>
-                            <Menu
-                                style={{marginTop: "45px"}}
-                                anchorEl={anchorEl}
-                                open={Boolean(anchorEl)}
-                                keepMounted
-                                onClose={() => setAnchorEl(null)}
-                            >
-                                <MenuItem onClick={openGroupEdit}>그룹 수정</MenuItem>
-                                <MenuItem onClick={() => setRemoveOpen(true)}>그룹 삭제</MenuItem>
-                            </Menu>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={12}>
-                        <Box style={{maxHeight: "200px", minHeight: "70px", overflow: "auto"}}>
+    if (!isReady) {
+        return (
+            <Box className={classes.root}>
+                조회 중...
+            </Box>
+        )
+    } else {
+        return (
+            <Box className={classes.root}>
+                <CssBaseline />
+                <Header  active={1} />
+                <Container maxWidth={"xl"} >
+                    <br/>
+                    <Breadcrumbs aria-label="breadcrumb">
+                        <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
+                            그룹목록
+                        </Link>
+                        <Typography color="textPrimary">그룹정보</Typography>
+                    </Breadcrumbs>
+                    <br/>
+                    <Grid container>
+                        <Grid item xs={8}>
+                            <Box style={{minHeight: "40px"}}>
+                                <Typography variant="h4" gutterBottom>
+                                    {group['name'] || ""}
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                            <Box style={{textAlign: "right"}}>
+                                <Button size={"small"} onClick={event => setAnchorEl(event.currentTarget)} variant={"outlined"} color={"primary"}>
+                                    설정 <ArrowDropDownIcon/>
+                                </Button>
+                                <Menu
+                                    style={{marginTop: "45px"}}
+                                    anchorEl={anchorEl}
+                                    open={Boolean(anchorEl)}
+                                    keepMounted
+                                    onClose={() => setAnchorEl(null)}
+                                >
+                                    <MenuItem onClick={openGroupEdit}>그룹 수정</MenuItem>
+                                    <MenuItem onClick={() => setRemoveOpen(true)}>그룹 삭제</MenuItem>
+                                </Menu>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Box style={{maxHeight: "200px", minHeight: "70px", overflow: "auto"}}>
                             <pre style={{fontSize: "1.1em"}}>
                                 {group['description'] || ""}
                             </pre>
+                            </Box>
+                        </Grid>
+                    </Grid>
+
+                    <Box my={6}>
+                        <AppBar position="static" color="default">
+                            <Tabs
+                                value={tabIndex}
+                                onChange={(event, value) => {setTabIndex(value)}}
+                                indicatorColor="primary"
+                                textColor="primary"
+                                variant="scrollable"
+                                scrollButtons="auto"
+                                aria-label="scrollable auto tabs example"
+                            >
+                                <Tab label="서비스" {...a11yProps(0)} />
+                                <Tab label="서버" {...a11yProps(1)} />
+                                <Tab label="권한" {...a11yProps(2)} />
+                            </Tabs>
+                        </AppBar>
+                        <TabPanel value={tabIndex} index={0}>
+                            <Service />
+                        </TabPanel>
+                        <TabPanel value={tabIndex} index={1}>
+                            <Server />
+                        </TabPanel>
+                        <TabPanel value={tabIndex} index={2}>
+                            <Authentication />
+                        </TabPanel>
+                    </Box>
+                </Container>
+
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                >
+                    <DialogTitle>
+                        그룹수정
+                    </DialogTitle>
+                    <DialogContent>
+                        <Box my={3}>
+                            <Grid container>
+                                <Grid item xs={4}>
+                                    이름
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextField fullWidth={true}
+                                               label={""}
+                                               value={name}
+                                               onChange={event => setName(event.target.value)}
+                                               required={true}
+                                               error={invalid['name']}
+                                               helperText={invalid['name']}
+
+                                    />
+                                </Grid>
+                            </Grid>
                         </Box>
-                    </Grid>
-                </Grid>
-
-                <Box my={6}>
-                    <AppBar position="static" color="default">
-                        <Tabs
-                            value={tabIndex}
-                            onChange={(event, value) => {setTabIndex(value)}}
-                            indicatorColor="primary"
-                            textColor="primary"
-                            variant="scrollable"
-                            scrollButtons="auto"
-                            aria-label="scrollable auto tabs example"
-                        >
-                            <Tab label="서비스" {...a11yProps(0)} />
-                            <Tab label="서버" {...a11yProps(1)} />
-                            <Tab label="권한" {...a11yProps(2)} />
-                        </Tabs>
-                    </AppBar>
-                    <TabPanel value={tabIndex} index={0}>
-                        <Service />
-                    </TabPanel>
-                    <TabPanel value={tabIndex} index={1}>
-                        <Server />
-                    </TabPanel>
-                    <TabPanel value={tabIndex} index={2}>
-                        <Authentication />
-                    </TabPanel>
-                </Box>
-            </Container>
-
-
-            <Dialog
-                fullWidth={true}
-                fullScreen={fullScreen}
-                open={editOpen}
-                onClose={() => setEditOpen(false)}
-            >
-                <DialogTitle>
-                    그룹수정
-                </DialogTitle>
-                <DialogContent>
-                    <Box my={3}>
+                        <Box my={3}>
+                            <Grid container >
+                                <Grid item xs={4}>
+                                    설명
+                                </Grid>
+                                <Grid item xs={8}>
+                                    <TextareaAutosize style={{width: '100%', minHeight: "50px"}}
+                                                      value={description}
+                                                      onChange={event => setDescription(event.target.value)}
+                                                      error={invalid['description']}
+                                                      helperText={invalid['description']}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    </DialogContent>
+                    <DialogActions>
                         <Grid container>
-                            <Grid item xs={4}>
-                                이름
-                            </Grid>
-                            <Grid item xs={8}>
-                                <TextField fullWidth={true}
-                                           label={""}
-                                           value={name}
-                                           onChange={event => setName(event.target.value)}
-                                           required={true}
-                                           error={invalid['name']}
-                                           helperText={invalid['name']}
+                            <Grid item xs="6">
 
-                                />
                             </Grid>
-                        </Grid>
-                    </Box>
-                    <Box my={3}>
-                        <Grid container >
-                            <Grid item xs={4}>
-                                설명
-                            </Grid>
-                            <Grid item xs={8}>
-                                <TextareaAutosize style={{width: '100%', minHeight: "50px"}}
-                                                  value={description}
-                                                  onChange={event => setDescription(event.target.value)}
-                                                  error={invalid['description']}
-                                                  helperText={invalid['description']}
-                                />
+                            <Grid item xs="6">
+                                <Box align="right">
+                                    <Button autoFocus
+                                            variant={"outlined"}
+                                            onClick={handleEditGroupProcess}
+                                            color="primary"
+                                    >
+                                        저장
+                                    </Button>
+                                    <Button style={{marginLeft: "5px"}} variant={"outlined"} onClick={() => setEditOpen(false)} color="default">
+                                        닫기
+                                    </Button>
+                                </Box>
                             </Grid>
                         </Grid>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Grid container>
-                        <Grid item xs="6">
+                    </DialogActions>
+                </Dialog>
 
+
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={removeOpen}
+                    onClose={() => setRemoveOpen(false)}
+                >
+                    <DialogTitle>
+                        그룹삭제
+                    </DialogTitle>
+                    <DialogContent>
+                        <Box color="error.main">[ {group['name']} ] 그룹을 삭제하시겠습니까?</Box>
+                    </DialogContent>
+                    <DialogActions>
+                        <Grid container>
+                            <Grid item xs="6">
+
+                            </Grid>
+                            <Grid item xs="6">
+                                <Box align="right">
+                                    <Button autoFocus
+                                            variant={"outlined"}
+                                            onClick={handleRemoveGroupProcess}
+                                            color="secondary"
+                                    >
+                                        삭제
+                                    </Button>
+                                    <Button style={{marginLeft: "5px"}}
+                                            variant={"outlined"}
+                                            onClick={() => setRemoveOpen(false)} color="default"
+                                    >
+                                        취소
+                                    </Button>
+                                </Box>
+                            </Grid>
                         </Grid>
-                        <Grid item xs="6">
-                            <Box align="right">
-                                <Button autoFocus
-                                        variant={"outlined"}
-                                        onClick={handleEditGroupProcess}
-                                        color="primary"
-                                >
-                                    저장
-                                </Button>
-                                <Button style={{marginLeft: "5px"}} variant={"outlined"} onClick={() => setEditOpen(false)} color="default">
-                                    닫기
-                                </Button>
-                            </Box>
-                        </Grid>
-                    </Grid>
-                </DialogActions>
-            </Dialog>
+                    </DialogActions>
+                </Dialog>
 
-
-
-            <Dialog
-                fullWidth={true}
-                fullScreen={fullScreen}
-                open={removeOpen}
-                onClose={() => setRemoveOpen(false)}
-            >
-                <DialogTitle>
-                    그룹삭제
-                </DialogTitle>
-                <DialogContent>
-                    <Box color="error.main">[ {group['name']} ] 그룹을 삭제하시겠습니까?</Box>
-                </DialogContent>
-                <DialogActions>
-                    <Grid container>
-                        <Grid item xs="6">
-
-                        </Grid>
-                        <Grid item xs="6">
-                            <Box align="right">
-                                <Button autoFocus
-                                        variant={"outlined"}
-                                        onClick={handleRemoveGroupProcess}
-                                        color="secondary"
-                                >
-                                    삭제
-                                </Button>
-                                <Button style={{marginLeft: "5px"}}
-                                        variant={"outlined"}
-                                        onClick={() => setRemoveOpen(false)} color="default"
-                                >
-                                    취소
-                                </Button>
-                            </Box>
-                        </Grid>
-                    </Grid>
-                </DialogActions>
-            </Dialog>
-
-        </Box>
-    );
+            </Box>
+        );
+    }
 }
 
 export default GroupDetail
