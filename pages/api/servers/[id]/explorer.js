@@ -80,8 +80,6 @@ const processToRemote = async (req, res) => {
       process_cmd(req.query['id'], req.query["type"], req.query["filename"], req.query["path"] + "/", req.query["filekey"]),
       {}
     ).then(res => {
-      console.log(res[res.length-1]);
-      
       res.forEach(ele => {
         if(ele.indexOf("fileKey") != -1){
           result = ele
