@@ -155,7 +155,8 @@ const controlData = async (req, res, userId) => {
   }
 };
 
-const excuteCmd = async (req, res) => {
+const excuteCmd = async (req, res) => {  
+  console.log("EXCUTE CMD");
   let server = await ServerService.findServerById(req.query["id"]);
   const sshClient = new SshClient(
     server.ip,
@@ -165,11 +166,41 @@ const excuteCmd = async (req, res) => {
   );
 
   try {
-    const cmd = await sshClient.exec(req.query["cmd"], {}).then((res) => {
-      console.log(res);
-      return res;
-    });
+    // var msg = await sshClient.exec("ls -al", {});
+    // console.log(msg);
 
+    console.log(req.query["cmd"]);
+    console.log(req.query["path"]);
+
+    // cd home/danawa/ && mkdir newFolder && ls -al
+    // cd home/danawa/ && mkdir newFolder && ls -al
+
+    // console.log( `cd ${req.query["path"]} && ${req.query["cmd"]} && ls -al && pwd`);
+
+    var excuteData = await sshClient.exec(
+      req.query["cmd"] !== undefined && req.query["cmd"] !== ""
+        ? `cd ${req.query["path"]} && ${req.query["cmd"]} && ls -al && pwd`
+        : `cd ${req.query["path"]} && ls -al && pwd`, // 아무것도 입력하지 않았을때 
+      {}
+    )
+
+    console.log(excuteData);
+
+    var result = {
+      dirFiles : "",
+      pwd : ""
+    }
+
+    if(excuteData.length > 1){
+      result['dirFiles'] = excuteData[excuteData.length-2] // 배열의 마지막에서 두번째 : ls -al
+      result['pwd'] = excuteData[excuteData.length-1] // 배열의 마지막 요소 : pwd
+    } else { // error handle
+      result['dirFiles'] = excuteData[0]
+      result['pwd'] = req.query["path"]
+    }
+
+    console.log(result);
+    
     return res.send(result);
   } catch (e) {
     console.log(e);
