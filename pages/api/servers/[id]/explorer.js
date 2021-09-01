@@ -37,7 +37,8 @@ const downUrl = "http://localhost:3355/tempFiles/";
 var process_cmd = (id, processType, filename, path, filekey) => {
   const uploadUrl = `http://localhost:3355/api/servers/${id}/explorer`;
   if (processType === "upload") {
-    var enc = encodeURI(`${downUrl}${filekey}`);
+    var enc = encodeURI(`${downUrl}${filekey}/${filename}`);
+    console.log(`curl "${enc}" > "${path + filename}"`);
     return `curl "${enc}" > "${path + filename}"`;
   } else if (processType === "download") {
     return `curl -F "file=@${path + filename}" ${uploadUrl}?type="download"`;
@@ -56,7 +57,16 @@ const writeFile = async (req, res, userId) => {
   form.parse(req, async function (err, fields, files) {
     try {
       var uuid = getRandomUuid();
-      await saveFile(files.file, uuid, req.__NEXT_INIT_QUERY["type"], userId);
+      var file = files.file;
+
+      fs.mkdirSync(`./public/tempFiles/${uuid}`);
+      fs.renameSync(file.path, `./public/tempFiles/${uuid}/${decodeURI(file.name)}`);
+
+      try {
+        await insertFileDb(userId, file, uuid, req.__NEXT_INIT_QUERY["type"], "F");
+      } catch (e) {
+        console.log(e);
+      }
     } catch (e) {
       console.log(e);
     }
@@ -66,31 +76,6 @@ const writeFile = async (req, res, userId) => {
       fileName: files.file.name,
     });
   });
-};
-
-// LOCAL TO SERVER
-const saveFile = async (file, uuid, type, userId) => {
-  console.log("## SAVE AT SERVER ##");
-  const data = fs.readFileSync(file.path);
-  try {
-    if (type === "upload") {
-      fs.writeFileSync(`./public/tempFiles/${uuid}`, data);
-      await fs.unlinkSync(file.path);
-      // DB에 파일내용 저장
-      var file = await insertFileDb(userId, file, uuid, type, "F");
-      return;
-    } else if (type === "download") {
-      fs.mkdirSync(`./public/tempFiles/${uuid}`);
-      fs.writeFileSync(
-        `./public/tempFiles/${uuid}/${decodeURI(file.name)}`,
-        data
-      );
-      await fs.unlinkSync(file.path);
-      return;
-    }
-  } catch (e) {
-    console.log(e);
-  }
 };
 
 // SERVER TO REMOTE
@@ -127,7 +112,7 @@ const processToRemote = async (req, res) => {
       });
 
     if (req.query["type"] === "upload") {
-      await fs.rmSync(`./public/tempFiles/` + req.query["filekey"]);
+      await fs.rmdirSync(`./public/tempFiles/` + req.query["filekey"], { recursive: true });
     }
 
     return res.status(201).send(result);
@@ -155,68 +140,19 @@ const controlData = async (req, res, userId) => {
   }
 };
 
-const excuteCmd = async (req, res) => {  
-  console.log("EXCUTE CMD");
-  let server = await ServerService.findServerById(req.query["id"]);
-  const sshClient = new SshClient(
-    server.ip,
-    server.port,
-    server.user,
-    server.password
-  );
-
-  try {
-    // var msg = await sshClient.exec("ls -al", {});
-    // console.log(msg);
-
-    console.log(req.query["cmd"]);
-    console.log(req.query["path"]);
-
-    // cd home/danawa/ && mkdir newFolder && ls -al
-    // cd home/danawa/ && mkdir newFolder && ls -al
-
-    // console.log( `cd ${req.query["path"]} && ${req.query["cmd"]} && ls -al && pwd`);
-
-    var excuteData = await sshClient.exec(
-      req.query["cmd"] !== undefined && req.query["cmd"] !== ""
-        ? `cd ${req.query["path"]} && ${req.query["cmd"]} && ls -al && pwd`
-        : `cd ${req.query["path"]} && ls -al && pwd`, // 아무것도 입력하지 않았을때 
-      {}
-    )
-
-    console.log(excuteData);
-
-    var result = {
-      dirFiles : "",
-      pwd : ""
-    }
-
-    if(excuteData.length > 1){
-      result['dirFiles'] = excuteData[excuteData.length-2] // 배열의 마지막에서 두번째 : ls -al
-      result['pwd'] = excuteData[excuteData.length-1] // 배열의 마지막 요소 : pwd
-    } else { // error handle
-      result['dirFiles'] = excuteData[0]
-      result['pwd'] = req.query["path"]
-    }
-
-    console.log(result);
-    
-    return res.send(result);
-  } catch (e) {
-    console.log(e);
-  }
-};
-
 export default withSession(async (req, res) => {
-  // 원격에서 curl로 들어올때 세션처리...??
   var userId = "";
   if (req.session.auth !== undefined) {
     userId = req.session.auth.user.userId;
   }
+  
+  // /서버들/5/액션?타입=명령어실행,
+  // 메소드: 포스트, 경로 /서버들/5/파일
+
   req.method === "POST"
     ? writeFile(req, res, userId)
     : req.method === "PUT"
-    ? excuteCmd(req, res)
+    ? console.log("PUT")
     : req.method === "DELETE"
     ? deleteFile(req, res)
     : req.method === "GET"

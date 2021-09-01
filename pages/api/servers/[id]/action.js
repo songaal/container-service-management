@@ -3,6 +3,7 @@ import fetch from "isomorphic-unfetch";
 import { withSession } from 'next-session';
 import ServerService from "../../../../services/ServerService"
 import AuthService from "../../../../services/AuthService";
+import SshClient from "../../../../utils/SshClient";
 
 async function serverTest(req, res) {
     res.statusCode = 200;
@@ -16,6 +17,40 @@ async function serverTest(req, res) {
             if (req.query['type'] === "exec") {
                 const cmdEntity = JSON.parse(req.body)
                 res.send(JSON.stringify(await ServerService.execCmd(id, cmdEntity['cmd'])))
+            } else if (req.query['type'] === "exp_excute") {
+                let server = await ServerService.findServerById(req.query["id"]);
+                const sshClient = new SshClient(
+                    server.ip,
+                    server.port,
+                    server.user,
+                    server.password
+                );
+                try {
+                    var body = JSON.parse(req.body);
+
+                    var excuteData = await sshClient.exec(
+                        body["cmd"] !== undefined && body["cmd"] !== ""
+                        ? `cd ${body["path"]} && ${body["cmd"]} ; ls -al ; pwd`
+                        : `cd ${body["path"]} && ls -al && pwd`, // 아무것도 입력하지 않았을때 
+                    {}
+                    )
+
+                    var result = {
+                        dirFiles : "",
+                        pwd : ""
+                    }
+
+                    if(excuteData.length == 2){
+                        result['dirFiles'] = "PATH : " + excuteData[excuteData.length-1] + "\n" + excuteData[excuteData.length-2] // 배열의 마지막에서 두번째 : ls -al
+                        result['pwd'] = excuteData[excuteData.length-1] // 배열의 마지막 요소 : pwd
+                    } else { // error handle
+                        result['dirFiles'] = excuteData[0]
+                        result['pwd'] = body["path"]
+                    }
+                    return res.send(JSON.stringify(result));
+                } catch (e) {
+                    console.log(e);
+                }
             }
         }
 

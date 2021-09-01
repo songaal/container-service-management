@@ -15,6 +15,7 @@ import UploadIcon from '@material-ui/icons/Publish';
 import InputIcon from '@material-ui/icons/Input';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -58,24 +59,31 @@ const ServerExplorer = () => {
   const classes = useStyles();  
   const steps = getSteps();
 
-  const [currentPath, setCurrentPath] = React.useState("/home/danawa");
+  const [showLoader, setShowLoader] = React.useState(false);
+  const [currentPath, setCurrentPath] = React.useState();
   const [cmd, setCmd] = React.useState();
-  const [dirData, setDirdata] = React.useState("No data");
+  const [dirData, setDirdata] = React.useState();
   const [server, setServer] = React.useState({});
-  const apiUrl = `/api/servers/${server["id"]}/explorer`;
 
 
-  const excuteCmd = (url) => {
-    if(url !== undefined){
-      fetch(`${url}?cmd=${cmd}&&path=${currentPath}`, {
-        method: "PUT",
+  const excuteCmd = (root) => {    
+    if(showLoader !== true){
+      setShowLoader(true);
+      setDirdata("");
+      var url = "/api" + location.pathname.replace("/explorer", "");
+      var path = root === undefined ? currentPath : root
+      fetch(`${url}/action?type=exp_excute`, {
+        method: "POST",
+        body: JSON.stringify({cmd, path})
       })
       .then((res) => {
         return res.json();
-      }).then((data) => {      
+      }).then((data) => {
         if(data.dirFiles.length > 0 && data.pwd.length > 0){            
-          setDirdata(data.dirFiles)
-          setCurrentPath(data.pwd.replace("\n", ""))
+          setDirdata(data.dirFiles);
+          setCurrentPath(data.pwd.replace("\n", ""));
+          setCmd("");
+          setShowLoader(false);
         }
       })
     }
@@ -88,7 +96,7 @@ const ServerExplorer = () => {
       .then((body) => {
         console.log(body["server"]);
         setServer(body["server"]);
-        excuteCmd(`/api/servers/${body["server"].id}/explorer?`);
+        excuteCmd(`/home/${body["server"].user}`);
       });
   }, []);
 
@@ -100,7 +108,7 @@ const ServerExplorer = () => {
                 <Grid item xs={12}>
                     <Paper component="form" className={classes.inputRoot}>
                       <Typography className={classes.currentPath}>
-                        {currentPath}
+                        명령어
                       </Typography>
                       <Divider className={classes.divider} orientation="vertical" />
                         <InputBase
@@ -108,16 +116,17 @@ const ServerExplorer = () => {
                             placeholder="ls -al"
                             fullWidth
                             spellCheck={false}
+                            value={cmd || ""}
                             onKeyPress={e => {
                               if (e.key === 'Enter') {                                                                
-                                excuteCmd(apiUrl)
+                                excuteCmd()
                                 e.preventDefault();
                               }
                             }}
                             onChange={e => setCmd(e.target.value) && e.preventDefault()}
                         />
                         <Divider className={classes.divider} orientation="vertical" />
-                        <IconButton color="primary" className={classes.iconButton} aria-label="directions" onClick={() => {excuteCmd(apiUrl)}}>
+                        <IconButton color="primary" className={classes.iconButton} aria-label="directions" onClick={() => {excuteCmd()}}>
                             <InputIcon />
                         </IconButton>
                     </Paper>
@@ -135,7 +144,10 @@ const ServerExplorer = () => {
                 overflowX: "hidden"
               }}
             >
-              <Input multiline disabled value={dirData} style={{width:"100%", color: "white", fontSize: "18px"}}/>              
+              <Input multiline disabled value={dirData || ""} style={{width:"100%", color: "white", sfontSize: "18px"}}/>    
+              <div style={showLoader === true ? {display: "block"} : {display: "none"}}>
+                <CircularProgress style={{position: "absolute", top: "30%", left: "45%"}}/>
+              </div>          
             </div>
             <TableContainer
               component={Paper}

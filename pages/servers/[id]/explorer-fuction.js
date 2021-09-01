@@ -7,7 +7,7 @@ const ServerExplorer = () => {
   const apiUrl = `/api/servers/${server["id"]}/explorer`;
 
   React.useEffect(() => {
-    const url = "/api" + location.pathname.replace("/explorer", "");
+    const url = "/api" + location.pathname.replace("/explorer-fuction", "");
     fetch(url)
       .then((res) => res.json())
       .then((body) => {
