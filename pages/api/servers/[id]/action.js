@@ -4,6 +4,7 @@ import { withSession } from 'next-session';
 import ServerService from "../../../../services/ServerService"
 import AuthService from "../../../../services/AuthService";
 import SshClient from "../../../../utils/SshClient";
+import FileService from "../../../../services/FileService";
 
 async function serverTest(req, res) {
     res.statusCode = 200;
@@ -41,7 +42,7 @@ async function serverTest(req, res) {
                     }
 
                     if(excuteData.length == 2){
-                        result['dirFiles'] = "PATH : " + excuteData[excuteData.length-1] + "\n" + excuteData[excuteData.length-2] // 배열의 마지막에서 두번째 : ls -al
+                        result['dirFiles'] = excuteData[excuteData.length-2] // 배열의 마지막에서 두번째 : ls -al
                         result['pwd'] = excuteData[excuteData.length-1] // 배열의 마지막 요소 : pwd
                     } else { // error handle
                         result['dirFiles'] = excuteData[0]
@@ -52,9 +53,19 @@ async function serverTest(req, res) {
                     console.log(e);
                 }
             }
+        } else if(req.method === 'GET'){
+            if (req.query["type"] === "searchFile") {
+                res.send({
+                  status: "success",
+                  fileList: await FileService.findFiles(req.session.auth.user.userId, req.query["filekey"]),
+                });
+            } else if (req.query["type"] === "removeFile") {
+                res.send({
+                   status: "success",
+                   fiileList: await FileService.removeFiles(req.session.auth.user.userId, req.query["filekey"])
+                });
+            }
         }
-
-
     } catch (error) {
         console.error(error);
         res.send({

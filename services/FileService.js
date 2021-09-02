@@ -2,7 +2,7 @@
 const { Sequelize, sequelize, Services, Variable, FileHistory} = require("../models")
 
 export default {
-    newFile: async (file) => {
+    newFileInfo: async (file) => {
         try {
             let registerFile = await FileHistory.create(file);
             return {
@@ -17,15 +17,14 @@ export default {
             }
         }
     }, 
-    findFiles: async (userId) => {
-        return await FileHistory.findAll({where: {userId: userId}})
+    findFiles: async (userId, filekey) => {
+        return await FileHistory.findAll({where: {userId: userId, filekey : filekey}})
     },
-    updateFiles: async (userId) => {
-        await FileHistory.update({phase: 'R'},{where: {userId: userId}})
-        return await FileHistory.findAll({where: {userId: userId}})
+    updateFileInfo: async (userId, fileKey, phase) => {
+        return await FileHistory.update({phase: phase},{where: {userId: userId, fileKey: fileKey}})
     },
-    removeFiles: async (userId) => {
-        await FileHistory.destroy({where: {userId: userId}})
+    removeFiles: async (userId, fileKey) => {
+        await FileHistory.destroy({where: {userId: userId, fileKey: fileKey}})
         return await FileHistory.findAll({where: {userId: userId}})
     },
 }

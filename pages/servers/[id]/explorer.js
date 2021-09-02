@@ -24,7 +24,6 @@ import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import FileIcon from "@material-ui/icons/Description";
-import { addAbortSignal } from "stream";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -59,7 +58,7 @@ const useStyles = makeStyles((theme) => ({
   },
   dropzone: {
     width: "100%",
-    height: "380px",
+    height: "350px",
     display: "flex",
     flex: "auto",
     flexFlow: "column",
@@ -142,23 +141,62 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
-  const uploadToRemote = async (fileKey, fileName) => {
+  const searchFileData = async (fileKey) => {
+    var url = "/api" + location.pathname.replace("/explorer", "");
+    var result;
+    await fetch(`${url}/action?type=searchFile&&filekey=${fileKey}`, {
+      method: "GET"
+    })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+      result = data.fileList;
+    });
+    return result;
+  }
+
+  const deleteFileData = async (fileKey) => {
+    var url = "/api" + location.pathname.replace("/explorer", "");
+    var result;
+    await fetch(`${url}/action?type=removeFile&&filekey=${fileKey}`, {
+      method: "GET"
+    })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+      result = data.fileList;
+    });
+    return result;
+  }
+
+  const uploadToRemote = async (fileKey, fileName, idx) => {
     await fetch(
-      apiUrl +
-        `?type=upload&&filekey=${fileKey}&&filename=${fileName}&&path=${currentPath}`,
+      `${apiUrl}?type=upload&&filekey=${fileKey}&&filename=${fileName}&&path=${currentPath}`,
       {
         method: "GET",
       }
     )
-      .then((res) => {
+      .then(async (res) => {
         console.log("FILE UPLOAD TO REMOTE");
+        var targetFile = await searchFileData(fileKey);
+        files[idx]['phase'] = targetFile[0][`phase`];
+        setFiles([
+          ...files
+        ])
       })
       .catch((error) => console.error("Error:", error));
   };
 
-  const handleFileUpload = async (item) => {
+  const handleFileUpload = async (item, idx) => {
     const body = new FormData();
-    body.append("file", item);
+    body.append("file", item);    
+
+    files[idx]['transferType'] = "upload"
+    setFiles([
+      ...files
+    ])
 
     // 로컬 -> 서버 파일 업로드
     await fetch(apiUrl + "?type=upload", {
@@ -168,14 +206,28 @@ const ServerExplorer = () => {
     .then((res) => {
       return res.json();
     })
-    .then((data) => {
-      console.log(data);
+    .then( async (data) => {
+      var targetFile = await searchFileData(data.fileKey);
+      files[idx]['phase'] = targetFile[0][`phase`];
+      files[idx]['fileKey'] = targetFile[0][`fileKey`];
+      setFiles([
+        ...files
+      ])
+
       if (data.status === "201") {
         // 서버 -> 원격 파일 업로드
-        uploadToRemote(data.fileKey, data.fileName);
+        uploadToRemote(data.fileKey, data.fileName, idx);
       }
     })
     .catch((error) => console.error("Error:", error));
+  }
+
+  const handleFileDelete = async (item, idx) => {
+    console.log(files[idx]['fileKey']);
+    var msg = await deleteFileData(files[idx]['fileKey']);
+    console.log(msg)
+    files.splice(idx);
+    setFiles([...files])
   }
 
   return (
@@ -262,6 +314,12 @@ const ServerExplorer = () => {
                   overflowX: "hidden",
                 }}
               >
+                <div>
+                  <Typography>
+                    PATH : {currentPath}
+                  </Typography>
+                </div>
+                <Divider />
                 <Table>
                   <TableBody>
                     {files.map((item, idx) => {
@@ -295,36 +353,38 @@ const ServerExplorer = () => {
                                 const stepProps = {};
                                 return (
                                   <Step key={label} {...stepProps}>
-                                    <StepButton disabled completed={false}>
+                                    <StepButton disabled completed={item.phase !== undefined && (item.phase === "F" && label === "Server") || (item.phase === "R" && (label === "Remote" || label === "Server")) || label === "Local" ? true : false}>
                                       {label}
                                     </StepButton>
                                   </Step>
                                 );
-                                s;
                               })}
                             </Stepper>
                           </TableCell>
                           <TableCell align="center" style={{ minWidth: 250 }}>
-                            <Typography
-                              style={
-                                item.phase
-                                  ? { display: "inline" }
-                                  : { display: "none" }
-                              }
-                            >
-                              Uploading ...
-                            </Typography>
                             <Button
                               variant="contained"
                               style={
-                                item.phase
+                                item.transferType
                                   ? { display: "none" }
                                   : { display: "inline" }
                               }
-                              onClick={e => handleFileUpload(item)}
+                              onClick={e => handleFileUpload(item, idx)}
                             >
                               업로드
                             </Button>
+                            <Button
+                              variant="contained"
+                              style={
+                                item.phase === "R"
+                                  ? { display: "block"}
+                                  : { display: "none" }
+                              }
+                              onClick={e =>handleFileDelete(item, idx)}
+                            >
+                              항목 제거
+                            </Button>
+                            {(item.transferType !== undefined && item.phase !== "R" ? item.transferType + "ing..." : undefined)}
                           </TableCell>
                         </TableRow>
                       );

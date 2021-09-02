@@ -23,7 +23,7 @@ function getRandomUuid() {
 }
 
 const insertFileDb = async (userId, file, uuid, type, phase) => {
-  return await FileService.newFile({
+  return await FileService.newFileInfo({
     userId: userId,
     fileName: file.name,
     fileSize: file.size,
@@ -34,13 +34,8 @@ const insertFileDb = async (userId, file, uuid, type, phase) => {
   });
 };
 
-const updateFileDb = async (userId, file, uuid, type, phase) => {
-  return await FileService.newFile({
-    userId: userId,
-    phase: phase,
-    fileKey: uuid,
-    checkTime: new Date(),
-  });
+const updateFileDb = async (userId, filekey, phase) => {
+  return await FileService.updateFileInfo(userId, filekey, phase);
 };
 
 const downUrl = "http://localhost:3355/tempFiles/";
@@ -65,6 +60,7 @@ const deleteFile = async (req, res) => {
 // WRITE FILE
 const writeFile = async (req, res, userId) => {
   const form = new formidable.IncomingForm();
+  // form.maxFileSize(1000 * 1024 * 1024); // 1000mb
   form.parse(req, async function (err, fields, files) {
     logger.info("success send to server : " + JSON.stringify(files.file));
     try {
@@ -103,7 +99,7 @@ const writeFile = async (req, res, userId) => {
 };
 
 // SERVER TO REMOTE
-const processToRemote = async (req, res) => {
+const processToRemote = async (req, res, userId) => {
   console.log("## PROCESS TO REMOTE ##");
   let server = await ServerService.findServerById(req.query["id"]);
   const sshClient = new SshClient(
@@ -137,15 +133,9 @@ const processToRemote = async (req, res) => {
         });
 
         try {
-          await insertFileDb(
-            userId,
-            file,
-            uuid,
-            req.__NEXT_INIT_QUERY["type"],
-            "F"
-          );
-        } catch (err) {
-          console.log(err);
+          updateFileDb(userId, req.query["filekey"], 'R');
+        } catch (e) {
+          console.log(e);
         }
 
         return res;
@@ -160,25 +150,6 @@ const processToRemote = async (req, res) => {
     return res.status(201).send(result);
   } catch (e) {
     console.log(e);
-  }
-};
-
-const controlData = async (req, res, userId) => {
-  if (req.query["type"] === "search") {
-    res.send({
-      status: "success",
-      fileList: await FileService.findFiles(userId),
-    });
-  } else if (req.query["type"] === "update") {
-    res.send({
-      status: "success",
-      fileList: await FileService.updateFiles(userId),
-    });
-  } else if (req.query["type"] === "remove") {
-    await FileService.removeFiles(userId);
-    res.send({
-      status: "success",
-    });
   }
 };
 
@@ -198,6 +169,6 @@ export default withSession(async (req, res) => {
     : req.method === "DELETE"
     ? deleteFile(req, res)
     : req.method === "GET"
-    ? processToRemote(req, res)
+    ? processToRemote(req, res, userId)
     : res.status(404).send("");
 });
