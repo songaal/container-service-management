@@ -60,6 +60,8 @@ const writeFile = async (req, res, userId) => {
       var file = files.file;
 
       fs.mkdirSync(`./public/tempFiles/${uuid}`);
+
+      // 임시 폴더의 파일이동
       fs.renameSync(file.path, `./public/tempFiles/${uuid}/${decodeURI(file.name)}`);
 
       try {
