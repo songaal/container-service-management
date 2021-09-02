@@ -14,9 +14,6 @@ module.exports = {
       fileName: {
         type: Sequelize.STRING
       },
-      initTime: {
-        type: Sequelize.DATE
-      },
       fileSize: {
         type: Sequelize.STRING
       },

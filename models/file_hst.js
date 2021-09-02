@@ -16,7 +16,6 @@ module.exports = (sequelize, DataTypes) => {
   file_hst.init({
     userId: DataTypes.STRING,
     fileName: DataTypes.STRING,
-    initTime: DataTypes.DATE,
     fileSize: DataTypes.STRING,
     phase: DataTypes.STRING,
     type: DataTypes.STRING,

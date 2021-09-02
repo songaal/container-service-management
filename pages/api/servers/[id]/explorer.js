@@ -4,12 +4,15 @@ import SshClient from "../../../../utils/SshClient";
 import ServerService from "../../../../services/ServerService";
 import { withSession } from "next-session";
 import FileService from "../../../../services/FileService";
+import { logger } from "../../../../utils/winston";
 
 export const config = {
   api: {
     bodyParser: false,
   },
 };
+
+const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
 
 function getRandomUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -23,10 +26,18 @@ const insertFileDb = async (userId, file, uuid, type, phase) => {
   return await FileService.newFile({
     userId: userId,
     fileName: file.name,
-    initTime: new Date(),
     fileSize: file.size,
     phase: phase, // L 로컬, F 운영관리 플랫폼, R 원격지
     type: type,
+    fileKey: uuid,
+    checkTime: new Date(),
+  });
+};
+
+const updateFileDb = async (userId, file, uuid, type, phase) => {
+  return await FileService.newFile({
+    userId: userId,
+    phase: phase,
     fileKey: uuid,
     checkTime: new Date(),
   });
@@ -47,7 +58,7 @@ var process_cmd = (id, processType, filename, path, filekey) => {
 
 // DELETE FILE
 const deleteFile = async (req, res) => {
-  fs.rmSync(`./public/tempFiles/` + req.__NEXT_INIT_QUERY["filename"]);
+  fs.rmSync(`${tempDir}/` + req.__NEXT_INIT_QUERY["filename"]);
   return;
 };
 
@@ -55,22 +66,33 @@ const deleteFile = async (req, res) => {
 const writeFile = async (req, res, userId) => {
   const form = new formidable.IncomingForm();
   form.parse(req, async function (err, fields, files) {
+    logger.info("success send to server : " + JSON.stringify(files.file));
     try {
       var uuid = getRandomUuid();
       var file = files.file;
 
-      fs.mkdirSync(`./public/tempFiles/${uuid}`);
+      //임시파일 이동
+      fs.mkdirSync(`${tempDir}/${uuid}`);
+      fs.renameSync(file.path, `${tempDir}/${uuid}/${decodeURI(file.name)}`);
 
-      // 임시 폴더의 파일이동
-      fs.renameSync(file.path, `./public/tempFiles/${uuid}/${decodeURI(file.name)}`);
+      fs.stat(`${tempDir}/${uuid}/${decodeURI(file.name)}`, (err, stat) => {
+        if (err) console.log("error: ", error);
+        logger.info("success move to tempfile : " + JSON.stringify(stat));
+      });
 
       try {
-        await insertFileDb(userId, file, uuid, req.__NEXT_INIT_QUERY["type"], "F");
-      } catch (e) {
-        console.log(e);
+        await insertFileDb(
+          userId,
+          file,
+          uuid,
+          req.__NEXT_INIT_QUERY["type"],
+          "F"
+        );
+      } catch (err) {
+        console.log(err);
       }
     } catch (e) {
-      console.log(e);
+      logger.error("fail to transfer : " + e);
     }
     return res.json({
       status: "201",
@@ -82,6 +104,7 @@ const writeFile = async (req, res, userId) => {
 
 // SERVER TO REMOTE
 const processToRemote = async (req, res) => {
+  console.log("## PROCESS TO REMOTE ##");
   let server = await ServerService.findServerById(req.query["id"]);
   const sshClient = new SshClient(
     server.ip,
@@ -89,10 +112,10 @@ const processToRemote = async (req, res) => {
     server.user,
     server.password
   );
-  console.log("## PROCESS TO REMOTE ##");
   try {
     var result;
-    const msg = await sshClient
+
+    await sshClient
       .exec(
         process_cmd(
           req.query["id"],
@@ -104,17 +127,34 @@ const processToRemote = async (req, res) => {
         {}
       )
       .then((res) => {
+        logger.info(
+          "success upload to remote server : " + res
+        );
         res.forEach((ele) => {
           if (ele.indexOf("fileKey") != -1) {
             result = ele;
           }
         });
 
+        try {
+          await insertFileDb(
+            userId,
+            file,
+            uuid,
+            req.__NEXT_INIT_QUERY["type"],
+            "F"
+          );
+        } catch (err) {
+          console.log(err);
+        }
+
         return res;
       });
 
     if (req.query["type"] === "upload") {
-      await fs.rmdirSync(`./public/tempFiles/` + req.query["filekey"], { recursive: true });
+      await fs.rmdirSync(`${tempDir}/` + req.query["filekey"], {
+        recursive: true,
+      });
     }
 
     return res.status(201).send(result);
@@ -147,7 +187,7 @@ export default withSession(async (req, res) => {
   if (req.session.auth !== undefined) {
     userId = req.session.auth.user.userId;
   }
-  
+
   // /서버들/5/액션?타입=명령어실행,
   // 메소드: 포스트, 경로 /서버들/5/파일
 

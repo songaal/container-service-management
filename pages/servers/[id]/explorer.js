@@ -87,6 +87,8 @@ const ServerExplorer = () => {
   const [server, setServer] = React.useState({});
   const [files, setFiles] = useState([]);
 
+  const apiUrl = `/api/servers/${server["id"]}/explorer`;
+
   const excuteCmd = (root) => {
     if (showLoader !== true) {
       setShowLoader(true);
@@ -140,9 +142,40 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
-  const handleFileUpload = (e) => {
-    console.log(e);
-    debugger;
+  const uploadToRemote = async (fileKey, fileName) => {
+    await fetch(
+      apiUrl +
+        `?type=upload&&filekey=${fileKey}&&filename=${fileName}&&path=${currentPath}`,
+      {
+        method: "GET",
+      }
+    )
+      .then((res) => {
+        console.log("FILE UPLOAD TO REMOTE");
+      })
+      .catch((error) => console.error("Error:", error));
+  };
+
+  const handleFileUpload = async (item) => {
+    const body = new FormData();
+    body.append("file", item);
+
+    // 로컬 -> 서버 파일 업로드
+    await fetch(apiUrl + "?type=upload", {
+      method: "POST",
+      body,
+    })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+      console.log(data);
+      if (data.status === "201") {
+        // 서버 -> 원격 파일 업로드
+        uploadToRemote(data.fileKey, data.fileName);
+      }
+    })
+    .catch((error) => console.error("Error:", error));
   }
 
   return (
@@ -288,7 +321,7 @@ const ServerExplorer = () => {
                                   ? { display: "none" }
                                   : { display: "inline" }
                               }
-                              onClick={e => handleFileUpload(idx)}
+                              onClick={e => handleFileUpload(item)}
                             >
                               업로드
                             </Button>

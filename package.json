@@ -85,6 +85,8 @@
     "styled-components": "5.0.1",
     "uuid": "^8.3.0",
     "virtualized": "^0.1.0",
+    "winston": "^3.3.3",
+    "winston-daily-rotate-file": "^4.5.5",
     "yaml-validator": "^3.0.0"
   },
   "devDependencies": {
