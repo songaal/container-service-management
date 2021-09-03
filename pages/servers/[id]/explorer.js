@@ -24,6 +24,7 @@ import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import FileIcon from "@material-ui/icons/Description";
+import {useSnackbar} from "notistack";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -75,10 +76,21 @@ function getSteps() {
   return ["Local", "Server", "Remote"];
 }
 
+function byteCalculation(bytes) { 
+  var bytes = parseInt(bytes);
+  var s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+  var e = Math.floor(Math.log(bytes)/Math.log(1024));
+  if(e == "-Infinity") return " ( " + "0 "+s[0] + ") "; 
+  else 
+  return " ( " + (bytes/Math.pow(1024, Math.floor(e))).toFixed(2)+" "+ s[e] + ") ";
+}
+
 const ServerExplorer = () => {
   const classes = useStyles();
   const steps = getSteps();
 
+  const {enqueueSnackbar, closeSnackbar} = useSnackbar();
   const [showLoader, setShowLoader] = React.useState(false);
   const [currentPath, setCurrentPath] = React.useState();
   const [cmd, setCmd] = React.useState();
@@ -89,26 +101,43 @@ const ServerExplorer = () => {
   const apiUrl = `/api/servers/${server["id"]}/explorer`;
 
   const excuteCmd = (root) => {
-    if (showLoader !== true) {
-      setShowLoader(true);
-      setDirdata("");
-      var url = "/api" + location.pathname.replace("/explorer", "");
-      var path = root === undefined ? currentPath : root;
-      fetch(`${url}/action?type=exp_excute`, {
-        method: "POST",
-        body: JSON.stringify({ cmd, path }),
-      })
-        .then((res) => {
-          return res.json();
+    if (showLoader !== true) {  // GET FILE 
+      
+      if((cmd||"").trim().toUpperCase().startsWith("GET ")){ // Download
+        let fileNameSplit = String(cmd).trim().split(" ")
+        fileNameSplit[0] = ""
+        var fileName = fileNameSplit.join("")
+
+        var downloadFile = {
+          name : fileName,
+          size : 0,
+          transferType : "download",
+          fileKey : "",
+          phase : "R"
+        }
+        setFiles(files => [...files, downloadFile]);
+        handleFileDownload(fileName);
+      } else { // 일반 명령어 실행
+        setShowLoader(true);
+        setDirdata("");
+        var url = "/api" + location.pathname.replace("/explorer", "");
+        var path = root === undefined ? currentPath : root;
+        fetch(`${url}/action?type=exp_excute`, {
+          method: "POST",
+          body: JSON.stringify({ cmd, path }),
         })
-        .then((data) => {
-          if (data.dirFiles.length > 0 && data.pwd.length > 0) {
-            setDirdata(data.dirFiles);
-            setCurrentPath(data.pwd.replace("\n", ""));
-            setCmd("");
-            setShowLoader(false);
-          }
-        });
+          .then((res) => {
+            return res.json();
+          })
+          .then((data) => {
+            if (data.dirFiles.length > 0 && data.pwd.length > 0) {
+              setDirdata(data.dirFiles);
+              setCurrentPath(data.pwd.replace("\n", ""));
+              setCmd("");
+              setShowLoader(false);
+            }
+          });
+      }
     }
   };
 
@@ -127,9 +156,10 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
+  // 드래그앤 드랍
   const handleDrop = (e) => {
     var items = [];
-
+    console.log(e.dataTransfer.files[0]);
     for(var i=0; i<e.dataTransfer.files.length; i++){
       items.push(e.dataTransfer.files[i]);
     }
@@ -141,6 +171,7 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
+  // DB 파일 검색
   const searchFileData = async (fileKey) => {
     var url = "/api" + location.pathname.replace("/explorer", "");
     var result;
@@ -156,6 +187,7 @@ const ServerExplorer = () => {
     return result;
   }
 
+  // 항목 삭제
   const deleteFileData = async (fileKey) => {
     var url = "/api" + location.pathname.replace("/explorer", "");
     var result;
@@ -171,6 +203,7 @@ const ServerExplorer = () => {
     return result;
   }
 
+  // 원격서버로 파일 업로드
   const uploadToRemote = async (fileKey, fileName, idx) => {
     await fetch(
       `${apiUrl}?type=upload&&filekey=${fileKey}&&filename=${fileName}&&path=${currentPath}`,
@@ -207,25 +240,52 @@ const ServerExplorer = () => {
       return res.json();
     })
     .then( async (data) => {
-      var targetFile = await searchFileData(data.fileKey);
-      files[idx]['phase'] = targetFile[0][`phase`];
-      files[idx]['fileKey'] = targetFile[0][`fileKey`];
-      setFiles([
-        ...files
-      ])
+      if(data.status === "500"){ // error
+        console.log(data.error);
+        enqueueSnackbar(data.error, {variant: "error"})
+        files[idx]['error'] = data.error;
+        setFiles([
+          ...files
+        ])
+      } else if(data.status === "201"){ // created
+        var targetFile = await searchFileData(data.fileKey);
+        files[idx]['phase'] = targetFile[0][`phase`];
+        files[idx]['fileKey'] = targetFile[0][`fileKey`];
+        setFiles([
+          ...files
+        ])
 
-      if (data.status === "201") {
         // 서버 -> 원격 파일 업로드
         uploadToRemote(data.fileKey, data.fileName, idx);
+        setTimeout(()=>{
+          excuteCmd();
+        })
       }
     })
-    .catch((error) => console.error("Error:", error));
+    .catch((error) =>{ debugger});
   }
+
+  // 파일 다운로드
+  const handleFileDownload = async (filename) => {
+    await fetch(apiUrl + `?type=download&&filename=${filename}&&path=${currentPath}`, {
+      method: "GET",
+    })
+      .then((res) => {
+        return res.json();
+      })
+      .then((res) => {
+        const a = document.createElement("a");
+        a.href = `/tempFiles/${res.fileKey}/${res.fileName}`;
+        a.download = filename;
+        a.click();
+        a.remove();
+      })
+      .catch((error) => console.error("Error:", error));
+  };
 
   const handleFileDelete = async (item, idx) => {
     console.log(files[idx]['fileKey']);
-    var msg = await deleteFileData(files[idx]['fileKey']);
-    console.log(msg)
+    await deleteFileData(files[idx]['fileKey']);
     files.splice(idx);
     setFiles([...files])
   }
@@ -290,7 +350,7 @@ const ServerExplorer = () => {
                   multiline
                   disabled
                   value={dirData || ""}
-                  style={{ width: "100%", color: "white", sfontSize: "18px" }}
+                  style={{ width: "100%", color: "white", fontSize: "18px" }}
                 />
                 <div
                   style={
@@ -316,7 +376,7 @@ const ServerExplorer = () => {
               >
                 <div>
                   <Typography>
-                    PATH : {currentPath}
+                    현재 경로: {currentPath}
                   </Typography>
                 </div>
                 <Divider />
@@ -330,38 +390,65 @@ const ServerExplorer = () => {
                             scope="row"
                             style={{
                               width: "80px",
-                              backgroundColor: "#A4C4EE",
+                              backgroundColor: (item.error && '#DB5548') || ((item.transferType === undefined || item.transferType === "upload") && "#A4C4EE") || (item.transferType === "download" && "#C2DA4A"), 
                               borderRight: "1px solid silver",
                               textAlign: "center",
                             }}
                           >
-                            <UploadIcon fontSize="large" />
+                            <UploadIcon fontSize="large" style={!item.transferType || item.transferType === "upload" ? {display:"inline"} : {display:"none"}}/>
+                            <DownloadIcon fontSize="large" style={item.transferType === "download" ? {display:"inline"} : {display:"none"}}/>
                           </TableCell>
                           <TableCell
                             component="th"
                             scope="row"
                             style={{ minWidth: 100 }}
                           >
-                            {item.name}
+                            {item.name + " " + byteCalculation(item.size)} 
                           </TableCell>
-                          <TableCell align="left" style={{ minWidth: 250 }}>
+                          <TableCell align="center" style={{ minWidth: 250 }}>
                             <Stepper
                               style={{ margin: "0", padding: "0" }}
                               alternativeLabel
                             >
-                              {steps.map((label, index) => {
-                                const stepProps = {};
+                              {
+                              steps.map((label, index) => {
+                                var chkStep = (transferType, phase) => {
+                                  if(transferType === "upload" || transferType === undefined){
+                                    if(phase === "F" && label === "Server"){
+                                      return true;
+                                    } else if(phase === "R" && (label === "Remote" || label === "Server")){
+                                      return true;
+                                    } else if(label === "Local"){
+                                      return true;
+                                    } else {
+                                      return false;
+                                    }
+                                  } else if(transferType === "download"){
+                                    if(phase === "L" && label === "Local"){
+                                      return true;
+                                    } else if(phase === "F" && (label === "Remote" || label === "Server")){
+                                      return true;
+                                    } else if(label === "Remote"){
+                                      return true;
+                                    } else {
+                                      return false;
+                                    }
+                                  }
+                                }
                                 return (
-                                  <Step key={label} {...stepProps}>
-                                    <StepButton disabled completed={item.phase !== undefined && (item.phase === "F" && label === "Server") || (item.phase === "R" && (label === "Remote" || label === "Server")) || label === "Local" ? true : false}>
+                                  <Step key={label}>
+                                    <StepButton disabled active={false} completed={chkStep(item.transferType, item.phase)}>
                                       {label}
                                     </StepButton>
                                   </Step>
                                 );
                               })}
                             </Stepper>
+                            <Typography>
+                              {item.error}
+                            </Typography>
                           </TableCell>
-                          <TableCell align="center" style={{ minWidth: 250 }}>
+                          <TableCell style={{ minWidth: 250, textAlign: "center" }}>
                             <Button
                               variant="contained"
                               style={
@@ -376,15 +463,16 @@ const ServerExplorer = () => {
                             <Button
                               variant="contained"
                               style={
-                                item.phase === "R"
-                                  ? { display: "block"}
+                                item.phase === "R" || item.error
+                                  ? { display: "inline"}
                                   : { display: "none" }
                               }
                               onClick={e =>handleFileDelete(item, idx)}
                             >
                               항목 제거
                             </Button>
-                            {(item.transferType !== undefined && item.phase !== "R" ? item.transferType + "ing..." : undefined)}
+                            <CircularProgress style={item.transferType !== undefined && !item.error && item.phase !== "R" ? {display: "inline-block", textAlign:"center"} : {display: "none"}}>
+                            </CircularProgress>
                           </TableCell>
                         </TableRow>
                       );
