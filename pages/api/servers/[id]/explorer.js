@@ -5,7 +5,6 @@ import ServerService from "../../../../services/ServerService";
 import { withSession } from "next-session";
 import FileService from "../../../../services/FileService";
 import { logger } from "../../../../utils/winston";
-import FileConfig from "./file_config"
 
 export const config = {
   api: {
@@ -14,6 +13,7 @@ export const config = {
 };
 
 const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
+const maxFileSize = process.env.MAX_FILE_BYTE_SIZE || 500 * 1024 * 1024 // 500MB;
 
 function getRandomUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -29,6 +29,7 @@ const insertFileDb = async (userId, file, uuid, type, phase) => {
     fileName: file.name,
     fileSize: file.size,
     phase: phase, // L 로컬, F 운영관리 플랫폼, R 원격지
+    path: file.path,
     type: type,
     fileKey: uuid,
     checkTime: new Date(),
@@ -60,7 +61,7 @@ const deleteFile = async (req, res) => {
 
 // WRITE FILE
 const writeFile = async (req, res, userId) => {
-  const form = new formidable.IncomingForm({maxFileSize : FileConfig.maxFilesize});
+  const form = new formidable.IncomingForm({maxFileSize : maxFileSize});
   try {
     form.parse(req, async (err, fields, files) => {
         if(err) {

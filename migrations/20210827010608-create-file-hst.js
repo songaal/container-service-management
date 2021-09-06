@@ -20,6 +20,9 @@ module.exports = {
       phase: {
         type: Sequelize.STRING
       },
+      path : {
+        type: Sequelize.STRING
+      },
       type: {
         type: Sequelize.STRING
       },

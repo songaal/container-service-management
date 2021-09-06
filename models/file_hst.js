@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
     fileName: DataTypes.STRING,
     fileSize: DataTypes.STRING,
     phase: DataTypes.STRING,
+    path: DataTypes.STRING,
     type: DataTypes.STRING,
     fileKey: DataTypes.STRING,
     checkTime: DataTypes.DATE

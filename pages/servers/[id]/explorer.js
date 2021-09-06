@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Box from "@material-ui/core/Box";
 import {
   Paper,
@@ -25,6 +25,7 @@ import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import FileIcon from "@material-ui/icons/Description";
 import {useSnackbar} from "notistack";
+import Chip from '@material-ui/core/Chip';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -83,7 +84,7 @@ function byteCalculation(bytes) {
   var e = Math.floor(Math.log(bytes)/Math.log(1024));
   if(e == "-Infinity") return " ( " + "0 "+s[0] + ") "; 
   else 
-  return " ( " + (bytes/Math.pow(1024, Math.floor(e))).toFixed(2)+" "+ s[e] + ") ";
+  return " (" + (bytes/Math.pow(1024, Math.floor(e))).toFixed(2)+" "+ s[e] + ") ";
 }
 
 const ServerExplorer = () => {
@@ -97,6 +98,7 @@ const ServerExplorer = () => {
   const [dirData, setDirdata] = React.useState();
   const [server, setServer] = React.useState({});
   const [files, setFiles] = useState([]);
+  const $input = useRef(null);
 
   const apiUrl = `/api/servers/${server["id"]}/explorer`;
 
@@ -149,6 +151,7 @@ const ServerExplorer = () => {
         console.log(body["server"]);
         setServer(body["server"]);
         excuteCmd(`/home/${body["server"].user}`);
+        searchFileData();
       });
   }, []);
 
@@ -156,12 +159,14 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
-  // 드래그앤 드랍
+  // 파일 셋팅
   const handleDrop = (e) => {
-    var items = [];
-    console.log(e.dataTransfer.files[0]);
-    for(var i=0; i<e.dataTransfer.files.length; i++){
-      items.push(e.dataTransfer.files[i]);
+    let items = [];
+    let fileList = e.dataTransfer === undefined ? e.target.files : e.dataTransfer.files;
+
+    for(let i=0; i<fileList.length; i++){
+      fileList[i]['path'] = currentPath;
+      items.push(fileList[i]);
     }
     
     items.forEach(item => {
@@ -171,7 +176,7 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
-  // DB 파일 검색
+  // DB 검색
   const searchFileData = async (fileKey) => {
     var url = "/api" + location.pathname.replace("/explorer", "");
     var result;
@@ -183,6 +188,24 @@ const ServerExplorer = () => {
     })
     .then((data) => {
       result = data.fileList;
+      
+      if(!fileKey){
+        let arr = [];
+
+        result.forEach(ele => {
+          var existFile = {
+            name : ele.fileName,
+            size : ele.fileSize,
+            transferType : ele.type,
+            fileKey : ele.fileKey,
+            phase : ele.phase,
+            path : ele.path
+          }
+          arr.push(existFile);
+        })
+
+        setFiles(arr);
+      }
     });
     return result;
   }
@@ -203,7 +226,7 @@ const ServerExplorer = () => {
     return result;
   }
 
-  // 원격서버로 파일 업로드
+  // 운영관리 -> 원격서버로 파일 업로드
   const uploadToRemote = async (fileKey, fileName, idx) => {
     await fetch(
       `${apiUrl}?type=upload&&filekey=${fileKey}&&filename=${fileName}&&path=${currentPath}`,
@@ -222,6 +245,7 @@ const ServerExplorer = () => {
       .catch((error) => console.error("Error:", error));
   };
 
+  // 파일 업로드
   const handleFileUpload = async (item, idx) => {
     const body = new FormData();
     body.append("file", item);    
@@ -257,9 +281,6 @@ const ServerExplorer = () => {
 
         // 서버 -> 원격 파일 업로드
         uploadToRemote(data.fileKey, data.fileName, idx);
-        setTimeout(()=>{
-          excuteCmd();
-        })
       }
     })
     .catch((error) =>{ debugger});
@@ -403,7 +424,8 @@ const ServerExplorer = () => {
                             scope="row"
                             style={{ minWidth: 100 }}
                           >
-                            {item.name + " " + byteCalculation(item.size)} 
+                            {item.name } <br/>
+                            {byteCalculation(item.size)} 
                           </TableCell>
                           <TableCell align="center" style={{ minWidth: 250 }}>
                             <Stepper
@@ -460,6 +482,7 @@ const ServerExplorer = () => {
                             >
                               업로드
                             </Button>
+
                             <Button
                               variant="contained"
                               style={
@@ -467,10 +490,21 @@ const ServerExplorer = () => {
                                   ? { display: "inline"}
                                   : { display: "none" }
                               }
-                              onClick={e =>handleFileDelete(item, idx)}
+                              onClick={e => handleFileDelete(item, idx)}
                             >
                               항목 제거
                             </Button>
+
+                            <div style={item.phase === "R" || item.error
+                                  ? { display: "inline"}
+                                  : { display: "none" }}>
+                              <Chip color="primary" label="완료" style={{marginLeft:10}}/>
+                            </div>
+
+                            <div style={!item.error ? { display: "none"} : { display: "inline" }}>
+                              <Chip label="실패" style={{marginLeft:10, backgroundColor:"#DB5548", color:"white"}}/>
+                            </div> 
+
                             <CircularProgress style={item.transferType !== undefined && !item.error && item.phase !== "R" ? {display: "inline-block", textAlign:"center"} : {display: "none"}}>
                             </CircularProgress>
                           </TableCell>
@@ -485,13 +519,18 @@ const ServerExplorer = () => {
                           ? { display: "none" }
                           : { display: "flex" }
                       }
+                      onClick={e => $input.current.click()}
                     >
-                        <TableCell align="center" style={{ minWidth: 250 }}>
+                        <TableCell align="center" style={{ minWidth: 250, borderBottom: "none" }}>
+                            <input type="file" style={{display: "none"} } ref={$input} multiple
+                              onChange={e => {
+                                handleDrop(e);
+                              }}/>
                             <FileIcon style={{ fontSize: 80 }} />
                             <Typography>
                               File Upload
                             </Typography>
-                          </TableCell>
+                        </TableCell>
                     </TableRow>
                     }
                   </TableBody>

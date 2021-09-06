@@ -18,7 +18,11 @@ export default {
         }
     }, 
     findFiles: async (userId, filekey) => {
-        return await FileHistory.findAll({where: {userId: userId, filekey : filekey}})
+        if(filekey === "undefined"){
+            return await FileHistory.findAll({where: {userId: userId}})
+        } else{
+            return await FileHistory.findAll({where: {userId: userId, filekey : filekey}})
+        }
     },
     updateFileInfo: async (userId, fileKey, phase) => {
         return await FileHistory.update({phase: phase},{where: {userId: userId, fileKey: fileKey}})
