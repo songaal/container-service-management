@@ -102,41 +102,74 @@ const ServerExplorer = () => {
 
   const apiUrl = `/api/servers/${server["id"]}/explorer`;
 
-  const excuteCmd = (root) => {
-    if (showLoader !== true) {  // GET FILE 
-      
+  const excuteCmd = async (root) => {
+    if (showLoader !== true) {  // GET FILE
       if((cmd||"").trim().toUpperCase().startsWith("GET ")){ // Download
-        let fileNameSplit = String(cmd).trim().split(" ")
-        fileNameSplit[0] = ""
-        var fileName = fileNameSplit.join("")
+        let fileNameTrimSplit = String(cmd).trim().split(" ");
+        fileNameTrimSplit[0] = "";
 
-        var downloadFile = {
-          name : fileName,
-          size : 0,
-          transferType : "download",
-          fileKey : "",
-          phase : "R"
+        if(fileNameTrimSplit.length > 2 && !fileNameTrimSplit[1].startsWith("/")){ // 띄어쓰기 파일명 처리
+          fileNameTrimSplit[2] = " " + fileNameTrimSplit[2];
         }
-        setFiles(files => [...files, downloadFile]);
-        handleFileDownload(fileName);
+
+        let fileNameSlashSplit = fileNameTrimSplit.join("").split("/");        
+        let fileName = fileNameSlashSplit[fileNameSlashSplit.length-1];
+        let filePath = currentPath + (fileNameTrimSplit[1].startsWith("/") ? fileNameTrimSplit.join("").replace("/" + fileName, "") : "");
+
+        let fileInfo;
+
+        // 파일 체크
+        await fetch(
+        `${apiUrl}?type=checkExist&&filekey=&&filename=${fileName}&&path=${filePath}`,
+        {
+          method: "GET",
+        }
+        )
+        .then((res) => {
+          return res.json();
+        })
+        .then(async (data) => {
+          setCmd("");
+          if(data){
+            if(data.length === 1){ // 존재
+              fileInfo = data[0].split("\t")
+              
+              // 파일 추가
+              var downloadFile = {
+                name : fileName,
+                size : fileInfo[0],
+                path : filePath,
+                transferType : "download",
+                fileKey : fileInfo[2],
+                phase : "R"
+              }
+              setFiles(files => [...files, downloadFile]);        
+              handleFileDownload(fileName, downloadFile.fileKey, downloadFile.path);      
+            } else { // 오류
+              enqueueSnackbar(data[0], {variant: "error"})
+            }
+          }
+        })
+        .catch((error) => console.error("Error:", error));
       } else { // 일반 명령어 실행
         setShowLoader(true);
         setDirdata("");
         var url = "/api" + location.pathname.replace("/explorer", "");
         var path = root === undefined ? currentPath : root;
+        const tmpCmd = root === undefined ? cmd : `ls -al`;
         fetch(`${url}/action?type=exp_excute`, {
           method: "POST",
-          body: JSON.stringify({ cmd, path }),
+          body: JSON.stringify({ cmd: tmpCmd, path }),
         })
           .then((res) => {
             return res.json();
           })
           .then((data) => {
+            setCurrentPath(data.pwd.replace("\n", ""));
+            setCmd("");
+            setShowLoader(false);
             if (data.dirFiles.length > 0 && data.pwd.length > 0) {
               setDirdata(data.dirFiles);
-              setCurrentPath(data.pwd.replace("\n", ""));
-              setCmd("");
-              setShowLoader(false);
             }
           });
       }
@@ -188,7 +221,6 @@ const ServerExplorer = () => {
     })
     .then((data) => {
       result = data.fileList;
-      
       if(!fileKey){
         let arr = [];
 
@@ -196,6 +228,7 @@ const ServerExplorer = () => {
           var existFile = {
             name : ele.fileName,
             size : ele.fileSize,
+            path : ele.path,
             transferType : ele.type,
             fileKey : ele.fileKey,
             phase : ele.phase,
@@ -203,11 +236,26 @@ const ServerExplorer = () => {
           }
           arr.push(existFile);
         })
-
+        
         setFiles(arr);
       }
     });
     return result;
+  }
+
+  // DB 업데이트
+  const updateFileData = async (fileKey, phase, path) => {
+    var url = "/api" + location.pathname.replace("/explorer", "");
+    await fetch(`${url}/action?type=updateFile&&filekey=${fileKey}&&phase=${phase}&&path=${path}`, {
+      method: "GET"
+    })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+    });
+
+    return;
   }
 
   // 항목 삭제
@@ -236,11 +284,14 @@ const ServerExplorer = () => {
     )
       .then(async (res) => {
         console.log("FILE UPLOAD TO REMOTE");
-        var targetFile = await searchFileData(fileKey);
-        files[idx]['phase'] = targetFile[0][`phase`];
+        files[idx]['phase'] = 'R';
         setFiles([
           ...files
         ])
+        
+        setTimeout(() => {
+          deleteFileData(fileKey);
+        })
       })
       .catch((error) => console.error("Error:", error));
   };
@@ -272,9 +323,7 @@ const ServerExplorer = () => {
           ...files
         ])
       } else if(data.status === "201"){ // created
-        var targetFile = await searchFileData(data.fileKey);
-        files[idx]['phase'] = targetFile[0][`phase`];
-        files[idx]['fileKey'] = targetFile[0][`fileKey`];
+        files[idx]['phase'] = 'F';
         setFiles([
           ...files
         ])
@@ -287,25 +336,42 @@ const ServerExplorer = () => {
   }
 
   // 파일 다운로드
-  const handleFileDownload = async (filename) => {
-    await fetch(apiUrl + `?type=download&&filename=${filename}&&path=${currentPath}`, {
+  const handleFileDownload = async (filename, filekey, path) => {
+    await fetch(apiUrl + `?type=download&&filekey=${filekey}&&filename=${filename}&&path=${path}`, {
       method: "GET",
     })
       .then((res) => {
+        setFiles(files => {          
+          files[files.length-1]['phase'] = 'F';
+          setFiles([
+            ...files
+          ])
+        });  
         return res.json();
       })
       .then((res) => {
+        setFiles(files => {          
+          files[files.length-1]['phase'] = 'L';
+          setFiles([
+            ...files
+          ])
+        }); 
+    
+        updateFileData(res.fileKey, 'L', path);
         const a = document.createElement("a");
         a.href = `/tempFiles/${res.fileKey}/${res.fileName}`;
         a.download = filename;
         a.click();
         a.remove();
+
+        setTimeout(() => {
+          deleteFileData(filekey);
+        })
       })
       .catch((error) => console.error("Error:", error));
   };
 
   const handleFileDelete = async (item, idx) => {
-    console.log(files[idx]['fileKey']);
     await deleteFileData(files[idx]['fileKey']);
     files.splice(idx);
     setFiles([...files])
@@ -424,8 +490,8 @@ const ServerExplorer = () => {
                             scope="row"
                             style={{ minWidth: 100 }}
                           >
-                            {item.name } <br/>
-                            {byteCalculation(item.size)} 
+                            {item.path}/{item.name} <br/>
+                            {item.transferType !== "download" ? byteCalculation(item.size) : "(" + item.size + ")"} 
                           </TableCell>
                           <TableCell align="center" style={{ minWidth: 250 }}>
                             <Stepper
@@ -446,7 +512,7 @@ const ServerExplorer = () => {
                                       return false;
                                     }
                                   } else if(transferType === "download"){
-                                    if(phase === "L" && label === "Local"){
+                                    if(phase === "L"){
                                       return true;
                                     } else if(phase === "F" && (label === "Remote" || label === "Server")){
                                       return true;
@@ -483,29 +549,29 @@ const ServerExplorer = () => {
                               업로드
                             </Button>
 
+                            <div style={(item.phase === "L" && item.transferType === "download") || (item.phase === "R" && item.transferType === "upload") && !item.error
+                                  ? { display: "inline"}
+                                  : { display: "none" }}>
+                              <Chip color="primary" label="완료" style={{marginRight:10}}/>
+                            </div>
+
+                            <div style={!item.error ? { display: "none"} : { display: "inline" }}>
+                              <Chip label="실패" style={{marginRight:10, backgroundColor:"#DB5548", color:"white"}}/>
+                            </div>
+
                             <Button
                               variant="contained"
                               style={
-                                item.phase === "R" || item.error
+                                (item.phase === "L" && item.transferType === "download") || (item.phase === "R" && item.transferType === "upload") || item.error
                                   ? { display: "inline"}
                                   : { display: "none" }
                               }
                               onClick={e => handleFileDelete(item, idx)}
                             >
                               항목 제거
-                            </Button>
+                            </Button> 
 
-                            <div style={item.phase === "R" || item.error
-                                  ? { display: "inline"}
-                                  : { display: "none" }}>
-                              <Chip color="primary" label="완료" style={{marginLeft:10}}/>
-                            </div>
-
-                            <div style={!item.error ? { display: "none"} : { display: "inline" }}>
-                              <Chip label="실패" style={{marginLeft:10, backgroundColor:"#DB5548", color:"white"}}/>
-                            </div> 
-
-                            <CircularProgress style={item.transferType !== undefined && !item.error && item.phase !== "R" ? {display: "inline-block", textAlign:"center"} : {display: "none"}}>
+                            <CircularProgress style={item.transferType !== undefined && !item.error && (item.phase !== "R" && item.transferType === "upload") || (item.phase !== "L" && item.transferType === "download") ? {display: "inline-block", textAlign:"center"} : {display: "none"}}>
                             </CircularProgress>
                           </TableCell>
                         </TableRow>

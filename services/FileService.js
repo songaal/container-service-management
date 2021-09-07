@@ -24,8 +24,9 @@ export default {
             return await FileHistory.findAll({where: {userId: userId, filekey : filekey}})
         }
     },
-    updateFileInfo: async (userId, fileKey, phase) => {
-        return await FileHistory.update({phase: phase},{where: {userId: userId, fileKey: fileKey}})
+    updateFileInfo: async (userId, fileKey, phase, path) => {
+        console.log("userId, fileKey, phase, path", userId, fileKey, phase, path);
+        return await FileHistory.update({phase: phase, path: path},{where: {userId: userId, fileKey: fileKey}})
     },
     removeFiles: async (userId, fileKey) => {
         await FileHistory.destroy({where: {userId: userId, fileKey: fileKey}})

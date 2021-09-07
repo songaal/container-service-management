@@ -36,8 +36,8 @@ const insertFileDb = async (userId, file, uuid, type, phase) => {
   });
 };
 
-const updateFileDb = async (userId, filekey, phase) => {
-  return await FileService.updateFileInfo(userId, filekey, phase);
+const updateFileDb = async (userId, filekey, phase, path) => {
+  return await FileService.updateFileInfo(userId, filekey, phase, path);
 };
 
 const downUrl = "http://localhost:3355/tempFiles/";
@@ -45,11 +45,14 @@ const downUrl = "http://localhost:3355/tempFiles/";
 var process_cmd = (id, processType, filename, path, filekey) => {
   const uploadUrl = `http://localhost:3355/api/servers/${id}/explorer`;
   if (processType === "upload") {
-    var enc = encodeURI(`${downUrl}${filekey}/${filename}`);
-    console.log(`curl "${enc}" > "${path + filename}"`);
+    let enc = encodeURI(`${downUrl}${filekey}/${filename}`);
     return `curl "${enc}" > "${path + filename}"`;
   } else if (processType === "download") {
-    return `curl -F "file=@${path + filename}" ${uploadUrl}?type="download"`;
+    console.log(`curl -F "file=@${path + filename}" ${uploadUrl}?filekey=${filekey}`);
+    return `curl -F "file=@${path + filename}" ${uploadUrl}?filekey=${filekey}`;
+  } else if (processType === "checkExist") {    
+    console.log(`cd ${path} && du -h "${filename}"`);
+    return `cd ${path} && du -h "${filename}"`;
   }
 };
 
@@ -70,26 +73,28 @@ const writeFile = async (req, res, userId) => {
         }
 
         logger.info("success send to server : " + JSON.stringify(files.file));
-        var uuid = getRandomUuid();
+        var uuid = req.query['filekey'] || getRandomUuid();
         var file = files.file;
   
-        //임시파일 이동
+        // 임시파일 -> 파일이동
         fs.mkdirSync(`${tempDir}/${uuid}`);
         fs.renameSync(file.path, `${tempDir}/${uuid}/${decodeURI(file.name)}`);
   
         fs.stat(`${tempDir}/${uuid}/${decodeURI(file.name)}`, (err, stat) => {
           if (err) console.log("error: ", error);
           logger.info("success move to tempfile : " + JSON.stringify(stat));
-        });
+        });        
 
         try {
-          await insertFileDb(
-            userId,
-            file,
-            uuid,
-            req.__NEXT_INIT_QUERY["type"],
-            "F"
-          );
+          if(req.query['filekey'] === undefined){
+            await insertFileDb(
+              userId,
+              file,
+              uuid,
+              req.__NEXT_INIT_QUERY["type"],
+              "F"
+            );
+          }
         } catch (e) {
           logger.error("fail to transfer : " + e);
           throw new Error(e)
@@ -117,7 +122,7 @@ const processToRemote = async (req, res, userId) => {
     server.password
   );
   try {
-    var result;
+    let result;
 
     await sshClient
       .exec(
@@ -131,20 +136,35 @@ const processToRemote = async (req, res, userId) => {
         {}
       )
       .then((res) => { // 업로드 및 다운로드 curl 결과 리턴
-        logger.info(
-          `success ${req.query["type"]} to remote server : ${res}`
-        );
-        res.forEach((ele) => {
-          // 파일정보 부분만 저장
-          if (ele.indexOf("fileKey") != -1) {
-            result = ele;
-          }
-        });
+        result = res;
+
+        if(req.query["type"] === "upload" || req.query["type"] === "download"){
+          logger.info(
+            `success ${req.query["type"]} to remote server : ${res}`
+          );
+          res.forEach((ele) => {
+            // 파일정보 부분만 저장
+            if (ele.indexOf("fileKey") != -1) {
+              result = ele;
+            }
+          });
+        }
 
         try {
-          // 업로드 완료시 DB 업데이트, 다운로드 처리는 로컬에서..
-          if(req.query["type"] === "upload"){
-            updateFileDb(userId, req.query["filekey"], "R");
+          // 업로드 완료시 DB 업데이트
+          if(req.query["type"] === "upload" || req.query["type"] === "download"){
+            let phase = req.query["type"] === "upload" ? "R" : "F";
+            updateFileDb(userId, req.query["filekey"], phase, req.query["path"]);
+          } else if(req.query["type"] === "checkExist"){
+            let fileInfo = res[0].split("\t");
+            let uuid = getRandomUuid();
+            let file = {
+              name : req.query["filename"],
+              size : fileInfo[0],
+              path : req.query["path"]
+            }
+            insertFileDb(userId, file, uuid, "download", "R");
+            res[0] += "\t" + uuid
           }
         } catch (e) {
           console.log(e);

@@ -27,27 +27,39 @@ async function serverTest(req, res) {
                     server.password
                 );
                 try {
-                    var body = JSON.parse(req.body);
+                    const body = JSON.parse(req.body);
 
-                    var excuteData = await sshClient.exec(
-                        body["cmd"] !== undefined && body["cmd"] !== ""
-                        ? `cd ${body["path"]} && ${body["cmd"]} ; ls -al ; pwd`
-                        : `cd ${body["path"]} && ls -al && pwd`, // 아무것도 입력하지 않았을때 
-                    {}
+                    let executeCmd = `export LANG=ko_KR.UTF-8 && cd ${body["path"]} && ${(body["cmd"] || "ls -al")}`
+                    let pramCmd = (body["cmd"]||"").toLowerCase()
+                    if (pramCmd.startsWith("cd ") || pramCmd.startsWith("mv ") || pramCmd.startsWith("rename ")) {
+                        executeCmd += "&&ls -al"
+                    }
+
+                    console.log('executeCmd', pramCmd);
+                    const excuteData = await sshClient.exec(
+                        executeCmd, {}
                     )
 
-                    var result = {
+                    let result = {
                         dirFiles : "",
                         pwd : ""
                     }
-
-                    if(excuteData.length == 2){
-                        result['dirFiles'] = excuteData[excuteData.length-2] // 배열의 마지막에서 두번째 : ls -al
-                        result['pwd'] = excuteData[excuteData.length-1] // 배열의 마지막 요소 : pwd
-                    } else { // error handle
-                        result['dirFiles'] = excuteData[0]
-                        result['pwd'] = body["path"]
+                
+                    let tmpPwdCmd = (body["cmd"]||"").toLowerCase()
+                    let tmpPwdPath = body["path"]
+                    if (tmpPwdCmd.startsWith("cd ")) {
+                        const excutePwdData = await sshClient.exec(
+                            `cd ${body["path"]} && ${body["cmd"]} && pwd`,{}
+                        )
+                        if (excutePwdData.join("").startsWith("/")) {
+                            tmpPwdPath = excutePwdData.join("")
+                        }
+                        console.log(excutePwdData)
                     }
+                    
+                    result['dirFiles'] = excuteData.join("")
+                    result['pwd'] = tmpPwdPath
+                    
                     return res.send(JSON.stringify(result));
                 } catch (e) {
                     console.log(e);
@@ -63,6 +75,11 @@ async function serverTest(req, res) {
                 res.send({
                    status: "success",
                    fiileList: await FileService.removeFiles(req.session.auth.user.userId, req.query["filekey"])
+                });
+            } else if (req.query["type"] === "updateFile") {
+                res.send({
+                   status: "success",
+                   fiileList: await FileService.updateFileInfo(req.session.auth.user.userId, req.query["filekey"], req.query["phase"], req.query["path"])
                 });
             }
         }
