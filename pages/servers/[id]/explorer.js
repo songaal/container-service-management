@@ -25,6 +25,9 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import FileIcon from "@material-ui/icons/Description";
 import {useSnackbar} from "notistack";
 import Chip from '@material-ui/core/Chip';
+import Autocomplete from '@material-ui/lab/Autocomplete';
+import TextField from '@material-ui/core/TextField';
+
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -216,7 +219,7 @@ const ServerExplorer = () => {
     })
     .then((res) => {
       return res.json();
-    })
+    })         
     .then((data) => {
       result = data.fileList;
       if(!fileKey){
@@ -394,6 +397,42 @@ const ServerExplorer = () => {
     }
   }
 
+  const handleFileDeleteAll = async () => {
+    setFiles([])
+  }
+
+  const handleTypeAccept = (type) => {
+    return (cmd||"").trim().toUpperCase().startsWith(type)
+  }
+
+  const setGuideOptions = () => {
+    if(handleTypeAccept("CD") || handleTypeAccept("GET")) {
+      const base = dirData.split("\n").slice(2);
+      var typeGroup = {
+          directory : [],
+          file : []
+      }
+
+      base.forEach((ele) => {
+          let fileLine = ele.split(" ");
+          let fileName = fileLine[fileLine.length-1];
+
+          if(fileLine[0].startsWith('d')){
+              if(fileName !== `.` && fileName !== `..`){                
+                  typeGroup['directory'].push("cd " + fileName);
+              }
+          } else if(fileLine[0].startsWith('-')){
+              typeGroup['file'].push("get " + fileName);
+          }
+      });
+
+      return handleTypeAccept("CD") ? typeGroup['directory'].map((option) => option) : typeGroup['file'].map((option) => option);
+    } else {
+      return [];
+    } 
+  }
+
+
   return (
     <div>
       <Box>
@@ -403,19 +442,29 @@ const ServerExplorer = () => {
               <Paper component="form" className={classes.inputRoot}>
                 <Typography className={classes.currentPath}>명령어</Typography>
                 <Divider className={classes.divider} orientation="vertical" />
-                <InputBase
-                  className={classes.input}
-                  placeholder="ls -al"
-                  fullWidth
-                  spellCheck={false}
-                  value={cmd || ""}
+                <Autocomplete
+                  freeSolo            
+                  value={cmd||""}
+                  className={classes.input} 
+                  options={setGuideOptions()}
+                  onChange={(e, v) => {
+                      if(e.key === "Enter" || e.type === "click"){
+                        setCmd(v)
+                      }
+                  }}
+                  onInputChange={(e, v, r) => {
+                    console.log(e);
+                    setCmd(v);
+                  }}
                   onKeyPress={(e) => {
-                    if (e.key === "Enter") {
+                    if (e.key === "Enter") {                      
                       excuteCmd();
                       e.preventDefault();
                     }
                   }}
-                  onChange={(e) => setCmd(e.target.value) && e.preventDefault()}
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined" />
+                  )}
                 />
                 <Divider className={classes.divider} orientation="vertical" />
                 <IconButton
@@ -494,7 +543,7 @@ const ServerExplorer = () => {
               >
                 <div style={{ width: "100%", marginRight:"30px", textAlign: 'right' }}>
                   <Button
-                    color="secondary"
+                    color="primary"
                     variant="contained"
                     style={
                       files.length > 0 ? 
@@ -503,6 +552,17 @@ const ServerExplorer = () => {
                     onClick={e => handleFileDelete()}
                   >
                     완료항목 제거
+                  </Button>
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    style={
+                      files.length > 0 ? 
+                      { marginBottom: "10px", marginLeft: "10px", diplay: "inline"} : { display : "none"}
+                    }
+                    onClick={e => handleFileDeleteAll()}
+                  >
+                    전체항목 제거
                   </Button>
                 </div>
                   <Divider/>
