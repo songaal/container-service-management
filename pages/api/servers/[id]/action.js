@@ -57,7 +57,11 @@ async function serverTest(req, res) {
                         console.log(excutePwdData)
                     }
                     
-                    result['dirFiles'] = excuteData.join("")
+                    let dirFiles = excuteData.join("").split("\n")
+                    dirFiles[0] = `현재 경로 : ${tmpPwdPath.replace("\n", "")}\n`
+                    dirFiles = dirFiles.join("\n")
+
+                    result['dirFiles'] = dirFiles
                     result['pwd'] = tmpPwdPath
                     
                     return res.send(JSON.stringify(result));

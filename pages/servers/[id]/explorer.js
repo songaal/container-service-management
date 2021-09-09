@@ -6,7 +6,6 @@ import {
   Divider,
   InputBase,
   IconButton,
-  Input,
 } from "@material-ui/core";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
@@ -131,9 +130,8 @@ const ServerExplorer = () => {
         .then(async (data) => {
           setCmd("");
           if(data){
-            if(data.length === 1){ // 존재
+            if(data[0].startsWith("error : ") === false){ // 존재
               fileInfo = data[0].split("\t")
-              
               // 파일 추가
               var downloadFile = {
                 name : fileName,
@@ -141,7 +139,7 @@ const ServerExplorer = () => {
                 path : filePath,
                 transferType : "download",
                 fileKey : fileInfo[2],
-                phase : "R"
+                phase : "R"                
               }
               setFiles(files => [...files, downloadFile]);        
               handleFileDownload(fileName, downloadFile.fileKey, downloadFile.path);      
@@ -350,31 +348,50 @@ const ServerExplorer = () => {
         return res.json();
       })
       .then((res) => {
-        setFiles(files => {          
-          files[files.length-1]['phase'] = 'L';
-          setFiles([
-            ...files
-          ])
-        }); 
-    
-        updateFileData(res.fileKey, 'L', path);
-        const a = document.createElement("a");
-        a.href = `/tempFiles/${res.fileKey}/${res.fileName}`;
-        a.download = filename;
-        a.click();
-        a.remove();
-
-        setTimeout(() => {
-          deleteFileData(filekey);
-        })
+        if(!res.status) {
+          res.forEach(ele => {
+            if(ele.startsWith("{\"status\":\"500\"")){
+              enqueueSnackbar(ele, {variant: "error"})
+              setFiles(files => {          
+                files[files.length-1]['error'] = ele;
+                setFiles([
+                  ...files
+                ])
+              }); 
+              deleteFileData(filekey);
+            }
+          })
+        } else {
+          setFiles(files => {          
+            files[files.length-1]['phase'] = 'L';
+            setFiles([
+              ...files
+            ])
+          }); 
+      
+          updateFileData(res.fileKey, 'L', path);
+          const a = document.createElement("a");
+          a.href = `/tempFiles/${res.fileKey}/${res.fileName}`;
+          a.download = filename;
+          a.click();
+          a.remove();
+  
+          setTimeout(() => {
+            deleteFileData(filekey);
+          })
+        }        
       })
       .catch((error) => console.error("Error:", error));
   };
 
-  const handleFileDelete = async (item, idx) => {
-    await deleteFileData(files[idx]['fileKey']);
-    files.splice(idx);
-    setFiles([...files])
+  const handleFileDelete = async (idx) => {
+    if(idx !== undefined){
+      await deleteFileData(files[idx]['fileKey']);
+      files.splice(idx, 1);
+      setFiles([...files])
+    } else {
+      setFiles([...files.filter(file => !file.phase || !file.transferType || (file.transferType === "download" && file.phase !== "L") || (file.transferType === "upload" && file.phase !== "R"))]);
+    }
   }
 
   return (
@@ -425,20 +442,30 @@ const ServerExplorer = () => {
             <Grid container alignItems="center">
               <div
                 style={{
-                  overflow: "scroll",
-                  height: 500,
-                  maxHeight: 500,
                   width: "100%",
-                  backgroundColor: "black",
                   overflowX: "hidden",
                 }}
               >
-                <Input
-                  multiline
+                <textarea
+                  spellCheck={false}
                   disabled
-                  value={dirData || ""}
-                  style={{ width: "100%", color: "white", fontSize: "18px" }}
-                />
+                  value={dirData}
+                  style={{
+                    padding: "15px 0px 0px 15px",
+                    width: "100%",
+                    height: 490,
+                    maxHeight: 490,
+                    backgroundColor: "black",
+                    color: "white",
+                    fontSize: "18px",
+                    letterSpacing: "1.3px",
+                    lineHeight: "25px",
+                    textIndent: "5px",
+                    border: "2px solid white"
+                  }}
+                >
+                  {dirData}
+                </textarea>
                 <div
                   style={
                     showLoader === true
@@ -451,25 +478,38 @@ const ServerExplorer = () => {
                   />
                 </div>
               </div>
+              <Typography style={{display: 'inline', marginLeft: "10px"}}>List of Upload / Download Files</Typography>
+
               <TableContainer
                 component={Paper}
                 style={{
                   overflow: "scroll",
-                  height: 380,
-                  maxHeight: 420,
+                  height: 365,
+                  maxHeight: 405,
                   width: "100%",
                   overflowX: "hidden",
+                  padding: "10px 10px 0 10px",
+                  border: "1px solid silver"
                 }}
               >
-                <div>
-                  <Typography>
-                    현재 경로: {currentPath}
-                  </Typography>
+                <div style={{ width: "100%", marginRight:"30px", textAlign: 'right' }}>
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    style={
+                      files.length > 0 ? 
+                      { marginBottom: "10px", diplay: "inline"} : { display : "none"}
+                    }
+                    onClick={e => handleFileDelete()}
+                  >
+                    완료항목 제거
+                  </Button>
                 </div>
-                <Divider />
+                  <Divider/>
                 <Table>
-                  <TableBody>
+                  <TableBody >
                     {files.map((item, idx) => {
+                      console.log(item.error);
                       return (
                         <TableRow key={idx}>
                           <TableCell
@@ -479,7 +519,7 @@ const ServerExplorer = () => {
                               width: "80px",
                               backgroundColor: (item.error && '#DB5548') || ((item.transferType === undefined || item.transferType === "upload") && "#A4C4EE") || (item.transferType === "download" && "#C2DA4A"), 
                               borderRight: "1px solid silver",
-                              textAlign: "center",
+                              textAlign: "center"
                             }}
                           >
                             <UploadIcon fontSize="large" style={!item.transferType || item.transferType === "upload" ? {display:"inline"} : {display:"none"}}/>
@@ -552,7 +592,7 @@ const ServerExplorer = () => {
                             <div style={(item.phase === "L" && item.transferType === "download") || (item.phase === "R" && item.transferType === "upload") && !item.error
                                   ? { display: "inline"}
                                   : { display: "none" }}>
-                              <Chip color="primary" label="완료" style={{marginRight:10}}/>
+                              <Chip color="primary" label="완료"/>
                             </div>
 
                             <div style={!item.error ? { display: "none"} : { display: "inline" }}>
@@ -562,18 +602,26 @@ const ServerExplorer = () => {
                             <Button
                               variant="contained"
                               style={
-                                (item.phase === "L" && item.transferType === "download") || (item.phase === "R" && item.transferType === "upload") || item.error
-                                  ? { display: "inline"}
-                                  : { display: "none" }
+                                item.transferType !== undefined && item.error === undefined && ((item.phase !== "R" && item.transferType === "upload") || (item.phase !== "L" && item.transferType === "download"))
+                                  ? { display: "none"}
+                                  : { display: "inline", marginLeft: "10px" }
                               }
-                              onClick={e => handleFileDelete(item, idx)}
+                              onClick={e => handleFileDelete(idx)}
                             >
                               항목 제거
                             </Button> 
 
-                            <CircularProgress style={item.transferType !== undefined && !item.error && (item.phase !== "R" && item.transferType === "upload") || (item.phase !== "L" && item.transferType === "download") ? {display: "inline-block", textAlign:"center"} : {display: "none"}}>
+                            <CircularProgress style={item.transferType !== undefined && item.error === undefined && ((item.phase !== "R" && item.transferType === "upload") || (item.phase !== "L" && item.transferType === "download")) ? {display: "inline-block", textAlign:"center"} : {display: "none"}}>
                             </CircularProgress>
                           </TableCell>
+                          <TableCell
+                            component="th"
+                            scope="row"
+                            style={{
+                              borderRight: "1px solid silver",
+                              textAlign: "center"
+                            }}
+                          ></TableCell>
                         </TableRow>
                       );
                     })}

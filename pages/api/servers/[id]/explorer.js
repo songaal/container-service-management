@@ -13,12 +13,12 @@ export const config = {
 };
 
 const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
-const maxFileSize = process.env.MAX_FILE_BYTE_SIZE || 500 * 1024 * 1024 // 500MB;
+const maxUploadFileSize = process.env.MAX_UPFILE_BYTE || 500 * 1024 * 1024 // 500MB, 524288000Byte;
+const maxDownFileSize = process.env.MAX_DOWNFILE_BYTE || 500 * 1024 * 1024 * 1024 // 50GB, 536870912000Byte;
 
 function getRandomUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0,
-      v = c == "x" ? r : (r & 0x3) | 0x8;
+    var r = (Math.random() * 16) | 0, v = c == "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -64,6 +64,7 @@ const deleteFile = async (req, res) => {
 
 // WRITE FILE
 const writeFile = async (req, res, userId) => {
+  const maxFileSize = req.__NEXT_INIT_QUERY["type"] === "upload" ? maxUploadFileSize : maxDownFileSize;
   const form = new formidable.IncomingForm({maxFileSize : maxFileSize});
   try {
     form.parse(req, async (err, fields, files) => {
@@ -155,8 +156,23 @@ const processToRemote = async (req, res, userId) => {
           if(req.query["type"] === "upload" || req.query["type"] === "download"){
             let phase = req.query["type"] === "upload" ? "R" : "F";
             updateFileDb(userId, req.query["filekey"], phase, req.query["path"]);
-          } else if(req.query["type"] === "checkExist"){
-            let fileInfo = res[0].split("\t");
+          } 
+        } catch (e) {
+          console.log(e);
+        }
+        
+        return res;
+      });
+
+    if(req.query["type"] === "checkExist"){      
+      await sshClient.exec(`cd ${req.query["path"]} && file ${req.query["filename"]}` , {})
+        .then((data) => {
+          let checkResult = data[0].split(" ");
+          let checkTarget = checkResult[1].replace("\n", "")
+          let checkMsg = checkTarget === "directory" || checkTarget === "symbolic" ? `${checkTarget} 는 다운로드할 수 없습니다.` : null
+
+          if(result[0].startsWith("du: cannot access") === false && checkMsg === null){
+            let fileInfo = result[0].split("\t");
             let uuid = getRandomUuid();
             let file = {
               name : req.query["filename"],
@@ -164,14 +180,16 @@ const processToRemote = async (req, res, userId) => {
               path : req.query["path"]
             }
             insertFileDb(userId, file, uuid, "download", "R");
-            res[0] += "\t" + uuid
+            result[0] += "\t" + uuid
+          } else {
+            if(result[0].startsWith("du: cannot access") === true){
+              result[0] = "error : " + result[0]
+            } else if(checkMsg !== null) {
+              result[0] = "error : " + checkMsg
+            }
           }
-        } catch (e) {
-          console.log(e);
-        }
-
-        return res;
-      });
+        })      
+    }
 
     if (req.query["type"] === "upload") {
       await fs.rmdirSync(`${tempDir}/` + req.query["filekey"], {
