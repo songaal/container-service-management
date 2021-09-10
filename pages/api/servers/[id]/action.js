@@ -39,11 +39,6 @@ async function serverTest(req, res) {
                     const excuteData = await sshClient.exec(
                         executeCmd, {}
                     )
-
-                    let result = {
-                        dirFiles : "",
-                        pwd : ""
-                    }
                 
                     let tmpPwdCmd = (body["cmd"]||"").toLowerCase()
                     let tmpPwdPath = body["path"]
@@ -61,7 +56,15 @@ async function serverTest(req, res) {
                     dirFiles[0] = `현재 경로 : ${tmpPwdPath.replace("\n", "")}\n`
                     dirFiles = dirFiles.join("\n")
 
+                    // 자동완성 API 파일명 체크용 데이터
+                    const excuteSouceData = await sshClient.exec(
+                        `export LANG=ko_KR.UTF-8 && cd ${tmpPwdPath.replace("\n", "")} && ls -a`, {}
+                    )
+
+                    let result = {}
+
                     result['dirFiles'] = dirFiles
+                    result['dirFileNames'] = excuteSouceData
                     result['pwd'] = tmpPwdPath
                     
                     return res.send(JSON.stringify(result));

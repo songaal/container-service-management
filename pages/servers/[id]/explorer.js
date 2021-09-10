@@ -4,7 +4,6 @@ import {
   Paper,
   Grid,
   Divider,
-  InputBase,
   IconButton,
 } from "@material-ui/core";
 import Table from "@material-ui/core/Table";
@@ -98,6 +97,7 @@ const ServerExplorer = () => {
   const [currentPath, setCurrentPath] = React.useState();
   const [cmd, setCmd] = React.useState();
   const [dirData, setDirdata] = React.useState();
+  const [dirFile, setDirFiles] = React.useState();
   const [server, setServer] = React.useState({});
   const [files, setFiles] = useState([]);
   const $input = useRef(null);
@@ -171,6 +171,7 @@ const ServerExplorer = () => {
             setShowLoader(false);
             if (data.dirFiles.length > 0 && data.pwd.length > 0) {
               setDirdata(data.dirFiles);
+              setDirFiles(data.dirFileNames);
             }
           });
       }
@@ -401,30 +402,37 @@ const ServerExplorer = () => {
     setFiles([])
   }
 
-  const handleTypeAccept = (type) => {
+  const handleTypeAccept = (type) => {    
     return (cmd||"").trim().toUpperCase().startsWith(type)
   }
 
   const setGuideOptions = () => {
     if(handleTypeAccept("CD") || handleTypeAccept("GET")) {
       const base = dirData.split("\n").slice(2);
+      const fileNames = dirFile[0].split("\n");      
+
       var typeGroup = {
           directory : [],
           file : []
       }
 
-      base.forEach((ele) => {
+      base.forEach((ele, idx) => {
           let fileLine = ele.split(" ");
-          let fileName = fileLine[fileLine.length-1];
+          let fileName = (fileNames[idx]||"");
+
+          // console.log(`name_eqauls : ${fileLine[fileLine.length-1] === fileName}`, fileLine[fileLine.length-1], fileName);
+
 
           if(fileLine[0].startsWith('d')){
-              if(fileName !== `.` && fileName !== `..`){                
-                  typeGroup['directory'].push("cd " + fileName);
+              if(fileName !== `.` && fileName !== `..` && (fileName.toUpperCase()).includes((cmd.toUpperCase().replace("CD", "").trim()||""))){                
+                  typeGroup['directory'].push(fileName);
               }
           } else if(fileLine[0].startsWith('-')){
-              typeGroup['file'].push("get " + fileName);
+              if((fileName.toUpperCase()).includes((cmd.toUpperCase().replace("GET", "").trim()||""))){
+                typeGroup['file'].push(fileName);
+              }
           }
-      });
+      });    
 
       return handleTypeAccept("CD") ? typeGroup['directory'].map((option) => option) : typeGroup['file'].map((option) => option);
     } else {
@@ -449,12 +457,15 @@ const ServerExplorer = () => {
                   options={setGuideOptions()}
                   onChange={(e, v) => {
                       if(e.key === "Enter" || e.type === "click"){
-                        setCmd(v)
+                        if(cmd.includes("cd") || cmd.includes("CD")){
+                          setCmd(cmd => `cd ${v}`);
+                        } else if(cmd.includes("get") || cmd.includes("GET")){
+                          setCmd(cmd => `get ${v}`);
+                        }
                       }
                   }}
                   onInputChange={(e, v, r) => {
-                    console.log(e);
-                    setCmd(v);
+                      setCmd(v);
                   }}
                   onKeyPress={(e) => {
                     if (e.key === "Enter") {                      
@@ -463,7 +474,7 @@ const ServerExplorer = () => {
                     }
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined" />
+                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined"/>
                   )}
                 />
                 <Divider className={classes.divider} orientation="vertical" />
