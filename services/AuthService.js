@@ -64,6 +64,7 @@ export default {
                 });
             }
         } catch (error) {
+            console.error('validate error >>> ', error)
             throw error;
         }
     }

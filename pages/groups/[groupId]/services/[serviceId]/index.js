@@ -13,7 +13,7 @@ import {
     Breadcrumbs,
     IconButton,
     Tooltip, TextField,
-    Switch
+    Switch, FormControl, TextareaAutosize
 } from "@material-ui/core";
 import CssBaseline from "@material-ui/core/CssBaseline";
 import {makeStyles} from '@material-ui/core/styles';
@@ -22,7 +22,6 @@ import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import Menu from "@material-ui/core/Menu";
 import Divider from '@material-ui/core/Divider';
 import Link from '@material-ui/core/Link';
-import { unstable_Box} from "@material-ui/core/Box";
 import {useRouter} from "next/router"
 import fetch from "isomorphic-unfetch"
 import DialogTitle from "@material-ui/core/DialogTitle";
@@ -34,7 +33,12 @@ import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import ShareIcon from '@material-ui/icons/Share';
 import Autocomplete from "@material-ui/lab/Autocomplete/Autocomplete";
 import {lightBlue, red, yellow} from "@material-ui/core/colors";
+import dynamic from 'next/dynamic'
+
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
 const Schedule = require("node-cron")
+const AceEditor = dynamic(import("react-ace"), {ssr: false})
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -57,6 +61,11 @@ const useStyles = makeStyles( theme => ({
         whiteSpace: "nowrap",
         display: "inline",
         // borderBottom: "1px solid silver",
+    },
+    viewLabel: {
+        marginRight: 20,
+        marginTop: 10,
+        textAlign: "center"
     }
 }));
 
@@ -251,7 +260,7 @@ function ServicesDetail() {
     const [selectedGroup, setSelectedGroup] = React.useState([]);
     const [shared, setShared] = React.useState(false);
     const [openChangeSchedule, setOpenChangeSchedule] = React.useState(false)
-
+    const [openConfiguration, setOpenConfiguration] = React.useState(false)
 
     const { groupId, serviceId } = router.query
 
@@ -543,6 +552,24 @@ function ServicesDetail() {
                                        val={ selectedServer['id'] ? `${selectedServer['name']||''} (${selectedServer['user']||''}@${selectedServer['ip']||''})` : "할당된 서버가 없습니다."}
                                        url={selectedServer['shared'] === undefined && selectedServer['id'] ? `/servers/${service['serverId']}` : undefined }/>
 
+                            <Box my={3}>
+                                <Grid container>
+                                    <Grid item xs={3} sm={3}>
+                                        <Box align={"right"} className={classes.label}> 구성보기 </Box>
+                                    </Grid>
+
+                                    <Grid item xs={9} sm={9}>
+                                        <Button size={"small"}
+                                                variant={"text"}
+                                                color={"primary"}
+                                                onClick={() => setOpenConfiguration(true)}
+                                        >
+                                            보기
+                                        </Button>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+
                         </Grid>
                         <Grid item xs={12} sm={12} md={6}>
 
@@ -757,6 +784,251 @@ function ServicesDetail() {
                         </Button>
                     </DialogActions>
                 </Dialog>
+
+
+                <Dialog
+                    maxWidth={"xl"}
+                    fullWidth={true}
+                    fullScreen={fullScreen}
+                    open={openConfiguration}
+                    onClose={() => setOpenConfiguration(false)}
+                >
+                    <DialogTitle>
+                        구성보기
+                    </DialogTitle>
+                    <DialogContent>
+
+
+                        <Grid container>
+                            <Grid item xs={3} sm={1}>
+                                <Box align={"right"} className={classes.viewLabel}>타입</Box>
+                            </Grid>
+                            <Grid item xs={9} sm={11}>
+                                <Box className={classes.viewLabel}>
+                                    {(service['type']||'') === 'container' ? "컨테이너" : "프로세스"}
+                                </Box>
+                            </Grid>
+                        </Grid>
+                        <br/>
+
+                        {/*  컨테이너  */}
+                        <Box display={(service['type']||'') === 'container' ? 'block' : 'none'}>
+
+                        {/*    변수    */}
+                            <Grid container>
+                                <Grid item xs={3} sm={1}>
+                                    <Box align={"right"} className={classes.viewLabel} style={{marginTop: 25}}>변수</Box>
+                                </Grid>
+                                <Grid item xs={9} sm={11}>
+                                    <List dense={true}>
+                                        {
+                                            (service['variables']||[]).length === 0 ?
+                                            <ListItem >
+                                                <Box align={"right"} className={classes.viewLabel}> - </Box>
+                                            </ListItem>
+                                            :
+                                            (service['variables']||[]).map((variable, index) => {
+                                                return (
+                                                    <ListItem key={index}>
+                                                        <Grid container>
+                                                            <Grid item xs={2}>
+                                                                <Box align={"right"} className={classes.viewLabel}>키</Box>
+                                                            </Grid>
+                                                            <Grid item xs={4}>
+                                                                <TextField fullWidth
+                                                                           size={"small"}
+                                                                           variant={"outlined"}
+                                                                           color={"primary"}
+                                                                           value={variable['key']}
+                                                                           placeholder={"image"}
+                                                                           disabled={true}
+                                                                />
+                                                            </Grid>
+                                                            <Grid item xs={2}>
+                                                                <Box align={"right"} className={classes.viewLabel}>값</Box>
+                                                            </Grid>
+                                                            <Grid item xs={4}>
+                                                                <TextField fullWidth
+                                                                           size={"small"}
+                                                                           variant={"outlined"}
+                                                                           color={"primary"}
+                                                                           required={true}
+                                                                           value={variable['value']}
+                                                                           disabled={true}
+                                                                />
+                                                            </Grid>
+                                                        </Grid>
+                                                    </ListItem>
+                                                )
+                                            })
+                                        }
+                                    </List>
+                                </Grid>
+                            </Grid>
+                            <br />
+
+                            <Grid container>
+                                <Grid item xs={3} sm={1}>
+                                    <Box align={"right"} className={classes.viewLabel} style={{marginTop: 0}}>YAML</Box>
+                                </Grid>
+                                <Grid item xs={9} sm={11}>
+                                    <Box>
+                                        <AceEditor
+                                            mode="text"
+                                            fontSize="15px"
+                                            height={"500px"}
+                                            width="100%"
+                                            tabSize={2}
+                                            placeholder=""
+                                            setOptions={{ useWorker: false, readOnly: true }}
+                                            value={service['yaml']||''}
+                                            placeholder={``}
+                                        />
+                                    </Box>
+                                </Grid>
+                            </Grid>
+
+                        </Box>
+
+                        {/*  프로세스  */}
+                        <Box display={(service['type']||'') === 'process' ? 'block' : 'none'}>
+
+                            <Grid container>
+                                <Grid item xs={3} sm={1}>
+                                    <Box align={"right"} className={classes.viewLabel} style={{marginTop: 0}}>PID 조회</Box>
+                                </Grid>
+                                <Grid item xs={9} sm={11}>
+                                    <Box>
+                                        <AceEditor
+                                            mode="text"
+                                            fontSize="15px"
+                                            height={"100px"}
+                                            width="100%"
+                                            tabSize={2}
+                                            placeholder=""
+                                            setOptions={{ useWorker: false, readOnly: true }}
+                                            value={service['pidCmd']||''}
+                                            placeholder={``}
+                                        />
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                            <br/>
+
+                            <Grid container>
+                                <Grid item xs={3} sm={1}>
+                                    <Box align={"right"} className={classes.viewLabel} style={{marginTop: 0}}>시작 스크립트</Box>
+                                </Grid>
+                                <Grid item xs={9} sm={11}>
+                                    <Box>
+                                        <AceEditor
+                                            mode="text"
+                                            fontSize="15px"
+                                            height={"300px"}
+                                            width="100%"
+                                            tabSize={2}
+                                            placeholder=""
+                                            setOptions={{ useWorker: false, readOnly: true }}
+                                            value={service['startScript']||''}
+                                            placeholder={``}
+                                        />
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                            <br/>
+
+                            <Grid container>
+                                <Grid item xs={3} sm={1}>
+                                    <Box align={"right"} className={classes.viewLabel} style={{marginTop: 0}}>종료 스크립트</Box>
+                                </Grid>
+                                <Grid item xs={9} sm={11}>
+                                    <Box>
+                                        <AceEditor
+                                            mode="text"
+                                            fontSize="15px"
+                                            height={"300px"}
+                                            width="100%"
+                                            tabSize={2}
+                                            placeholder=""
+                                            setOptions={{ useWorker: false, readOnly: true }}
+                                            value={service['stopScript']||''}
+                                            placeholder={``}
+                                        />
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                            <br/>
+
+                            {/*    변수    */}
+                            <Grid container>
+                                <Grid item xs={3} sm={1}>
+                                    <Box align={"right"} className={classes.viewLabel} style={{marginTop: 25}}>로그파일</Box>
+                                </Grid>
+                                <Grid item xs={9} sm={11}>
+                                    <List dense={true}>
+                                        {
+                                            (service['logFiles']||[]).length === 0 ?
+                                                <ListItem >
+                                                    <Box align={"right"} className={classes.viewLabel}> - </Box>
+                                                </ListItem>
+                                                :
+                                                (service['logFiles']||[]).map((logFile, index) => {
+                                                    return (
+                                                        <ListItem key={index}>
+                                                            <Grid container>
+                                                                <Grid item xs={2}>
+                                                                    <Box align={"right"} className={classes.viewLabel}>라벨</Box>
+                                                                </Grid>
+                                                                <Grid item xs={4}>
+                                                                    <TextField fullWidth
+                                                                               size={"small"}
+                                                                               variant={"outlined"}
+                                                                               color={"primary"}
+                                                                               value={logFile['key']}
+                                                                               placeholder={"image"}
+                                                                               disabled={true}
+                                                                    />
+                                                                </Grid>
+                                                                <Grid item xs={2}>
+                                                                    <Box align={"right"} className={classes.viewLabel}>경로</Box>
+                                                                </Grid>
+                                                                <Grid item xs={4}>
+                                                                    <TextField fullWidth
+                                                                               size={"small"}
+                                                                               variant={"outlined"}
+                                                                               color={"primary"}
+                                                                               required={true}
+                                                                               value={logFile['value']}
+                                                                               disabled={true}
+                                                                    />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </ListItem>
+                                                    )
+                                                })
+                                        }
+                                    </List>
+                                </Grid>
+                            </Grid>
+                            <br />
+
+                        </Box>
+
+
+                    </DialogContent>
+                    <DialogActions>
+                        <Box align="right">
+                            <Button style={{marginLeft: "5px"}}
+                                    variant={"outlined"}
+                                    onClick={() => setOpenConfiguration(false)} color="default"
+                            >
+                                닫기
+                            </Button>
+                        </Box>
+                    </DialogActions>
+                </Dialog>
+
+
             </Container>
         </Box>
     );
