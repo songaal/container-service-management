@@ -118,6 +118,14 @@ function Server() {
                                                     <Button variant={"outlined"}
                                                             color={"primary"}
                                                             target="_blank"
+                                                            href={`/servers/${server['id']}/explorer`}
+                                                            size={"small"}
+                                                    >
+                                                        탐색기 열기 <LaunchIcon color={"primary"} />
+                                                    </Button>
+                                                    <Button variant={"outlined"}
+                                                            color={"primary"}
+                                                            target="_blank"
                                                             size={"small"}
                                                             href={`/servers/${server['id']}/terminal`}
                                                     >

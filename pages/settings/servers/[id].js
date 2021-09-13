@@ -195,6 +195,14 @@ function SystemStatus({server}) {
                                 <Button variant={"outlined"}
                                         color={"primary"}
                                         target="_blank"
+                                        href={`/servers/${server['id']}/explorer`}
+                                >
+                                    탐색기 열기 <LaunchIcon color={"primary"} />
+                                </Button>
+
+                                <Button variant={"outlined"}
+                                        color={"primary"}
+                                        target="_blank"
                                         href={`/servers/${server['id']}/terminal`}
                                 >
                                     터미널 열기 <LaunchIcon color={"primary"} />
