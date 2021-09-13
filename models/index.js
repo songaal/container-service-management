@@ -23,6 +23,7 @@ db.Groups = require("./group")(sequelize, Sequelize);
 db.GroupServer = require("./group_server")(sequelize, Sequelize);
 db.GroupAuth = require("./group_auth")(sequelize, Sequelize);
 db.ShareService = require("./share_service")(sequelize, Sequelize);
+db.FileHistory = require("./file_hst")(sequelize, Sequelize);
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {

@@ -16,3 +16,4 @@ sequelize model:create --name group_server --attributes serverId:string,groupId:
 
 sequelize model:create --name group_auth --attributes userId:string,groupId:string
 
+sequelize model:create --name file_hst --attributes userId:string,fileName:string,fileSize:string,phase:string,path:string,type:string,fileKey:string,checkTime:date,errorMsg:string
