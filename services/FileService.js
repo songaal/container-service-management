@@ -1,5 +1,5 @@
 
-const { Sequelize, sequelize, Services, Variable, FileHistory} = require("../models")
+const {FileHistory} = require("../models")
 
 export default {
     newFileInfo: async (file) => {

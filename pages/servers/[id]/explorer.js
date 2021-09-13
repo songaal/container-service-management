@@ -111,7 +111,9 @@ const ServerExplorer = () => {
         fileNameTrimSplit[0] = "";
 
         if(fileNameTrimSplit.length > 2 && !fileNameTrimSplit[1].startsWith("/")){ // 띄어쓰기 파일명 처리
-          fileNameTrimSplit[2] = " " + fileNameTrimSplit[2];
+          for(let i=2; i<fileNameTrimSplit.length; i++){
+            fileNameTrimSplit[i] = " " + fileNameTrimSplit[i];
+          }
         }
 
         let fileNameSlashSplit = fileNameTrimSplit.join("").split("/");        
@@ -261,10 +263,10 @@ const ServerExplorer = () => {
   }
 
   // 항목 삭제
-  const deleteFileData = async (fileKey) => {
+  const deleteFileData = async (fileKey, isFileDelete) => {
     var url = "/api" + location.pathname.replace("/explorer", "");
     var result;
-    await fetch(`${url}/action?type=removeFile&&filekey=${fileKey}`, {
+    await fetch(`${url}/action?type=removeFile&&filekey=${fileKey}&&isFileDelete=${isFileDelete}`, {
       method: "GET"
     })
     .then((res) => {
@@ -292,7 +294,7 @@ const ServerExplorer = () => {
         ])
         
         setTimeout(() => {
-          deleteFileData(fileKey);
+          deleteFileData(fileKey, false);
         })
       })
       .catch((error) => console.error("Error:", error));
@@ -362,7 +364,7 @@ const ServerExplorer = () => {
                   ...files
                 ])
               }); 
-              deleteFileData(filekey);
+              deleteFileData(filekey, false);
             }
           })
         } else {
@@ -381,7 +383,7 @@ const ServerExplorer = () => {
           a.remove();
   
           setTimeout(() => {
-            deleteFileData(filekey);
+            deleteFileData(filekey, false);
           })
         }        
       })
@@ -390,15 +392,27 @@ const ServerExplorer = () => {
 
   const handleFileDelete = async (idx) => {
     if(idx !== undefined){
-      await deleteFileData(files[idx]['fileKey']);
+      await deleteFileData(files[idx]['fileKey'], true);
       files.splice(idx, 1);
       setFiles([...files])
     } else {
+      files.forEach((ele) => {
+        if(ele.phase && ele.transferType && ((ele.transferType === "download" && ele.phase === "L") || (ele.transferType === "upload" && ele.phase === "R"))){
+          deleteFileData(ele.fileKey, true);
+        }
+      })
+      
       setFiles([...files.filter(file => !file.phase || !file.transferType || (file.transferType === "download" && file.phase !== "L") || (file.transferType === "upload" && file.phase !== "R"))]);
     }
   }
 
   const handleFileDeleteAll = async () => {
+    files.forEach((ele) => {
+      if(ele.fileKey){
+        deleteFileData(ele.fileKey, true);
+      }
+    })
+
     setFiles([])
   }
 

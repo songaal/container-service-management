@@ -83,6 +83,11 @@ async function serverTest(req, res) {
                    status: "success",
                    fiileList: await FileService.removeFiles(req.session.auth.user.userId, req.query["filekey"])
                 });
+                if(req.query["isFileDelete"] === "true"){
+                    await fs.rmdirSync(`${tempDir}/` + req.query["filekey"], {
+                        recursive: true,
+                    });
+                }
             } else if (req.query["type"] === "updateFile") {
                 res.send({
                    status: "success",

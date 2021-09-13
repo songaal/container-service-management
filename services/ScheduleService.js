@@ -1,7 +1,7 @@
 const Schedule = require('node-cron');
-const { Services, Servers } = require("../models")
-
+const { Services, Servers, FileHistory } = require("../models")
 const dockerDefaultPort = 2375
+const fs = require('fs');
 
 let sync = {}
 async function TaskJob(service) {
@@ -121,6 +121,49 @@ class ScheduleService {
             }
         })
         console.log("schedule Service Count: ", services.length)
+
+        // 임시파일 삭제 스케줄
+        Schedule.schedule((process.env.TEMPFILE_REMOVE_CRON || "0 0 */3 * * *"), async () => {
+            try{ 
+                await fs.readdir((process.env.TEMP_FILES_DIR || "./public/tempFiles"), function(error, filelist) {
+                    if (error) return console.log(error);
+                    filelist.forEach(name => {
+                        fs.stat((process.env.TEMP_FILES_DIR || "./public/tempFiles") + `/${name}`, async (err, fileInfo) => {  
+                            if (err) return console.log(err);
+                            if (name !== "logs") {
+                                var gapTime = ((new Date().getTime() - fileInfo.birthtime.getTime())/1000/60).toFixed(0);
+
+                                // 180분 경과된 파일을 제거
+                                if(parseInt(gapTime) >= (process.env.FILE_REMOVE_MINUTE || 180)){
+
+                                    // 파일 삭제
+                                    try {
+                                        await fs.rmdirSync((process.env.TEMP_FILES_DIR || "./public/tempFiles") + `/${name}`, {
+                                            recursive: true,
+                                        });
+                                    } catch (error) {
+                                        console.log(error);   
+                                    }
+                                    
+                                    // DB 삭제
+                                    // 스케줄링 인터벌 시간 이후에도 'F'인 건, 업로드에 멈춘 건, 다운로드 멈춘건 디비에서 제거
+                                    try {
+                                        await FileHistory.destroy({where: {fileKey: name, phase: 'L', type: 'upload'}});
+                                        await FileHistory.destroy({where: {fileKey: name, phase: 'R', type: 'download'}});
+                                        await FileHistory.destroy({where: {fileKey: name, phase: 'F'}});
+                                        await FileHistory.destroy({where: {userId: ''}});
+                                    } catch (error) {
+                                        console.log(error);
+                                    }                   
+                                }
+                            }
+                        });
+                    });
+                })
+            } catch(e) {
+                console.log(e);
+            } 
+        }, { scheduled: true, timezone: "Asia/Seoul"}).start()
     }
     createJob(key, cron, service) {
         if (!registryJobs[key]) {
