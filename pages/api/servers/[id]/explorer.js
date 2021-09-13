@@ -13,8 +13,10 @@ export const config = {
 };
 
 const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
-const maxUploadFileSize = process.env.MAX_UPFILE_BYTE || 500 * 1024 * 1024 // 500MB, 524288000Byte;
-const maxDownFileSize = process.env.MAX_DOWNFILE_BYTE || 500 * 1024 * 1024 * 1024 // 50GB, 536870912000Byte;
+const maxUploadFileSize = process.env.MAX_UPFILE_BYTE || 500 * 1024 * 1024 // 500MB, 524288000BYTE;
+const maxDownFileSize = process.env.MAX_DOWNFILE_BYTE || 500 * 1024 * 1024 * 1024 // 50GB, 536870912000BYTE;
+const localhost_url = process.env.LOCALHOST_URL || "http://localhost:3000";
+
 
 function getRandomUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -40,10 +42,15 @@ const updateFileDb = async (userId, filekey, phase, path) => {
   return await FileService.updateFileInfo(userId, filekey, phase, path);
 };
 
-const downUrl = "http://localhost:3355/tempFiles/";
+const updateFileError = async (filekey, errorMsg) => {
+  console.log("#### filekey, errorMsg", filekey, errorMsg);
+  return await FileService.updateFileError(filekey, errorMsg);
+};
+
+const downUrl = localhost_url + "/tempFiles/";
 
 var process_cmd = (id, processType, filename, path, filekey) => {
-  const uploadUrl = `http://localhost:3355/api/servers/${id}/explorer`;
+  const uploadUrl = localhost_url + `/api/servers/${id}/explorer`;
   if (processType === "upload") {
     let enc = encodeURI(`${downUrl}${filekey}/${filename}`);
     return `curl "${enc}" > "${path + filename}"`;
@@ -70,6 +77,7 @@ const writeFile = async (req, res, userId) => {
     form.parse(req, async (err, fields, files) => {
         if(err) {
           logger.error("fail to send server : " + err);
+          updateFileError(req.query["filekey"], err.message);
           return res.json({status : "500", error : "" + err})
         }
 
@@ -107,14 +115,13 @@ const writeFile = async (req, res, userId) => {
         });
     });
   } catch (e) {
-    console.log("#", e);
+    updateFileError(req.query["filekey"], e.message);
     return res.json({status: "500", error: e})
   }
 };
 
 // SERVER TO REMOTE
 const processToRemote = async (req, res, userId) => {
-  console.log("## PROCESS TO REMOTE ##");
   let server = await ServerService.findServerById(req.query["id"]);
   const sshClient = new SshClient(
     server.ip,
@@ -158,7 +165,7 @@ const processToRemote = async (req, res, userId) => {
             updateFileDb(userId, req.query["filekey"], phase, req.query["path"]);
           } 
         } catch (e) {
-          console.log(e);
+          logger.error(e);
         }
         
         return res;
@@ -199,7 +206,9 @@ const processToRemote = async (req, res, userId) => {
 
     return res.status(201).send(result);
   } catch (e) {
-    console.log(e);
+    logger.error(e);
+    updateFileError(req.query["filekey"], e.message);
+    return res.send(e);
   }
 };
 

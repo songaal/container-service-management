@@ -5,8 +5,10 @@ import ServerService from "../../../../services/ServerService"
 import AuthService from "../../../../services/AuthService";
 import SshClient from "../../../../utils/SshClient";
 import FileService from "../../../../services/FileService";
+import fs from "fs"
 
 async function serverTest(req, res) {
+    const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json')
     const id = req.query['id'];
@@ -78,7 +80,14 @@ async function serverTest(req, res) {
                   status: "success",
                   fileList: await FileService.findFiles(req.session.auth.user.userId, req.query["filekey"]),
                 });
-            } else if (req.query["type"] === "removeFile") {
+            } else if (req.query["type"] === "updateFile") {
+                res.send({
+                   status: "success",
+                   fiileList: await FileService.updateFileInfo(req.session.auth.user.userId, req.query["filekey"], req.query["phase"], req.query["path"])
+                });
+            }
+        } else if(req.method === 'DELETE'){
+            if (req.query["type"] === "removeFile") {
                 res.send({
                    status: "success",
                    fiileList: await FileService.removeFiles(req.session.auth.user.userId, req.query["filekey"])
@@ -88,11 +97,6 @@ async function serverTest(req, res) {
                         recursive: true,
                     });
                 }
-            } else if (req.query["type"] === "updateFile") {
-                res.send({
-                   status: "success",
-                   fiileList: await FileService.updateFileInfo(req.session.auth.user.userId, req.query["filekey"], req.query["phase"], req.query["path"])
-                });
             }
         }
     } catch (error) {

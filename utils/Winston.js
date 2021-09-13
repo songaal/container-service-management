@@ -1,10 +1,7 @@
 import winston from 'winston';
 import winstonDaily from 'winston-daily-rotate-file';
 
-
-const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles"
-
-const logDir = './public/tempFiles/logs';  // logs 디렉토리 하위에 로그 파일 저장
+const logDir = process.env.TEMP_FILES_LOG_DIR || "./public/logs";  // logs 디렉토리 하위에 로그 파일 저장
 const { combine, timestamp, printf } = winston.format;
 
 // Define log format

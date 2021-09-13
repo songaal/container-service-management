@@ -21,7 +21,8 @@ module.exports = (sequelize, DataTypes) => {
     path: DataTypes.STRING,
     type: DataTypes.STRING,
     fileKey: DataTypes.STRING,
-    checkTime: DataTypes.DATE
+    checkTime: DataTypes.DATE,
+    errorMsg: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'file_hst',

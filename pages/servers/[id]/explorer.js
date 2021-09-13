@@ -123,37 +123,43 @@ const ServerExplorer = () => {
         let fileInfo;
 
         // 파일 체크
-        await fetch(
-        `${apiUrl}?type=checkExist&&filekey=&&filename=${fileName}&&path=${filePath}`,
-        {
-          method: "GET",
-        }
-        )
-        .then((res) => {
-          return res.json();
-        })
-        .then(async (data) => {
-          setCmd("");
-          if(data){
-            if(data[0].startsWith("error : ") === false){ // 존재
-              fileInfo = data[0].split("\t")
-              // 파일 추가
-              var downloadFile = {
-                name : fileName,
-                size : fileInfo[0],
-                path : filePath,
-                transferType : "download",
-                fileKey : fileInfo[2],
-                phase : "R"                
-              }
-              setFiles(files => [...files, downloadFile]);        
-              handleFileDownload(fileName, downloadFile.fileKey, downloadFile.path);      
-            } else { // 오류
-              enqueueSnackbar(data[0], {variant: "error"})
+        try {
+          await fetch(
+            `${apiUrl}?type=checkExist&&filekey=&&filename=${fileName}&&path=${filePath}`,
+            {
+              method: "GET",
             }
-          }
-        })
-        .catch((error) => console.error("Error:", error));
+            )
+            .then((res) => {
+              return res.json();
+            })
+            .then(async (data) => {
+              setCmd("");
+              if(data && data.status !== 'error'){
+                if(data[0].startsWith("error : ") === false){ // 존재
+                  fileInfo = data[0].split("\t")
+                  // 파일 추가
+                  var downloadFile = {
+                    name : fileName,
+                    size : fileInfo[0],
+                    path : filePath,
+                    transferType : "download",
+                    fileKey : fileInfo[2],
+                    phase : "R"                
+                  }
+                  setFiles(files => [...files, downloadFile]);        
+                  handleFileDownload(fileName, downloadFile.fileKey, downloadFile.path);      
+                } else { // 오류
+                  enqueueSnackbar(data[0], {variant: "error"})
+                }
+              } else {
+                enqueueSnackbar(data.message, {variant: "error"})
+              }
+            })
+            .catch((error) => {console.log(error)}); 
+        } catch (error) {
+          console.log(error);
+        }      
       } else { // 일반 명령어 실행
         setShowLoader(true);
         setDirdata("");
@@ -236,7 +242,8 @@ const ServerExplorer = () => {
             transferType : ele.type,
             fileKey : ele.fileKey,
             phase : ele.phase,
-            path : ele.path
+            path : ele.path,
+            error : ele.errorMsg
           }
           arr.push(existFile);
         })
@@ -264,10 +271,11 @@ const ServerExplorer = () => {
 
   // 항목 삭제
   const deleteFileData = async (fileKey, isFileDelete) => {
+    console.log(fileKey);
     var url = "/api" + location.pathname.replace("/explorer", "");
     var result;
     await fetch(`${url}/action?type=removeFile&&filekey=${fileKey}&&isFileDelete=${isFileDelete}`, {
-      method: "GET"
+      method: "DELETE"
     })
     .then((res) => {
       return res.json();
@@ -286,16 +294,27 @@ const ServerExplorer = () => {
         method: "GET",
       }
     )
-      .then(async (res) => {
-        console.log("FILE UPLOAD TO REMOTE");
-        files[idx]['phase'] = 'R';
-        setFiles([
-          ...files
-        ])
-        
-        setTimeout(() => {
-          deleteFileData(fileKey, false);
-        })
+      .then(res => {
+        return res.json();
+      })
+      .then(data => {
+        if(data.status !== "error"){
+          console.log("FILE UPLOAD TO REMOTE");
+          files[idx]['phase'] = 'R';
+          setFiles([
+            ...files
+          ])
+          
+          setTimeout(() => {
+            deleteFileData(fileKey, false);
+          })
+        } else {
+          files[idx]['error'] = data.message;
+          setFiles([
+            ...files
+          ])
+          enqueueSnackbar(data.message, {variant: "error"})
+        }
       })
       .catch((error) => console.error("Error:", error));
   };
@@ -333,7 +352,7 @@ const ServerExplorer = () => {
         ])
 
         // 서버 -> 원격 파일 업로드
-        uploadToRemote(data.fileKey, data.fileName, idx);
+        await uploadToRemote(data.fileKey, data.fileName, idx);
       }
     })
     .catch((error) =>{ debugger});
@@ -364,7 +383,6 @@ const ServerExplorer = () => {
                   ...files
                 ])
               }); 
-              deleteFileData(filekey, false);
             }
           })
         } else {
@@ -381,11 +399,10 @@ const ServerExplorer = () => {
           a.download = filename;
           a.click();
           a.remove();
-  
           setTimeout(() => {
             deleteFileData(filekey, false);
           })
-        }        
+        }     
       })
       .catch((error) => console.error("Error:", error));
   };
@@ -433,9 +450,6 @@ const ServerExplorer = () => {
       base.forEach((ele, idx) => {
           let fileLine = ele.split(" ");
           let fileName = (fileNames[idx]||"");
-
-          // console.log(`name_eqauls : ${fileLine[fileLine.length-1] === fileName}`, fileLine[fileLine.length-1], fileName);
-
 
           if(fileLine[0].startsWith('d')){
               if(fileName !== `.` && fileName !== `..` && (fileName.toUpperCase()).includes((cmd.toUpperCase().replace("CD", "").trim()||""))){                
@@ -527,8 +541,8 @@ const ServerExplorer = () => {
                   style={{
                     padding: "15px 0px 0px 15px",
                     width: "100%",
-                    height: 490,
-                    maxHeight: 490,
+                    height: 550,
+                    maxHeight: 550,
                     backgroundColor: "black",
                     color: "white",
                     fontSize: "18px",
@@ -558,8 +572,8 @@ const ServerExplorer = () => {
                 component={Paper}
                 style={{
                   overflow: "scroll",
-                  height: 365,
-                  maxHeight: 405,
+                  height: 605,
+                  maxHeight: 645,
                   width: "100%",
                   overflowX: "hidden",
                   padding: "10px 10px 0 10px",
@@ -593,8 +607,7 @@ const ServerExplorer = () => {
                   <Divider/>
                 <Table>
                   <TableBody >
-                    {files.map((item, idx) => {
-                      console.log(item.error);
+                    {files.map((item, idx) => {                      
                       return (
                         <TableRow key={idx}>
                           <TableCell

@@ -32,6 +32,9 @@ module.exports = {
       checkTime: {
         type: Sequelize.DATE
       },
+      errorMsg: {
+        type: Sequelize.STRING
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

@@ -25,8 +25,10 @@ export default {
         }
     },
     updateFileInfo: async (userId, fileKey, phase, path) => {
-        console.log("userId, fileKey, phase, path", userId, fileKey, phase, path);
         return await FileHistory.update({phase: phase, path: path},{where: {userId: userId, fileKey: fileKey}})
+    },
+    updateFileError: async (fileKey, errorMsg) => {
+        return await FileHistory.update({errorMsg: errorMsg},{where: {fileKey: fileKey}})
     },
     removeFiles: async (userId, fileKey) => {
         await FileHistory.destroy({where: {userId: userId, fileKey: fileKey}})
