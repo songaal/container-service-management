@@ -4,7 +4,7 @@ import SshClient from "../../../../utils/SshClient";
 import ServerService from "../../../../services/ServerService";
 import { withSession } from "next-session";
 import FileService from "../../../../services/FileService";
-import { logger } from "../../../../utils/winston";
+const logger = "../utils/winston";
 
 export const config = {
   api: {
