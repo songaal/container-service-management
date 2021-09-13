@@ -2,7 +2,7 @@ const Schedule = require('node-cron');
 const { Services, Servers, FileHistory } = require("../models")
 const dockerDefaultPort = 2375
 const fs = require('fs');
-const logger = "../utils/winston";
+// const console = "../utils/winston";
 
 let sync = {}
 async function TaskJob(service) {
@@ -164,13 +164,13 @@ class ScheduleService {
             const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
             try{                
                 await fs.readdir(tempDir, function(err, fileList) {
-                    if (err) return logger.error("Remove Schedule Error : " + err);
+                    if (err) return console.error("Remove Schedule Error : " + err);
                     const nowTime = new Date().getTime();
 
                     fileList.forEach(file => {
                         fs.stat(tempDir + `/${file}`, async (err, fileInfo) => {  
                             try {
-                                if(err) return logger.error("Remove Schedule Error : " + err);
+                                if(err) return console.error("Remove Schedule Error : " + err);
 
                                 let gapTime = parseInt(((nowTime - fileInfo.birthtime.getTime())/1000/60).toFixed(0));
 
@@ -182,7 +182,7 @@ class ScheduleService {
                                             recursive: true
                                         });
                                     } catch (err) {
-                                        logger.error("Remove Schedule Error : " + err);
+                                        console.error("Remove Schedule Error : " + err);
                                     }
                                     
                                     // 3시간 지난 DB 삭제
@@ -191,17 +191,17 @@ class ScheduleService {
                                             await FileHistory.destroy({where: {fileKey: file}});
                                         }
                                     } catch (err) {
-                                        logger.error("Remove Schedule Error : " + err);
+                                        console.error("Remove Schedule Error : " + err);
                                     }                   
                                 }
                             } catch(err) {
-                                logger.error("Remove Schedule Error : " + err);
+                                console.error("Remove Schedule Error : " + err);
                             }
                         });
                     });
                 })
             } catch(err) {
-                logger.error("Remove Schedule Error : " + err);
+                console.error("Remove Schedule Error : " + err);
             } 
         }, { scheduled: true, timezone: "Asia/Seoul"}).start()       
     }

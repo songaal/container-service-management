@@ -4,7 +4,7 @@ import SshClient from "../../../../utils/SshClient";
 import ServerService from "../../../../services/ServerService";
 import { withSession } from "next-session";
 import FileService from "../../../../services/FileService";
-const logger = "../utils/winston";
+// const logger = "../utils/winston";
 
 export const config = {
   api: {
@@ -76,12 +76,12 @@ const writeFile = async (req, res, userId) => {
   try {
     form.parse(req, async (err, fields, files) => {
         if(err) {
-          logger.error("fail to send server : " + err);
+          console.error("fail to send server : " + err);
           updateFileError(req.query["filekey"], err.message);
           return res.json({status : "500", error : "" + err})
         }
 
-        logger.info("success send to server : " + JSON.stringify(files.file));
+        console.info("success send to server : " + JSON.stringify(files.file));
         var uuid = req.query['filekey'] || getRandomUuid();
         var file = files.file;
   
@@ -91,7 +91,7 @@ const writeFile = async (req, res, userId) => {
   
         fs.stat(`${tempDir}/${uuid}/${decodeURI(file.name)}`, (err, stat) => {
           if (err) console.log("error: ", error);
-          logger.info("success move to tempfile : " + JSON.stringify(stat));
+          console.info("success move to tempfile : " + JSON.stringify(stat));
         });        
 
         try {
@@ -105,7 +105,7 @@ const writeFile = async (req, res, userId) => {
             );
           }
         } catch (e) {
-          logger.error("fail to transfer : " + e);
+          console.error("fail to transfer : " + e);
           throw new Error(e)
         }
         return res.json({
@@ -147,7 +147,7 @@ const processToRemote = async (req, res, userId) => {
         result = res;
 
         if(req.query["type"] === "upload" || req.query["type"] === "download"){
-          logger.info(
+          console.info(
             `success ${req.query["type"]} to remote server : ${res}`
           );
           res.forEach((ele) => {
@@ -165,7 +165,7 @@ const processToRemote = async (req, res, userId) => {
             updateFileDb(userId, req.query["filekey"], phase, req.query["path"]);
           } 
         } catch (e) {
-          logger.error(e);
+          console.error(e);
         }
         
         return res;
@@ -206,7 +206,7 @@ const processToRemote = async (req, res, userId) => {
 
     return res.status(201).send(result);
   } catch (e) {
-    logger.error(e);
+    console.error(e);
     updateFileError(req.query["filekey"], e.message);
     return res.send(e);
   }
