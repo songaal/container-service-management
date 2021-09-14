@@ -77,8 +77,7 @@ const writeFile = async (req, res, userId) => {
   const fileUploadPath = `${tempDir}/${uuid}`
   form.uploadDir = fileUploadPath;
   fs.mkdirSync(fileUploadPath, {
-    recursive: true,
-    mode: "777"
+    recursive: true
   });
 
   try {
