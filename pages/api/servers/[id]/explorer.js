@@ -76,7 +76,10 @@ const writeFile = async (req, res, userId) => {
   var uuid = req.query['filekey'] || getRandomUuid();
   const fileUploadPath = `${tempDir}/${uuid}`
   form.uploadDir = fileUploadPath;
-  fs.mkdirSync(fileUploadPath);
+  fs.mkdirSync(fileUploadPath, {
+    recursive: true,
+    mode: "777"
+  });
 
   try {
     form.parse(req, async (err, fields, files) => {
@@ -92,9 +95,9 @@ const writeFile = async (req, res, userId) => {
   
         // 임시파일 -> 파일이동
 
-        // fs.renameSync(file.path, `${tempDir}/${uuid}/${decodeURI(file.name)}`);
+        fs.renameSync(file.path, `${fileUploadPath}/${decodeURI(file.name)}`);
   
-        fs.stat(`${tempDir}/${uuid}/${decodeURI(file.name)}`, (err, stat) => {
+        fs.stat(`${fileUploadPath}/${decodeURI(file.name)}`, (err, stat) => {
           if (err) console.log("error: ", error);
           console.info("success move to tempfile : " + JSON.stringify(stat));
         });        
