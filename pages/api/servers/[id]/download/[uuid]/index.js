@@ -1,16 +1,17 @@
 import React from 'react';
 import fetch from "isomorphic-unfetch";
-import { withSession } from 'next-session';
 import fs from "fs"
 const mime = require('mime-types');
 
+const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
+
 async function download(req, res) {
-    const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
+    console.log('file Download call')
     res.statusCode = 200;
-    const uuid = req.query['uuid'];
-    const fileName = req.query['fileName'];
-    const fileFullPath = `${tempDir}/${uuid}/${fileName}`
     try {
+        const uuid = req.query['uuid'];
+        const fileName = req.query['fileName'];
+        const fileFullPath = `${tempDir}/${uuid}/${fileName}`
         console.log('file Download .. path: ', fileFullPath)
         if (fs.existsSync(fileFullPath)) {
             let mimeType = mime.lookup(fileFullPath);
@@ -34,4 +35,4 @@ async function download(req, res) {
     }
 }
 
-export default withSession(download)
+export default download
