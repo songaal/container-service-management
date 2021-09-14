@@ -14,6 +14,7 @@ async function server(req, res) {
 
     try {
         if (req.method === 'GET') {
+            console.log('/api/servers ', id)
             let server = await ServerService.findServerById(id)
             server['password'] = Base64.btoa(server['password']);
             res.send({

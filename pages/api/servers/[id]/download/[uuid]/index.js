@@ -11,10 +11,20 @@ async function download(req, res) {
     const fileName = req.query['fileName'];
     const fileFullPath = `${tempDir}/${uuid}/${fileName}`
     try {
-        let mimeType = mime.lookup(fileFullPath);
-        res.setHeader('Content-disposition', 'attachment; filename=' + fileName);
-        res.setHeader('Content-type', mimeType);
-        fs.createReadStream(fileFullPath).pipe(res);
+        console.log('file Download .. path: ', fileFullPath)
+        if (fs.existsSync(fileFullPath)) {
+            let mimeType = mime.lookup(fileFullPath);
+            res.setHeader('Content-disposition', 'attachment; filename=' + fileName);
+            res.setHeader('Content-type', mimeType);
+            console.log('download >>> ', mimeType, fileFullPath)
+            fs.createReadStream(fileFullPath).pipe(res);
+        } else {
+            res.statusCode = 403;
+            res.send({
+                status: "error",
+                message: "파일이 존재하지 않습니다."
+            })
+        }
     } catch (error) {
         console.error(error);
         res.send({

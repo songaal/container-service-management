@@ -50,7 +50,7 @@ const updateFileError = async (filekey, errorMsg) => {
 const downUrl = localhost_url + "/tempFiles/";
 
 var process_cmd = (id, processType, filename, path, filekey) => {
-  const uploadUrl = localhost_url + `/api/servers/${id}/${filekey}?fileName=${filename}`;
+  const uploadUrl = localhost_url + `/api/servers/${id}/download/${filekey}?fileName=${filename}`;
   const downloadUrl = localhost_url + `/api/servers/${id}/explorer`;
   if (processType === "upload") {
     console.log(`curl "${encodeURI(uploadUrl)}" > "${path + filename}"`);
