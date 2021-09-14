@@ -73,6 +73,7 @@ const deleteFile = async (req, res) => {
 const writeFile = async (req, res, userId) => {
   const maxFileSize = req.__NEXT_INIT_QUERY["type"] === "upload" ? maxUploadFileSize : maxDownFileSize;
   const form = new formidable.IncomingForm({maxFileSize : maxFileSize});
+  form.uploadDir='tmp';
   try {
     form.parse(req, async (err, fields, files) => {
         if(err) {
