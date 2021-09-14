@@ -57,7 +57,7 @@ export default {
         if (shareServices.length > 0) {
             const serviceIds = shareServices.map(ss => ss['serviceId'])
             const services = await Services.findAll({where: {id: { [Sequelize.Op.in]: serviceIds }}})
-            const shareServerIds = services.filter(svc => !servers.find(server => server[id] === svc['serverId'])).map(svc => svc['serverId'])
+            const shareServerIds = services.filter(svc => !servers.find(server => server['id'] === svc['serverId'])).map(svc => svc['serverId'])
             const shareServers = await Servers.findAll({
                 attributes: { exclude: ["password"] },
                 where: {
