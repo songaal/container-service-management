@@ -13,7 +13,7 @@ build:
     - export VERSION="$(cat package.json | grep version | head -1 | awk -F= "{ print $2 }" | sed -E 's/(version)|[:,\",]//g' | tr -d '[[:space:]]')"
     - echo "$IMAGE:latest"
     - echo "$IMAGE:$VERSION"
-    - docker build -t ${IMAGE}:latest . --no-cache
+    - docker build -t ${IMAGE}:latest .
     - docker tag ${IMAGE}:latest ${IMAGE}:${VERSION}
     - docker push ${IMAGE}:latest
     - docker push ${IMAGE}:${VERSION}
