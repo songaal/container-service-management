@@ -397,7 +397,8 @@ const ServerExplorer = () => {
           updateFileData(res.fileKey, 'L', path);
           const a = document.createElement("a");
           // a.href = `/tempFiles/${res.fileKey}/${res.fileName}`;
-          a.href = `/api/${location.pathname.replace("/explorer", `/download/${res.fileKey}`)}?fileName=${res.fileName}`
+          // a.href = `/api/${location.pathname.replace("/explorer", `/download/${res.fileKey}`)}?fileName=${res.fileName}`
+          a.href = `/api${location.pathname.replace("/explorer", `/download/${res.fileKey}`)}?fileName=${res.fileName}`
           a.download = filename;
           a.click();
           a.remove();
