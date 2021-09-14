@@ -24,6 +24,8 @@ RUN npx sequelize-cli db:migrate
 
 RUN npx sequelize db:seed:all
 
+RUN mkdir -p public/tempFiles
+
 #COPY docker-compose-Linux-x86_64 /usr/bin/docker-compose
 #
 #RUN chmod +x /usr/bin/docker-compose
