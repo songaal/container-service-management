@@ -13,8 +13,8 @@ export const config = {
 };
 
 const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
-const maxUploadFileSize = process.env.MAX_UPFILE_BYTE || 500 * 1024 * 1024 // 500MB, 524288000BYTE;
-const maxDownFileSize = process.env.MAX_DOWNFILE_BYTE || 500 * 1024 * 1024 * 1024 // 50GB, 536870912000BYTE;
+const maxUploadFileSize = Number(process.env.MAX_UPFILE_BYTE || 500 * 1024 * 1024) // 500MB, 524288000BYTE;
+const maxDownFileSize = Number(process.env.MAX_DOWNFILE_BYTE || 500 * 1024 * 1024 * 1024) // 50GB, 536870912000BYTE;
 const localhost_url = process.env.LOCALHOST_URL || "http://localhost:3000";
 
 
@@ -77,7 +77,7 @@ const writeFile = async (req, res, userId) => {
   const fileUploadPath = `${tempDir}/${uuid}`
   form.uploadDir = fileUploadPath;
   fs.mkdirSync(fileUploadPath, {
-    recursive: true
+    recursive: true, mode: '777'
   });
 
   try {
@@ -91,9 +91,6 @@ const writeFile = async (req, res, userId) => {
         console.info("success send to server : " + JSON.stringify(files.file));
 
         var file = files.file;
-  
-        // 임시파일 -> 파일이동
-
         fs.renameSync(file.path, `${fileUploadPath}/${decodeURI(file.name)}`);
   
         fs.stat(`${fileUploadPath}/${decodeURI(file.name)}`, (err, stat) => {
