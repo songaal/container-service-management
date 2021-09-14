@@ -73,7 +73,11 @@ const deleteFile = async (req, res) => {
 const writeFile = async (req, res, userId) => {
   const maxFileSize = req.__NEXT_INIT_QUERY["type"] === "upload" ? maxUploadFileSize : maxDownFileSize;
   const form = new formidable.IncomingForm({maxFileSize : maxFileSize});
-  form.uploadDir='tmp';
+  var uuid = req.query['filekey'] || getRandomUuid();
+  const fileUploadPath = `${tempDir}/${uuid}`
+  form.uploadDir = fileUploadPath;
+  fs.mkdirSync(fileUploadPath);
+
   try {
     form.parse(req, async (err, fields, files) => {
         if(err) {
@@ -83,12 +87,12 @@ const writeFile = async (req, res, userId) => {
         }
 
         console.info("success send to server : " + JSON.stringify(files.file));
-        var uuid = req.query['filekey'] || getRandomUuid();
+
         var file = files.file;
   
         // 임시파일 -> 파일이동
-        fs.mkdirSync(`${tempDir}/${uuid}`);
-        fs.renameSync(file.path, `${tempDir}/${uuid}/${decodeURI(file.name)}`);
+
+        // fs.renameSync(file.path, `${tempDir}/${uuid}/${decodeURI(file.name)}`);
   
         fs.stat(`${tempDir}/${uuid}/${decodeURI(file.name)}`, (err, stat) => {
           if (err) console.log("error: ", error);
