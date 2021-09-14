@@ -283,17 +283,16 @@ function SettingsServer() {
                                     viewServers.map((server, index) => {
                                         return (
                                             <TableRow key={server['id']}
-                                                      onClick={() => router.push(`/settings/servers/${server['id']}`)}
                                                       style={{cursor: "pointer"}}
                                             >
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell>{server['name']}</TableCell>
-                                                <TableCell>{server['ip']}</TableCell>
-                                                <TableCell>{server['port']}</TableCell>
-                                                <TableCell>{server['dockerPort']}</TableCell>
-                                                <TableCell>{server['user']}</TableCell>
-                                                <TableCell>{server['group_server_count']}</TableCell>
-                                                <TableCell>{server['service_count']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{index + 1}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['name']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['ip']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['port']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['dockerPort']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['user']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['group_server_count']}</TableCell>
+                                                <TableCell onClick={() => router.push(`/settings/servers/${server['id']}`)}>{server['service_count']}</TableCell>
                                                 <TableCell>
                                                     <Button variant={"outlined"}
                                                             color={"primary"}

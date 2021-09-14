@@ -162,7 +162,10 @@ class ScheduleService {
     removeTempFileScheduleJob() {
         Schedule.schedule((process.env.TEMPFILE_REMOVE_CRON || "0 * * * * *"), async () => {
             const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
-            try{                
+            try{
+                // 임시 파일 전송 디렉토리 없으면 생성
+                fs.mkdirSync(tempDir, { recursive: true })
+                console.log("임시파일 삭제 체크.", new Date().toLocaleString())
                 await fs.readdir(tempDir, function(err, fileList) {
                     if (err) return console.error("Remove Schedule Error : " + err);
                     const nowTime = new Date().getTime();
@@ -171,10 +174,10 @@ class ScheduleService {
                         fs.stat(tempDir + `/${file}`, async (err, fileInfo) => {  
                             try {
                                 if(err) return console.error("Remove Schedule Error : " + err);
+                                // ms 단위를 min 단위
+                                const diffTime = nowTime - fileInfo.birthtime.getTime() / 60 / 1000
 
-                                let gapTime = parseInt(((nowTime - fileInfo.birthtime.getTime())/1000/60).toFixed(0));
-
-                                if(gapTime >= (process.env.FILE_REMOVE_MINUTE || 180)){
+                                if(diffTime >= (process.env.FILE_REMOVE_MINUTE || 180)){
                                     try {
                                         await fs.rmdirSync(tempDir + `/${file}`, {
                                             maxRetries: process.env.FILE_REMOVE_FAIL_RETRY || 5,
@@ -187,7 +190,7 @@ class ScheduleService {
                                     
                                     // 3시간 지난 DB 삭제
                                     try {
-                                        if(gapTime >= (process.env.FILE_REMOVE_MINUTE || 180)){
+                                        if(diffTime >= (process.env.FILE_REMOVE_MINUTE || 180)){
                                             await FileHistory.destroy({where: {fileKey: file}});
                                         }
                                     } catch (err) {

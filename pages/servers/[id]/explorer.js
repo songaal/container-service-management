@@ -40,7 +40,9 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(1),
   },
   inputRoot: {
-    padding: "2px 4px",
+    // padding: "2px 4px",
+    marginLeft: '4px',
+    marginRight: '4px',
     display: "flex",
     alignItems: "center",
   },
@@ -231,18 +233,17 @@ const ServerExplorer = () => {
     })         
     .then((data) => {
       result = data.fileList;
-      if(!fileKey){
+      if(!fileKey && result && result.length > 0){
         let arr = [];
 
         result.forEach(ele => {
-          var existFile = {
+          let existFile = {
             name : ele.fileName,
             size : ele.fileSize,
             path : ele.path,
             transferType : ele.type,
             fileKey : ele.fileKey,
             phase : ele.phase,
-            path : ele.path,
             error : ele.errorMsg
           }
           arr.push(existFile);
@@ -473,22 +474,40 @@ const ServerExplorer = () => {
     <div>
       <Box>
         <Paper elevation={2}>
+
+          <Grid container style={{textAlign: "center"}}>
+            <Grid item xs={4}>
+              <Box>
+                서버명: {server['name']||''}
+              </Box>
+            </Grid>
+            <Grid item xs={4}>
+              <Box>
+                아이피: {server['ip']||''}
+              </Box>
+            </Grid>
+            <Grid item xs={4}>
+              <Box>
+                계정: {server['user']||''}
+              </Box>
+            </Grid>
+          </Grid>
+
           <Grid container>
             <Grid item xs={12}>
               <Paper component="form" className={classes.inputRoot}>
                 <Typography className={classes.currentPath}>명령어</Typography>
-                <Divider className={classes.divider} orientation="vertical" />
                 <Autocomplete
-                  freeSolo            
+                  freeSolo
                   value={cmd||""}
-                  className={classes.input} 
+                  className={classes.input}
                   options={setGuideOptions()}
                   onChange={(e, v) => {
                       if(e.key === "Enter" || e.type === "click"){
-                        if(cmd.includes("cd") || cmd.includes("CD")){
-                          setCmd(cmd => `cd ${v}`);
-                        } else if(cmd.includes("get") || cmd.includes("GET")){
-                          setCmd(cmd => `get ${v}`);
+                        if((cmd||"").toLowerCase().includes("cd")){
+                          setCmd(`cd ${v}`);
+                        } else if((cmd||"").toLowerCase().includes("get")){
+                          setCmd(`get ${v}`);
                         }
                       }
                   }}
@@ -496,7 +515,7 @@ const ServerExplorer = () => {
                       setCmd(v);
                   }}
                   onKeyPress={(e) => {
-                    if (e.key === "Enter") {                      
+                    if (e.key === "Enter") {
                       excuteCmd();
                       e.preventDefault();
                     }
@@ -505,7 +524,6 @@ const ServerExplorer = () => {
                     <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined"/>
                   )}
                 />
-                <Divider className={classes.divider} orientation="vertical" />
                 <IconButton
                   color="primary"
                   className={classes.iconButton}
@@ -571,11 +589,9 @@ const ServerExplorer = () => {
               <TableContainer
                 component={Paper}
                 style={{
-                  overflow: "scroll",
-                  height: 605,
-                  maxHeight: 645,
+                  overflow: "hidden",
+                  // maxHeight: 645,
                   width: "100%",
-                  overflowX: "hidden",
                   padding: "10px 10px 0 10px",
                   border: "1px solid silver"
                 }}
