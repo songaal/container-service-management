@@ -50,13 +50,14 @@ const updateFileError = async (filekey, errorMsg) => {
 const downUrl = localhost_url + "/tempFiles/";
 
 var process_cmd = (id, processType, filename, path, filekey) => {
-  const uploadUrl = localhost_url + `/api/servers/${id}/explorer`;
+  const uploadUrl = localhost_url + `/api/servers/${id}/${filekey}?fileName=${filename}`;
+  const downloadUrl = localhost_url + `/api/servers/${id}/explorer`;
   if (processType === "upload") {
-    let enc = encodeURI(`${downUrl}${filekey}/${filename}`);
-    return `curl "${enc}" > "${path + filename}"`;
+    console.log(`curl "${encodeURI(uploadUrl)}" > "${path + filename}"`);
+    return `curl "${encodeURI(uploadUrl)}" > "${path + filename}"`;
   } else if (processType === "download") {
-    console.log(`curl -F "file=@${path + filename}" ${uploadUrl}?filekey=${filekey}`);
-    return `curl -F "file=@${path + filename}" ${uploadUrl}?filekey=${filekey}`;
+    console.log(`curl -F "file=@${path + filename}" ${downloadUrl}?filekey=${filekey}`);
+    return `curl -F "file=@${path + filename}" ${downloadUrl}?filekey=${filekey}`;
   } else if (processType === "checkExist") {    
     console.log(`cd ${path} && du -h "${filename}"`);
     return `cd ${path} && du -h "${filename}"`;
