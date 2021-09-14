@@ -165,7 +165,7 @@ class ScheduleService {
             try{
                 // 임시 파일 전송 디렉토리 없으면 생성
                 fs.mkdirSync(tempDir, { recursive: true, mode: '777'  })
-                console.log("임시파일 삭제 체크.", new Date().toLocaleString())
+
                 await fs.readdir(tempDir, function(err, fileList) {
                     if (err) return console.error("Remove Schedule Error : " + err);
                     const nowTime = new Date().getTime();
@@ -175,10 +175,11 @@ class ScheduleService {
                             try {
                                 if(err) return console.error("Remove Schedule Error : " + err);
                                 // ms 단위를 min 단위
-                                const diffTime = nowTime - fileInfo.birthtime.getTime() / 60 / 1000
+                                const diffTime = (nowTime - fileInfo.birthtime.getTime()) / 60 / 60 / 1000
 
                                 if(diffTime >= Number(process.env.FILE_REMOVE_MINUTE || 180)){
                                     try {
+                                        console.log("오래된 파일 삭제.", file)
                                         await fs.rmdirSync(tempDir + `/${file}`, {
                                             maxRetries: Number(process.env.FILE_REMOVE_FAIL_RETRY || 5),
                                             retryDelay: Number(process.env.FILE_REMOVE_FAIL_RETRY_DELAY || 5000),

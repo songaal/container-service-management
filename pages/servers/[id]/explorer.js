@@ -402,7 +402,7 @@ const ServerExplorer = () => {
           a.remove();
           setTimeout(() => {
             deleteFileData(filekey, false);
-          })
+          }, 500)
         }     
       })
       .catch((error) => console.error("Error:", error));
