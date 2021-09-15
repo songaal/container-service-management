@@ -3,6 +3,7 @@ import fetch from "isomorphic-unfetch";
 import { withSession } from 'next-session';
 import AuthService from "../../../services/AuthService";
 import JsonUtil from "../../../utils/JsonUtil";
+import { logger } from '../../../utils/Winston'
 
 async function login(req, res) {
     res.statusCode = 200;
@@ -13,6 +14,7 @@ async function login(req, res) {
         res.end()
     }
     try {
+        logger.log('debug', '로그인 요청', req.body)
         let requestLogin = JsonUtil.parse(req.body);
         const auth = await AuthService.login(requestLogin['userId'], requestLogin['password']);
 

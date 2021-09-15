@@ -1,7 +1,13 @@
 import winston from 'winston';
 import winstonDaily from 'winston-daily-rotate-file';
+import fs from 'fs'
 
-const logDir = process.env.TEMP_FILES_LOG_DIR || "./public/logs";  // logs 디렉토리 하위에 로그 파일 저장
+const logDir = process.env.TEMP_FILES_LOG_DIR || "./logs";  // logs 디렉토리 하위에 로그 파일 저장
+
+if (fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, {recursive: true})
+}
+
 const { combine, timestamp, printf } = winston.format;
 
 // Define log format
@@ -13,7 +19,7 @@ const logFormat = printf(info => {
  * Log Level
  * error: 0, warn: 1, info: 2, http: 3, verbose: 4, debug: 5, silly: 6
  */
-const logger = winston.createLogger({
+export const logger = winston.createLogger({
   format: combine(
     timestamp({
       format: 'YYYY-MM-DD HH:mm:ss',
@@ -23,11 +29,11 @@ const logger = winston.createLogger({
   transports: [
     // info 레벨 로그를 저장할 파일 설정
     new winstonDaily({
-      level: 'info',
+      level: 'debug',
       datePattern: 'YYYY-MM-DD',
       dirname: logDir,
       filename: `%DATE%.log`,
-      maxFiles: "14d",  // 14일치 로그 파일 저장
+      maxFiles: "7d",  // 14일치 로그 파일 저장
       zippedArchive: true, 
     }),
     // error 레벨 로그를 저장할 파일 설정
@@ -43,13 +49,9 @@ const logger = winston.createLogger({
 });
 
 // Production 환경이 아닌 경우(dev 등) 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),  // 색깔 넣어서 출력
-      winston.format.simple(),  // `${info.level}: ${info.message} JSON.stringify({ ...rest })` 포맷으로 출력
-    )
-  }));
-}
-
-export default logger;
+logger.add(new winston.transports.Console({
+  // format: winston.format.combine(
+  //     winston.format.colorize(),  // 색깔 넣어서 출력
+  //     winston.format.simple(),  // `${info.level}: ${info.message} JSON.stringify({ ...rest })` 포맷으로 출력
+  // )
+}));
