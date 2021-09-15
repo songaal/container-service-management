@@ -20,7 +20,7 @@ const localhost_url = process.env.LOCALHOST_URL || "http://localhost:3000";
 
 function getRandomUuid() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0, v = c == "x" ? r : (r & 0x3) | 0x8;
+    let r = (Math.random() * 16) | 0, v = c == "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
 }
@@ -49,7 +49,7 @@ const updateFileError = async (filekey, errorMsg) => {
 
 const downUrl = localhost_url + "/tempFiles/";
 
-var process_cmd = (id, processType, filename, path, filekey) => {
+let process_cmd = (id, processType, filename, path, filekey) => {
   const uploadUrl = localhost_url + `/api/servers/${id}/download/${filekey}?fileName=${filename}`;
   const downloadUrl = localhost_url + `/api/servers/${id}/explorer`;
   if (processType === "upload") {
@@ -74,7 +74,7 @@ const deleteFile = async (req, res) => {
 const writeFile = async (req, res, userId) => {
   const maxFileSize = req.__NEXT_INIT_QUERY["type"] === "upload" ? maxUploadFileSize : maxDownFileSize;
   const form = new formidable.IncomingForm({maxFileSize : maxFileSize});
-  var uuid = req.query['filekey'] || getRandomUuid();
+  let uuid = req.query['filekey'] || getRandomUuid();
   const fileUploadPath = `${tempDir}/${uuid}`
   form.uploadDir = fileUploadPath;
   fs.mkdirSync(fileUploadPath, {
@@ -91,7 +91,7 @@ const writeFile = async (req, res, userId) => {
 
         console.info("success send to server : " + JSON.stringify(files.file));
 
-        var file = files.file;
+        let file = files.file;
         fs.renameSync(file.path, `${fileUploadPath}/${decodeURI(file.name)}`);
   
         fs.stat(`${fileUploadPath}/${decodeURI(file.name)}`, (err, stat) => {
@@ -204,7 +204,7 @@ const processToRemote = async (req, res, userId) => {
     }
 
     if (req.query["type"] === "upload") {
-      await fs.rmdirSync(`${tempDir}/` + req.query["filekey"], {
+      fs.rmdirSync(`${tempDir}/` + req.query["filekey"], {
         recursive: true,
       });
     }
@@ -218,7 +218,7 @@ const processToRemote = async (req, res, userId) => {
 };
 
 export default withSession(async (req, res) => {
-  var userId = "";
+  let userId = "";
   if (req.session.auth !== undefined) {
     userId = req.session.auth.user.userId;
   }
