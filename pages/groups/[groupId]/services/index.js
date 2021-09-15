@@ -56,7 +56,7 @@ function Services() {
     const router = useRouter();
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [servers, setServers] = React.useState([]);
-
+    const [groups, setGroups] = React.useState([]);
     const [name, setName] = React.useState("")
     const [server, setServer] = React.useState('-1');
     const [type, setType] = React.useState('container');
@@ -79,6 +79,15 @@ function Services() {
     }, [])
 
     const init = () => {
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            })
         fetch(`/api/groups/${groupId}/servers`)
             .then(res => res.json())
             .then(body => {
@@ -151,12 +160,14 @@ function Services() {
                 <br/>
                 <Breadcrumbs aria-label="breadcrumb">
                     <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
-                        그룹목록
+                        그룹
                     </Link>
                     <Link color="inherit" onClick={() => router.push("/groups/" + groupId)} style={{cursor: "pointer"}}>
-                        그룹정보
+                        {
+                            groups.find(g => String(g?.id||'') === groupId)?.name||''
+                        }
                     </Link>
-                    <Typography color="textPrimary">서비스</Typography>
+                    <Typography color="textPrimary">서비스 추가</Typography>
                 </Breadcrumbs>
                 <br/>
                 <Grid container>

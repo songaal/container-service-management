@@ -180,9 +180,9 @@ function GroupDetail() {
                     <br/>
                     <Breadcrumbs aria-label="breadcrumb">
                         <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
-                            그룹목록
+                            그룹
                         </Link>
-                        <Typography color="textPrimary">그룹정보</Typography>
+                        <Typography color="textPrimary">{group['name'] || ""}</Typography>
                     </Breadcrumbs>
                     <br/>
                     <Grid container>

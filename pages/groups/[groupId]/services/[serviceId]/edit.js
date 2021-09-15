@@ -62,7 +62,7 @@ function ServiceEdit() {
     const fullScreen = useMediaQuery(theme.breakpoints.down('xs'));
     const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [servers, setServers] = React.useState([]);
-
+    const [service, setService] = React.useState({})
     const [name, setName] = React.useState("")
     const [server, setServer] = React.useState('-1');
     const [type, setType] = React.useState('container');
@@ -70,7 +70,7 @@ function ServiceEdit() {
     const [editConfirmOpen, setEditConfirmOpen] = React.useState(false)
     const [cron, setCron] = React.useState('');
     const [isSchedule, setSchedule] = React.useState(false);
-
+    const [groups, setGroups] = React.useState([]);
     // 컨테이너
     const [variables, setVariables] = React.useState([{}]);
     const [yaml, setYaml] = React.useState("");
@@ -87,6 +87,15 @@ function ServiceEdit() {
     }, [])
 
     const init = () => {
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            })
         fetch(`/api/groups/${groupId}/servers`)
             .then(res => res.json())
             .then(body => {
@@ -112,6 +121,7 @@ function ServiceEdit() {
                     setStopScript(service['stopScript'])
                     setYaml(service['yaml'])
                     setLogFiles(service['logFiles'].length === 0 ? [{}] : service['logFiles'])
+                    setService(Object.assign({}, {}, body['service']))
                 }
             })
     }
@@ -162,15 +172,19 @@ function ServiceEdit() {
                 <br/>
                 <Breadcrumbs aria-label="breadcrumb">
                     <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
-                        그룹목록
+                        그룹
                     </Link>
                     <Link color="inherit" onClick={() => router.push("/groups/" + groupId)} style={{cursor: "pointer"}}>
-                        그룹정보
+                        {
+                            groups.find(g => String(g?.id||'') === service['groupId'])?.name||''
+                        }
                     </Link>
                     <Link color="inherit" onClick={() => router.push("/groups/" + groupId + "/services/" + serviceId)} style={{cursor: "pointer"}}>
-                        서비스
+                        {
+                            service?.name||''
+                        }
                     </Link>
-                    <Typography color="textPrimary">수정</Typography>
+                    <Typography color="textPrimary">서비스 수정</Typography>
                 </Breadcrumbs>
                 <br/>
                 <Grid container>
