@@ -17,7 +17,7 @@ import StepButton from "@material-ui/core/StepButton";
 import { makeStyles } from "@material-ui/core/styles";
 import DownloadIcon from "@material-ui/icons/GetApp";
 import UploadIcon from "@material-ui/icons/Publish";
-import InputIcon from "@material-ui/icons/Input";
+import InputIcon from '@material-ui/icons/SubdirectoryArrowLeft';
 import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import CircularProgress from "@material-ui/core/CircularProgress";
@@ -39,8 +39,8 @@ const useStyles = makeStyles((theme) => ({
     marginTop: theme.spacing(1),
     marginBottom: theme.spacing(1),
   },
-  inputRoot: {
-    // padding: "2px 4px",
+  inputRoot: {    
+    height: "7vh",
     marginLeft: '4px',
     marginRight: '4px',
     display: "flex",
@@ -53,17 +53,20 @@ const useStyles = makeStyles((theme) => ({
   iconButton: {
     padding: 10,
   },
-  currentPath: {
-    padding: 10,
+  commandLine: {
+    padding: 10,    
     backgroundColor: "silver",
+    borderRadius: "5px",
+    marginLeft: 3,
+    marginTop: 5,    
   },
   divider: {
     height: 28,
     margin: 4,
   },
   dropzone: {
-    width: "100%",
-    height: "350px",
+    width: "100%",  
+    height: "33.3vh",  
     display: "flex",
     flex: "auto",
     flexFlow: "column",
@@ -81,13 +84,13 @@ function getSteps() {
 }
 
 function byteCalculation(bytes) { 
-  var bytes = parseInt(bytes);
-  var s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  let byte = parseInt(bytes);
+  let s = ['bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
 
-  var e = Math.floor(Math.log(bytes)/Math.log(1024));
+  let e = Math.floor(Math.log(byte)/Math.log(1024));
   if(e == "-Infinity") return " ( " + "0 "+s[0] + ") "; 
   else 
-  return " (" + (bytes/Math.pow(1024, Math.floor(e))).toFixed(2)+" "+ s[e] + ") ";
+  return " (" + (byte/Math.pow(1024, Math.floor(e))).toFixed(2)+" "+ s[e] + ") ";
 }
 
 const ServerExplorer = () => {
@@ -141,7 +144,7 @@ const ServerExplorer = () => {
                 if(data[0].startsWith("error : ") === false){ // 존재
                   fileInfo = data[0].split("\t")
                   // 파일 추가
-                  var downloadFile = {
+                  let downloadFile = {
                     name : fileName,
                     size : fileInfo[0],
                     path : filePath,
@@ -165,8 +168,8 @@ const ServerExplorer = () => {
       } else { // 일반 명령어 실행
         setShowLoader(true);
         setDirdata("");
-        var url = "/api" + location.pathname.replace("/explorer", "");
-        var path = root === undefined ? currentPath : root;
+        let url = "/api" + location.pathname.replace("/explorer", "");
+        let path = root === undefined ? currentPath : root;
         const tmpCmd = root === undefined ? cmd : `ls -al`;
         fetch(`${url}/action?type=exp_excute`, {
           method: "POST",
@@ -189,7 +192,7 @@ const ServerExplorer = () => {
   };
 
   React.useEffect(() => {
-    var url = "/api" + location.pathname.replace("/explorer", "");
+    let url = "/api" + location.pathname.replace("/explorer", "");
     fetch(url)
       .then((res) => res.json())
       .then((body) => {
@@ -223,8 +226,8 @@ const ServerExplorer = () => {
 
   // DB 검색
   const searchFileData = async (fileKey) => {
-    var url = "/api" + location.pathname.replace("/explorer", "");
-    var result;
+    let url = "/api" + location.pathname.replace("/explorer", "");
+    let result;
     await fetch(`${url}/action?type=searchFile&&filekey=${fileKey}`, {
       method: "GET"
     })
@@ -257,7 +260,7 @@ const ServerExplorer = () => {
 
   // DB 업데이트
   const updateFileData = async (fileKey, phase, path) => {
-    var url = "/api" + location.pathname.replace("/explorer", "");
+    let url = "/api" + location.pathname.replace("/explorer", "");
     await fetch(`${url}/action?type=updateFile&&filekey=${fileKey}&&phase=${phase}&&path=${path}`, {
       method: "GET"
     })
@@ -273,8 +276,8 @@ const ServerExplorer = () => {
   // 항목 삭제
   const deleteFileData = async (fileKey, isFileDelete) => {
     console.log(fileKey);
-    var url = "/api" + location.pathname.replace("/explorer", "");
-    var result;
+    let url = "/api" + location.pathname.replace("/explorer", "");
+    let result;
     await fetch(`${url}/action?type=removeFile&&filekey=${fileKey}&&isFileDelete=${isFileDelete}`, {
       method: "DELETE"
     })
@@ -395,9 +398,7 @@ const ServerExplorer = () => {
           }); 
       
           updateFileData(res.fileKey, 'L', path);
-          const a = document.createElement("a");
-          // a.href = `/tempFiles/${res.fileKey}/${res.fileName}`;
-          // a.href = `/api/${location.pathname.replace("/explorer", `/download/${res.fileKey}`)}?fileName=${res.fileName}`
+          const a = document.createElement("a")          
           a.href = `/api${location.pathname.replace("/explorer", `/download/${res.fileKey}`)}?fileName=${res.fileName}`
           a.download = filename;
           a.click();
@@ -445,7 +446,7 @@ const ServerExplorer = () => {
       const base = dirData.split("\n").slice(2);
       const fileNames = dirFile[0].split("\n");      
 
-      var typeGroup = {
+      let typeGroup = {
           directory : [],
           file : []
       }
@@ -477,20 +478,26 @@ const ServerExplorer = () => {
       <Box>
         <Paper elevation={2}>
 
-          <Grid container style={{textAlign: "center"}}>
+          <Grid container style={{textAlign: "center", marginTop:"5px"}}>
             <Grid item xs={4}>
               <Box>
-                서버명: {server['name']||''}
+                <Typography>
+                  서버명 : {server['name']||''}
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={4}>
               <Box>
-                아이피: {server['ip']||''}
+                <Typography>
+                  아이피 : {server['ip']||''}
+                </Typography>
               </Box>
             </Grid>
             <Grid item xs={4}>
               <Box>
-                계정: {server['user']||''}
+                <Typography>
+                  계정 : {server['user']||''}
+                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -498,7 +505,7 @@ const ServerExplorer = () => {
           <Grid container>
             <Grid item xs={12}>
               <Paper component="form" className={classes.inputRoot}>
-                <Typography className={classes.currentPath}>명령어</Typography>
+                <Typography className={classes.commandLine}>명령어</Typography>
                 <Autocomplete
                   freeSolo
                   value={cmd||""}
@@ -523,11 +530,10 @@ const ServerExplorer = () => {
                     }
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined"/>
+                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined" size="small" />
                   )}
                 />
                 <IconButton
-                  color="primary"
                   className={classes.iconButton}
                   aria-label="directions"
                   onClick={() => {
@@ -546,6 +552,7 @@ const ServerExplorer = () => {
             onDragOver={e => dragPrevent(e)}
             onDragEnter={e => dragPrevent(e)}
             onDragLeave={e => dragPrevent(e)}
+            style={{overflowX: "hidden"}}
           >
             <Grid container alignItems="center">
               <div
@@ -561,8 +568,7 @@ const ServerExplorer = () => {
                   style={{
                     padding: "15px 0px 0px 15px",
                     width: "100%",
-                    height: 550,
-                    maxHeight: 550,
+                    height: "50vh", 
                     backgroundColor: "black",
                     color: "white",
                     fontSize: "18px",
@@ -572,7 +578,6 @@ const ServerExplorer = () => {
                     border: "2px solid white"
                   }}
                 >
-                  {dirData}
                 </textarea>
                 <div
                   style={
@@ -582,20 +587,20 @@ const ServerExplorer = () => {
                   }
                 >
                   <CircularProgress
-                    style={{ position: "absolute", top: "30%", left: "45%" }}
+                    style={{ position: "absolute", top: "35%", left: "45%" }}
                   />
                 </div>
               </div>
-              <Typography style={{display: 'inline', marginLeft: "10px"}}>List of Upload / Download Files</Typography>
+              <Typography style={{display: 'inline', marginLeft: "10px"}}>업로드/다운로드 파일 리스트</Typography>
 
               <TableContainer
                 component={Paper}
                 style={{
-                  overflow: "hidden",
-                  // maxHeight: 645,
+                  overflowX: "hidden",                  
                   width: "100%",
-                  padding: "10px 10px 0 10px",
-                  border: "1px solid silver"
+                  height: "36vh",
+                  padding: "10px",
+                  border: "1px solid silver",                  
                 }}
               >
                 <div style={{ width: "100%", marginRight:"30px", textAlign: 'right' }}>
@@ -656,7 +661,7 @@ const ServerExplorer = () => {
                             >
                               {
                               steps.map((label, index) => {
-                                var chkStep = (transferType, phase) => {
+                                let chkStep = (transferType, phase) => {
                                   if(transferType === "upload" || transferType === undefined){
                                     if(phase === "F" && label === "Server"){
                                       return true;
