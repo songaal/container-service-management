@@ -4,7 +4,7 @@ import SshClient from "../../../../utils/SshClient";
 import ServerService from "../../../../services/ServerService";
 import { withSession } from "next-session";
 import FileService from "../../../../services/FileService";
-// const logger = "../utils/winston";
+import { logger } from '../../../../utils/Winston'
 
 export const config = {
   api: {
@@ -43,11 +43,9 @@ const updateFileDb = async (userId, filekey, phase, path) => {
 };
 
 const updateFileError = async (filekey, errorMsg) => {
-  console.log("#### filekey, errorMsg", filekey, errorMsg);
+  logger.log("#### filekey, errorMsg", filekey, errorMsg);
   return await FileService.updateFileError(filekey, errorMsg);
 };
-
-const downUrl = localhost_url + "/tempFiles/";
 
 let process_cmd = (id, processType, filename, path, filekey) => {
   const uploadUrl = localhost_url + `/api/servers/${id}/download/${filekey}?fileName=${filename}`;
@@ -84,19 +82,19 @@ const writeFile = async (req, res, userId) => {
   try {
     form.parse(req, async (err, fields, files) => {
         if(err) {
-          console.error("fail to send server : " + err);
+          logger.error("fail to send server : " + err);
           updateFileError(req.query["filekey"], err.message);
           return res.json({status : "500", error : "" + err})
         }
 
-        console.info("success send to server : " + JSON.stringify(files.file));
+        logger.info("success send to server : " + JSON.stringify(files.file));
 
         let file = files.file;
         fs.renameSync(file.path, `${fileUploadPath}/${decodeURI(file.name)}`);
   
         fs.stat(`${fileUploadPath}/${decodeURI(file.name)}`, (err, stat) => {
-          if (err) console.log("error: ", error);
-          console.info("success move to tempfile : " + JSON.stringify(stat));
+          if (err) logger.log("error: ", error);
+          logger.info("success rename tempfile : " + JSON.stringify(stat));
         });        
 
         try {
@@ -110,7 +108,7 @@ const writeFile = async (req, res, userId) => {
             );
           }
         } catch (e) {
-          console.error("fail to transfer : " + e);
+          logger.error("fail to transfer : " + e);
           throw new Error(e)
         }
         return res.json({
@@ -125,7 +123,7 @@ const writeFile = async (req, res, userId) => {
   }
 };
 
-// SERVER TO REMOTE
+// SERVER <-> REMOTE
 const processToRemote = async (req, res, userId) => {
   let server = await ServerService.findServerById(req.query["id"]);
   const sshClient = new SshClient(
@@ -152,8 +150,8 @@ const processToRemote = async (req, res, userId) => {
         result = res;
 
         if(req.query["type"] === "upload" || req.query["type"] === "download"){
-          console.info(
-            `success ${req.query["type"]} to remote server : ${res}`
+          logger.info(
+            `success ${req.query["type"]} at remote server : ${res}`
           );
           res.forEach((ele) => {
             // 파일정보 부분만 저장
@@ -170,7 +168,7 @@ const processToRemote = async (req, res, userId) => {
             updateFileDb(userId, req.query["filekey"], phase, req.query["path"]);
           } 
         } catch (e) {
-          console.error(e);
+          logger.error(e);
         }
         
         return res;
@@ -211,7 +209,7 @@ const processToRemote = async (req, res, userId) => {
 
     return res.status(201).send(result);
   } catch (e) {
-    console.error(e);
+    logger.error(e);
     updateFileError(req.query["filekey"], e.message);
     return res.send(e);
   }

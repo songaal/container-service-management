@@ -54,7 +54,7 @@ const useStyles = makeStyles((theme) => ({
     padding: 10,
   },
   commandLine: {
-    padding: 10,    
+    padding: 8,    
     backgroundColor: "silver",
     borderRadius: "5px",
     marginLeft: 3,
@@ -106,6 +106,12 @@ const ServerExplorer = () => {
   const [server, setServer] = React.useState({});
   const [files, setFiles] = useState([]);
   const $input = useRef(null);
+  const scrollRef = useRef();
+
+  const scrollToBottom = () => {
+      // 스크롤 내리기
+      scrollRef.current.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' });
+  };
 
   const apiUrl = `/api/servers/${server["id"]}/explorer`;
 
@@ -207,8 +213,12 @@ const ServerExplorer = () => {
     e.preventDefault();
   };
 
+  const getTransferTime = (type, time) => {
+    return (type === "createdAt" ? "시작" : "종료") + " 일시 : " + new Date(time||new Date).toLocaleString();
+  }
+
   // 파일 셋팅
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     let items = [];
     let fileList = e.dataTransfer === undefined ? e.target.files : e.dataTransfer.files;
 
@@ -222,6 +232,10 @@ const ServerExplorer = () => {
     })
 
     e.preventDefault();
+
+    setTimeout(() => {
+      scrollToBottom();
+    })
   };
 
   // DB 검색
@@ -247,7 +261,9 @@ const ServerExplorer = () => {
             transferType : ele.type,
             fileKey : ele.fileKey,
             phase : ele.phase,
-            error : ele.errorMsg
+            error : ele.errorMsg,
+            createdAt : getTransferTime("createdAt", ele.createdAt),
+            updatedAt : getTransferTime("updatedAt", ele.updatedAt)
           }
           arr.push(existFile);
         })
@@ -305,6 +321,7 @@ const ServerExplorer = () => {
         if(data.status !== "error"){
           console.log("FILE UPLOAD TO REMOTE");
           files[idx]['phase'] = 'R';
+          files[idx]['updatedAt'] = getTransferTime("updatedAt");
           setFiles([
             ...files
           ])
@@ -329,6 +346,8 @@ const ServerExplorer = () => {
     body.append("file", item);    
 
     files[idx]['transferType'] = "upload"
+    files[idx]['createdAt'] =  getTransferTime('createdAt')
+    files[idx]['updatedAt'] =  getTransferTime('updatedAt')
     setFiles([
       ...files
     ])
@@ -346,11 +365,13 @@ const ServerExplorer = () => {
         console.log(data.error);
         enqueueSnackbar(data.error, {variant: "error"})
         files[idx]['error'] = data.error;
+        files[idx]['updatedAt'] = getTransferTime('updatedAt')
         setFiles([
           ...files
         ])
       } else if(data.status === "201"){ // created
         files[idx]['phase'] = 'F';
+        files[idx]['updatedAt'] = getTransferTime('updatedAt')
         setFiles([
           ...files
         ])
@@ -364,12 +385,21 @@ const ServerExplorer = () => {
 
   // 파일 다운로드
   const handleFileDownload = async (filename, filekey, path) => {
+    setFiles(files => {
+      files[files.length-1]['createdAt'] =  getTransferTime('createdAt');
+      files[files.length-1]['updatedAt'] =  getTransferTime('updatedAt');
+      setFiles([
+        ...files
+        ])
+    });
+
     await fetch(apiUrl + `?type=download&&filekey=${filekey}&&filename=${filename}&&path=${path}`, {
       method: "GET",
     })
       .then((res) => {
         setFiles(files => {          
           files[files.length-1]['phase'] = 'F';
+          files[files.length-1]['updatedAt'] =  getTransferTime('updatedAt');
           setFiles([
             ...files
           ])
@@ -383,6 +413,7 @@ const ServerExplorer = () => {
               enqueueSnackbar(ele, {variant: "error"})
               setFiles(files => {          
                 files[files.length-1]['error'] = ele;
+                files[files.length-1]['updatedAt'] =  getTransferTime('updatedAt');
                 setFiles([
                   ...files
                 ])
@@ -392,6 +423,7 @@ const ServerExplorer = () => {
         } else {
           setFiles(files => {          
             files[files.length-1]['phase'] = 'L';
+            files[files.length-1]['updatedAt'] =  getTransferTime('updatedAt');
             setFiles([
               ...files
             ])
@@ -478,26 +510,20 @@ const ServerExplorer = () => {
       <Box>
         <Paper elevation={2}>
 
-          <Grid container style={{textAlign: "center", marginTop:"5px"}}>
+          <Grid container style={{textAlign: "center", marginTop:"5px", height:"2.5vh"}}>
             <Grid item xs={4}>
               <Box>
-                <Typography>
                   서버명 : {server['name']||''}
-                </Typography>
               </Box>
             </Grid>
             <Grid item xs={4}>
               <Box>
-                <Typography>
                   아이피 : {server['ip']||''}
-                </Typography>
               </Box>
             </Grid>
             <Grid item xs={4}>
               <Box>
-                <Typography>
                   계정 : {server['user']||''}
-                </Typography>
               </Box>
             </Grid>
           </Grid>
@@ -568,10 +594,10 @@ const ServerExplorer = () => {
                   style={{
                     padding: "15px 0px 0px 15px",
                     width: "100%",
-                    height: "50vh", 
+                    height: "48vh", 
                     backgroundColor: "black",
                     color: "white",
-                    fontSize: "18px",
+                    fontSize: "16px",
                     letterSpacing: "1.3px",
                     lineHeight: "25px",
                     textIndent: "5px",
@@ -595,10 +621,9 @@ const ServerExplorer = () => {
 
               <TableContainer
                 component={Paper}
-                style={{
-                  overflowX: "hidden",                  
+                style={{               
                   width: "100%",
-                  height: "36vh",
+                  height: "36.5vh",
                   padding: "10px",
                   border: "1px solid silver",                  
                 }}
@@ -628,7 +653,7 @@ const ServerExplorer = () => {
                   </Button>
                 </div>
                   <Divider/>
-                <Table>
+                <Table ref={scrollRef}>
                   <TableBody >
                     {files.map((item, idx) => {                      
                       return (
@@ -693,11 +718,17 @@ const ServerExplorer = () => {
                                 );
                               })}
                             </Stepper>
+                            <Typography style={{fontSize:"0.7rem"}}>
+                              {item.createdAt}
+                            </Typography>
+                            <Typography style={{fontSize:"0.7rem"}}>
+                              {item.updatedAt}
+                            </Typography>
                             <Typography>
                               {item.error}
                             </Typography>
                           </TableCell>
-                          <TableCell style={{ minWidth: 250, textAlign: "center" }}>
+                          <TableCell style={{ minWidth: 200, textAlign: "center" }}>
                             <Button
                               variant="contained"
                               style={
