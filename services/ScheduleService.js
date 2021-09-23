@@ -2,7 +2,7 @@ const Schedule = require('node-cron');
 const { Services, Servers, FileHistory } = require("../models")
 const dockerDefaultPort = 2375
 const fs = require('fs');
-// const console = "../utils/winston";
+const sequelize = require('sequelize');
 
 let sync = {}
 async function TaskJob(service) {
@@ -164,11 +164,12 @@ class ScheduleService {
             const tempDir = process.env.TEMP_FILES_DIR || "./public/tempFiles";
             try{
                 // 임시 파일 전송 디렉토리 없으면 생성
-                fs.mkdirSync(tempDir, { recursive: true, mode: '777'  })
+                fs.mkdirSync(tempDir, { recursive: true, mode: '777' })
+
+                const nowTime = new Date().getTime();
 
                 await fs.readdir(tempDir, function(err, fileList) {
                     if (err) return console.error("Remove Schedule Error : " + err);
-                    const nowTime = new Date().getTime();
 
                     fileList.forEach(file => {
                         fs.stat(tempDir + `/${file}`, async (err, fileInfo) => {  
@@ -187,15 +188,6 @@ class ScheduleService {
                                         });
                                     } catch (err) {
                                         console.error("Remove Schedule Error : " + err);
-                                    }
-                                    
-                                    // 3시간 지난 DB 삭제
-                                    try {
-                                        if(diffTime >= Number(process.env.FILE_REMOVE_MINUTE || 180)){
-                                            await FileHistory.destroy({where: {fileKey: file}});
-                                        }
-                                    } catch (err) {
-                                        console.error("Remove Schedule Error : " + err);
                                     }                   
                                 }
                             } catch(err) {
@@ -204,6 +196,26 @@ class ScheduleService {
                         });
                     });
                 })
+
+                // 설정시간 경과 데이터 제거
+                try {
+                    let configDate = new Date(nowTime)
+                    configDate.setMinutes(configDate.getMinutes() - Number(process.env.FILE_REMOVE_MINUTE || 180));
+
+                    // 생성일자(createdAt)가 설정시간 이전일 때
+                    let query = {
+                        where : {
+                            createdAt : {
+                                [sequelize.Op.lte]: configDate
+                            }
+                        }
+                    }
+
+                    await FileHistory.destroy(query);
+                } catch (err) {
+                    console.error("Remove Schedule Error : " + err);
+                }
+
             } catch(err) {
                 console.error("Remove Schedule Error : " + err);
             } 

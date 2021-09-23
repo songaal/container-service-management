@@ -55,3 +55,5 @@ logger.add(new winston.transports.Console({
   //     winston.format.simple(),  // `${info.level}: ${info.message} JSON.stringify({ ...rest })` 포맷으로 출력
   // )
 }));
+
+// module.exports = logger;
