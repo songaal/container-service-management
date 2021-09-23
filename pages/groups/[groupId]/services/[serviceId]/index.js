@@ -476,12 +476,14 @@ function ServicesDetail() {
                 <br/>
                 <Breadcrumbs aria-label="breadcrumb">
                     <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
-                        그룹목록
+                        그룹
                     </Link>
                     <Link color="inherit" onClick={() => router.push("/groups/" + groupId)} style={{cursor: "pointer"}}>
-                        그룹정보
+                        {
+                            groups.find(g => String(g?.id||'') === service['groupId'])?.name||''
+                        }
                     </Link>
-                    <Typography color="textPrimary">서비스</Typography>
+                    <Typography color="textPrimary">{service?.name||''}</Typography>
                 </Breadcrumbs>
 
                 <Box my={2}>

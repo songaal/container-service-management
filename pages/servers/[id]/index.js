@@ -124,7 +124,7 @@ function ServerDetail() {
                 <br/>
                 <Breadcrumbs aria-label="breadcrumb">
                     <Link color="inherit" onClick={() => router.push("/groups")} style={{cursor: "pointer"}}>
-                        그룹목록
+                        그룹
                     </Link>
                     <Link color="inherit" onClick={() => router.push(groupId ? "/groups/" + groupId : "/groups")} style={{cursor: "pointer"}}>
                         그룹정보
@@ -222,7 +222,7 @@ function ServerDetail() {
                 <Box my={3}>
                     {
                         openTerminal ?
-                            <iframe src={`/servers/${server['id']}/expTerminal`}
+                            <iframe src={`/servers/${server['id']}/terminal`}
                                     style={{
                                         width: "100%",
                                         height: "600px",
