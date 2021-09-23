@@ -552,7 +552,7 @@ function ServicesDetail() {
 
                             <ShowField label={"서버"}
                                        val={ selectedServer['id'] ? `${selectedServer['name']||''} (${selectedServer['user']||''}@${selectedServer['ip']||''})` : "할당된 서버가 없습니다."}
-                                       url={selectedServer['shared'] === undefined && selectedServer['id'] ? `/servers/${service['serverId']}` : undefined }/>
+                                       url={selectedServer['shared'] === undefined && selectedServer['id'] ? `/servers/${service['serverId']}?groupId=${groupId||''}` : undefined }/>
 
                             <Box my={3}>
                                 <Grid container>
