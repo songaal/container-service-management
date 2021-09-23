@@ -14,6 +14,7 @@ import fetch from "isomorphic-unfetch";
 import {useRouter} from "next/router";
 import ServerTerminal from "./terminal";
 import LaunchIcon from '@material-ui/icons/Launch';
+import {useSnackbar} from "notistack";
 
 const useStyles = makeStyles( theme => ({
     root: {
@@ -70,10 +71,12 @@ function ShowField({label, val, url}) {
 function ServerDetail() {
     const classes = useStyles();
     const router = useRouter();
+    const { enqueueSnackbar, closeSnackbar } = useSnackbar();
     const [server, setServer] = React.useState({})
     const [cmdName, setCmdName] = React.useState("위 버튼을 눌러 조회하세요.")
     const [cmdResult, setCmdResult] = React.useState("")
     const [openTerminal, setOpenTerminal] = React.useState(false)
+    const [groups, setGroups] = React.useState([])
     const { groupId } = router.query
 
     React.useEffect(() => {
@@ -82,6 +85,15 @@ function ServerDetail() {
     }, [])
 
     const init = () => {
+        fetch('/api/groups')
+            .then(res => res.json())
+            .then(body => {
+                if (body['status'] === 'success') {
+                    setGroups(body['groups'])
+                } else {
+                    enqueueSnackbar(body['message'], {variant: "error"});
+                }
+            })
         fetch(`/api${location.pathname}`)
             .then(res => res.json())
             .then(body => {
@@ -127,9 +139,11 @@ function ServerDetail() {
                         그룹
                     </Link>
                     <Link color="inherit" onClick={() => router.push(groupId ? "/groups/" + groupId : "/groups")} style={{cursor: "pointer"}}>
-                        그룹정보
+                        {
+                            groups.find(g => String(g.id||'') === String(groupId||''))?.name
+                        }
                     </Link>
-                    <Typography color="textPrimary">서버</Typography>
+                    <Typography color="textPrimary">{server?.name||''}</Typography>
                 </Breadcrumbs>
                 <Box my={2}>
                     <Grid container>
