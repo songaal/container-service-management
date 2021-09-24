@@ -26,11 +26,13 @@ import {useSnackbar} from "notistack";
 import Chip from '@material-ui/core/Chip';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from '@material-ui/core/TextField';
+import AppBar from '@material-ui/core/AppBar';
 
 
 const useStyles = makeStyles((theme) => ({
   root: {
     width: "100%",
+    height: "100%",
   },
   backButton: {
     marginRight: theme.spacing(1),
@@ -40,11 +42,13 @@ const useStyles = makeStyles((theme) => ({
     marginBottom: theme.spacing(1),
   },
   inputRoot: {    
-    height: "7vh",
-    marginLeft: '4px',
-    marginRight: '4px',
+    width: "100%",
+    height: "100%",
     display: "flex",
     alignItems: "center",
+    backgroundColor: "silver",
+    borderLeft: "1px solid white",
+    borderRight: "1px solid white"
   },
   input: {
     marginLeft: theme.spacing(1),
@@ -55,7 +59,6 @@ const useStyles = makeStyles((theme) => ({
   },
   commandLine: {
     padding: 8,    
-    backgroundColor: "silver",
     borderRadius: "5px",
     marginLeft: 3,
     marginTop: 5,    
@@ -66,7 +69,7 @@ const useStyles = makeStyles((theme) => ({
   },
   dropzone: {
     width: "100%",  
-    height: "33.3vh",  
+    height: "29vh",  
     display: "flex",
     flex: "auto",
     flexFlow: "column",
@@ -76,6 +79,9 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: "hsla(0, 10%, 20%, 0.1)",
     border: "2px dotted black",
     margin: "0 auto",
+  },
+  appBar: {
+    borderBottom: `1px solid`,
   },
 }));
 
@@ -107,6 +113,14 @@ const ServerExplorer = () => {
   const [files, setFiles] = useState([]);
   const $input = useRef(null);
   const scrollRef = useRef();
+
+  const commandGroup = {
+    "CD"  : "directory",
+    "RMDIR"  : "directory",
+    "GET" : "file",
+    "RM"  : "file",
+    "CAT"  : "file",
+  }
 
   const scrollToBottom = () => {
       // 스크롤 내리기
@@ -221,7 +235,7 @@ const ServerExplorer = () => {
   const handleDrop = async (e) => {
     let items = [];
     let fileList = e.dataTransfer === undefined ? e.target.files : e.dataTransfer.files;
-
+    
     for(let i=0; i<fileList.length; i++){
       fileList[i]['path'] = currentPath;
       items.push(fileList[i]);
@@ -469,12 +483,12 @@ const ServerExplorer = () => {
     setFiles([])
   }
 
-  const handleTypeAccept = (type) => {    
-    return (cmd||"").trim().toUpperCase().startsWith(type)
+  const handleTypeAccept = () => {
+    return commandGroup[(cmd||"").trim().toUpperCase().split(" ")[0]];
   }
 
   const setGuideOptions = () => {
-    if(handleTypeAccept("CD") || handleTypeAccept("GET")) {
+    if(handleTypeAccept() !== undefined) {
       const base = dirData.split("\n").slice(2);
       const fileNames = dirFile[0].split("\n");      
 
@@ -486,19 +500,19 @@ const ServerExplorer = () => {
       base.forEach((ele, idx) => {
           let fileLine = ele.split(" ");
           let fileName = (fileNames[idx]||"");
+          let key_exist = (fileName.toUpperCase()).includes((cmd.toUpperCase().replace((cmd||"").trim().toUpperCase().split(" ")[0], "").trim()||""));
 
           if(fileLine[0].startsWith('d')){
-              if(fileName !== `.` && fileName !== `..` && (fileName.toUpperCase()).includes((cmd.toUpperCase().replace("CD", "").trim()||""))){                
-                  typeGroup['directory'].push(fileName);
+              if(fileName !== `.` && fileName !== `..` && key_exist){                
+                typeGroup['directory'].push(fileName);
               }
           } else if(fileLine[0].startsWith('-')){
-              if((fileName.toUpperCase()).includes((cmd.toUpperCase().replace("GET", "").trim()||""))){
+              if(key_exist){
                 typeGroup['file'].push(fileName);
               }
           }
       });    
-
-      return handleTypeAccept("CD") ? typeGroup['directory'].map((option) => option) : typeGroup['file'].map((option) => option);
+      return typeGroup[handleTypeAccept()].map((option) => option);
     } else {
       return [];
     } 
@@ -506,11 +520,10 @@ const ServerExplorer = () => {
 
 
   return (
-    <div>
+    <div style={{position: "fixed", overflow: "hidden", width: "100%", height: "100%"}}>
       <Box>
-        <Paper elevation={2}>
-
-          <Grid container style={{textAlign: "center", marginTop:"5px", height:"2.5vh"}}>
+      <AppBar position="static" color="default">        
+        <Grid container style={{textAlign: "center", alignItems: "center", justifyContent: "center", height:"3vh", marginBottom: "1%", marginTop: "1%",}}>
             <Grid item xs={4}>
               <Box>
                   서버명 : {server['name']||''}
@@ -526,8 +539,9 @@ const ServerExplorer = () => {
                   계정 : {server['user']||''}
               </Box>
             </Grid>
-          </Grid>
-
+        </Grid>
+      </AppBar>
+        <Paper elevation={2}>
           <Grid container>
             <Grid item xs={12}>
               <Paper component="form" className={classes.inputRoot}>
@@ -539,11 +553,7 @@ const ServerExplorer = () => {
                   options={setGuideOptions()}
                   onChange={(e, v) => {
                       if(e.key === "Enter" || e.type === "click"){
-                        if((cmd||"").toLowerCase().includes("cd")){
-                          setCmd(`cd ${v}`);
-                        } else if((cmd||"").toLowerCase().includes("get")){
-                          setCmd(`get ${v}`);
-                        }
+                        setCmd(`${(cmd||"").trim().split(" ")[0]} ${v}`);
                       }
                   }}
                   onInputChange={(e, v, r) => {
@@ -556,7 +566,7 @@ const ServerExplorer = () => {
                     }
                   }}
                   renderInput={(params) => (
-                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined" size="small" />
+                    <TextField {...params} placeholder="ls -al // 다운로드는 `GET 파일명`" margin="normal" variant="outlined" size="small" style={{backgroundColor:"white", borderRadius:"4px"}} />
                   )}
                 />
                 <IconButton
@@ -594,14 +604,14 @@ const ServerExplorer = () => {
                   style={{
                     padding: "15px 0px 0px 15px",
                     width: "100%",
-                    height: "48vh", 
+                    height: "50vh", 
                     backgroundColor: "black",
                     color: "white",
                     fontSize: "16px",
                     letterSpacing: "1.3px",
                     lineHeight: "25px",
                     textIndent: "5px",
-                    border: "2px solid white"
+                    border: "1px solid white"
                   }}
                 >
                 </textarea>
@@ -617,35 +627,50 @@ const ServerExplorer = () => {
                   />
                 </div>
               </div>
-              <Typography style={{display: 'inline', marginLeft: "10px"}}>업로드/다운로드 파일 리스트</Typography>
+              
+              <Typography style={{display: 'inline', marginLeft: "10px", width: "100%", height: "2.7vh"}}>
+                업로드/다운로드 파일 리스트
+              </Typography>
 
               <TableContainer
                 component={Paper}
                 style={{               
                   width: "100%",
-                  height: "36.5vh",
+                  height: "36vh",
                   padding: "10px",
-                  border: "1px solid silver",                  
+                  border: "1px solid silver"
                 }}
               >
-                <div style={{ width: "100%", marginRight:"30px", textAlign: 'right' }}>
+                <div style={{ width: "100%", marginBottom: "10px", textAlign: 'right' }}>
+                  <Button
+                    color="default"
+                    variant="contained"
+                    style={
+                      files.length > 0 ? 
+                      {diplay: "inline", float:"left"} : { display : "none"}
+                    }
+                    onClick={e => $input.current.click()}
+                  >
+                    업로드할 파일 선택
+                  </Button>
+
                   <Button
                     color="primary"
                     variant="contained"
                     style={
                       files.length > 0 ? 
-                      { marginBottom: "10px", diplay: "inline"} : { display : "none"}
+                      { marginLeft: "10px", diplay: "inline"} : { display : "none"}
                     }
                     onClick={e => handleFileDelete()}
                   >
                     완료항목 제거
-                  </Button>
+                  </Button>          
                   <Button
                     color="secondary"
                     variant="contained"
                     style={
                       files.length > 0 ? 
-                      { marginBottom: "10px", marginLeft: "10px", diplay: "inline"} : { display : "none"}
+                      { marginLeft: "10px", diplay: "inline"} : { display : "none"}
                     }
                     onClick={e => handleFileDeleteAll()}
                   >
