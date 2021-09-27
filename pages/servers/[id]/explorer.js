@@ -217,7 +217,6 @@ const ServerExplorer = () => {
     fetch(url)
       .then((res) => res.json())
       .then((body) => {
-        console.log(body["server"]);
         setServer(body["server"]);
         excuteCmd(`/home/${body["server"].user}`);
         searchFileData();
@@ -306,7 +305,6 @@ const ServerExplorer = () => {
 
   // 항목 삭제
   const deleteFileData = async (fileKey, isFileDelete) => {
-    console.log(fileKey);
     let url = "/api" + location.pathname.replace("/explorer", "");
     let result;
     await fetch(`${url}/action?type=removeFile&&filekey=${fileKey}&&isFileDelete=${isFileDelete}`, {
@@ -334,7 +332,6 @@ const ServerExplorer = () => {
       })
       .then(data => {
         if(data.status !== "error"){
-          console.log("FILE UPLOAD TO REMOTE");
           files[idx]['phase'] = 'R';
           files[idx]['updatedAt'] = getTransferTime("updatedAt");
           setFiles([
@@ -377,7 +374,6 @@ const ServerExplorer = () => {
     })
     .then( async (data) => {
       if(data.status === "500"){ // error
-        console.log(data.error);
         enqueueSnackbar(data.error, {variant: "error"})
         files[idx]['error'] = data.error;
         files[idx]['updatedAt'] = getTransferTime('updatedAt')
@@ -635,7 +631,7 @@ const ServerExplorer = () => {
                   }
                 >
                   <CircularProgress
-                    style={{ position: "absolute", top: "35%", left: "45%" }}
+                    style={{ position: "absolute", top: "35%", left: "48%" }}
                   />
                 </div>
               </div>
