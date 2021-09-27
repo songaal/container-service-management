@@ -69,7 +69,7 @@ const useStyles = makeStyles((theme) => ({
   },
   dropzone: {
     width: "100%",  
-    height: "29vh",  
+    height: "31vh",  
     display: "flex",
     flex: "auto",
     flexFlow: "column",
