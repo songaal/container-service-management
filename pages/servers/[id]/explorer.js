@@ -235,15 +235,27 @@ const ServerExplorer = () => {
   const handleDrop = async (e) => {
     let items = [];
     let fileList = e.dataTransfer === undefined ? e.target.files : e.dataTransfer.files;
-    
+    let fileInvalid = false;
+
     for(let i=0; i<fileList.length; i++){
       fileList[i]['path'] = currentPath;
+
+      // 디렉토리 여부 체크
+      if(fileList[i].type === '' && fileList[i].size%4096 === 0){
+        fileInvalid = true;
+      }
+
       items.push(fileList[i]);
-    }
+    }    
     
-    items.forEach(item => {
-      setFiles(files => [...files, item])
-    })
+    if(fileInvalid === false){
+      items.forEach(item => {
+        setFiles(files => [...files, item])
+      }) 
+    }
+    else {
+      enqueueSnackbar(`업로드 할 수 없는 파일이 존재합니다.`, {variant: "error"});
+    }
 
     e.preventDefault();
 
