@@ -186,11 +186,13 @@ const ServerExplorer = () => {
           console.log(error);
         }      
       } else { // 일반 명령어 실행
+        let command = cmd;
+        setCmd("")
         setShowLoader(true);
         setDirdata("");
         let url = "/api" + location.pathname.replace("/explorer", "");
         let path = root === undefined ? currentPath : root;
-        const tmpCmd = root === undefined ? cmd : `ls -al`;
+        const tmpCmd = root === undefined ? command : `ls -al`;
         fetch(`${url}/action?type=exp_excute`, {
           method: "POST",
           body: JSON.stringify({ cmd: tmpCmd, path }),
@@ -200,7 +202,6 @@ const ServerExplorer = () => {
           })
           .then((data) => {
             setCurrentPath(data.pwd.replace("\n", ""));
-            setCmd("");
             setShowLoader(false);
             if (data.dirFiles.length > 0 && data.pwd.length > 0) {
               setDirdata(data.dirFiles);
@@ -487,7 +488,7 @@ const ServerExplorer = () => {
     return commandGroup[(cmd||"").trim().toUpperCase().split(" ")[0]];
   }
 
-  const setGuideOptions = () => {
+  const setAutoCompOptions = () => {
     if(handleTypeAccept() !== undefined) {
       const base = dirData.split("\n").slice(2);
       const fileNames = dirFile[0].split("\n");      
@@ -501,14 +502,19 @@ const ServerExplorer = () => {
           let fileLine = ele.split(" ");
           let fileName = (fileNames[idx]||"");
           let key_exist = (fileName.toUpperCase()).includes((cmd.toUpperCase().replace((cmd||"").trim().toUpperCase().split(" ")[0], "").trim()||""));
+          let key_exact = fileName.toUpperCase() === (cmd.toUpperCase().replace((cmd||"").trim().toUpperCase().split(" ")[0], "").trim()||"");
 
           if(fileLine[0].startsWith('d')){
-              if(fileName !== `.` && fileName !== `..` && key_exist){                
-                typeGroup['directory'].push(fileName);
+              if(fileName !== `.` && fileName !== `..` && key_exist){
+                if(key_exact !== true){ // 명령어와 자동완성 정확하게 일치하는 경우는 안보여주도록 구현 => 자동완성 api에서 변경점을 인식못함
+                  typeGroup['directory'].push(fileName);
+                }
               }
           } else if(fileLine[0].startsWith('-')){
               if(key_exist){
-                typeGroup['file'].push(fileName);
+                if(key_exact !== true){
+                  typeGroup['file'].push(fileName);
+                }
               }
           }
       });    
@@ -522,25 +528,25 @@ const ServerExplorer = () => {
   return (
     <div style={{position: "fixed", overflow: "hidden", width: "100%", height: "100%"}}>
       <Box>
-      <AppBar position="static" color="default">        
-        <Grid container style={{textAlign: "center", alignItems: "center", justifyContent: "center", height:"3vh", marginBottom: "1%", marginTop: "1%",}}>
-            <Grid item xs={4}>
-              <Box>
-                  서버명 : {server['name']||''}
-              </Box>
-            </Grid>
-            <Grid item xs={4}>
-              <Box>
-                  아이피 : {server['ip']||''}
-              </Box>
-            </Grid>
-            <Grid item xs={4}>
-              <Box>
-                  계정 : {server['user']||''}
-              </Box>
-            </Grid>
-        </Grid>
-      </AppBar>
+        <AppBar position="static" color="default">        
+          <Grid container style={{textAlign: "center", alignItems: "center", height:"3vh"}}>
+              <Grid item xs={4}>
+                <Box>
+                    서버명 : {server['name']||''}
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box>
+                    아이피 : {server['ip']||''}
+                </Box>
+              </Grid>
+              <Grid item xs={4}>
+                <Box>
+                    계정 : {server['user']||''}
+                </Box>
+              </Grid>
+          </Grid>
+        </AppBar>
         <Paper elevation={2}>
           <Grid container>
             <Grid item xs={12}>
@@ -550,14 +556,20 @@ const ServerExplorer = () => {
                   freeSolo
                   value={cmd||""}
                   className={classes.input}
-                  options={setGuideOptions()}
+                  options={setAutoCompOptions()}
                   onChange={(e, v) => {
-                      if(e.key === "Enter" || e.type === "click"){
-                        setCmd(`${(cmd||"").trim().split(" ")[0]} ${v}`);
-                      }
+                    if((e.key === "Enter" || e.type === "click") && cmd !== null && v !== null){
+                      setCmd(`${(cmd||"").trim().split(" ")[0]} ${v}`);
+                    } else {
+                      setCmd('');
+                    }
                   }}
                   onInputChange={(e, v, r) => {
+                    if(r === 'input'){
                       setCmd(v);
+                    } else if(r === 'clear'){
+                      setCmd('');
+                    }
                   }}
                   onKeyPress={(e) => {
                     if (e.key === "Enter") {
@@ -604,7 +616,7 @@ const ServerExplorer = () => {
                   style={{
                     padding: "15px 0px 0px 15px",
                     width: "100%",
-                    height: "50vh", 
+                    height: "53vh", 
                     backgroundColor: "black",
                     color: "white",
                     fontSize: "16px",
