@@ -616,7 +616,7 @@ const ServerExplorer = () => {
                   style={{
                     padding: "15px 0px 0px 15px",
                     width: "100%",
-                    height: "53vh", 
+                    height: "55vh", 
                     backgroundColor: "black",
                     color: "white",
                     fontSize: "16px",
