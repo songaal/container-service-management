@@ -69,7 +69,7 @@ const useStyles = makeStyles((theme) => ({
   },
   dropzone: {
     width: "100%",  
-    height: "31vh",  
+    height: "30vh",  
     display: "flex",
     flex: "auto",
     flexFlow: "column",
@@ -235,27 +235,19 @@ const ServerExplorer = () => {
   const handleDrop = async (e) => {
     let items = [];
     let fileList = e.dataTransfer === undefined ? e.target.files : e.dataTransfer.files;
-    let fileInvalid = false;
 
     for(let i=0; i<fileList.length; i++){
       fileList[i]['path'] = currentPath;
-
-      // 디렉토리 여부 체크
-      if(fileList[i].type === '' && fileList[i].size%4096 === 0){
-        fileInvalid = true;
-      }
-
       items.push(fileList[i]);
     }    
     
-    if(fileInvalid === false){
-      items.forEach(item => {
-        setFiles(files => [...files, item])
-      }) 
-    }
-    else {
-      enqueueSnackbar(`업로드 할 수 없는 파일이 존재합니다.`, {variant: "error"});
-    }
+    items.forEach(item => {
+      if(item.type === '' && item.size % 4096 === 0){
+        enqueueSnackbar(`업로드 할 수 없는 파일(${item.name})이 있습니다.`, {variant: "warning"});
+      } else {
+        setFiles(files => [...files, item]);
+      }
+    }) 
 
     e.preventDefault();
 
@@ -534,7 +526,7 @@ const ServerExplorer = () => {
 
 
   return (
-    <div style={{position: "fixed", overflow: "hidden", width: "100%", height: "100%"}}>
+    <div style={{position: "fixed", width: "100%", height: "100%"}}>
       <Box>
         <AppBar position="static" color="default">        
           <Grid container style={{textAlign: "center", alignItems: "center", height:"3vh"}}>
