@@ -74,7 +74,7 @@ function Server() {
                                            onChange={event => setTmpKeyword(event.target.value)}
                                            onKeyUp ={event=> event.keyCode === 13 ? handleKeywordSearch() : null}
                                 />
-                                <Button style={{height: '40px'}}
+                                <Button style={{height: '40px', marginLeft: '5px'}}
                                         variant={"outlined"}
                                         color={"default"}
                                         onClick={handleKeywordSearch}
@@ -128,6 +128,7 @@ function Server() {
                                                             target="_blank"
                                                             size={"small"}
                                                             href={`/servers/${server['id']}/terminal`}
+                                                            style={{marginLeft: "10px"}}
                                                     >
                                                         터미널 열기 <LaunchIcon color={"primary"} />
                                                     </Button>

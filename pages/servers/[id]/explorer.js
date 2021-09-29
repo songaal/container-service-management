@@ -237,13 +237,14 @@ const ServerExplorer = () => {
     let fileList = e.dataTransfer === undefined ? e.target.files : e.dataTransfer.files;
 
     for(let i=0; i<fileList.length; i++){
+      fileList[i]['isDirectory'] = e.dataTransfer === undefined ? false : e.dataTransfer.items[i].webkitGetAsEntry().isDirectory;
       fileList[i]['path'] = currentPath;
       items.push(fileList[i]);
     }    
     
     items.forEach(item => {
-      if(item.type === '' && item.size % 4096 === 0){
-        enqueueSnackbar(`업로드 할 수 없는 파일(${item.name})이 있습니다.`, {variant: "warning"});
+      if(item.isDirectory === true){
+        enqueueSnackbar(`디렉토리(${item.name})는 업로드할 수 있습니다.`, {variant: "warning"});
       } else {
         setFiles(files => [...files, item]);
       }
@@ -395,7 +396,14 @@ const ServerExplorer = () => {
         await uploadToRemote(data.fileKey, data.fileName, idx);
       }
     })
-    .catch((error) =>{ debugger});
+    .catch((error) =>{ console.log(error) });
+  }
+
+   // 파일 일괄 업로드
+   const handleFileBatchUpload = async () => {
+    files.forEach((item, idx) => {
+      handleFileUpload(item, idx);   
+    })
   }
 
   // 파일 다운로드
@@ -529,7 +537,7 @@ const ServerExplorer = () => {
     <div style={{position: "fixed", width: "100%", height: "100%"}}>
       <Box>
         <AppBar position="static" color="default">        
-          <Grid container style={{textAlign: "center", alignItems: "center", height:"3vh"}}>
+          <Grid container style={{textAlign: "center", alignItems: "center", height:"30px"}}>
               <Grid item xs={4}>
                 <Box>
                     서버명 : {server['name']||''}
@@ -664,6 +672,18 @@ const ServerExplorer = () => {
                     onClick={e => $input.current.click()}
                   >
                     업로드할 파일 선택
+                  </Button>
+
+                  <Button
+                    color="default"
+                    variant="contained"
+                    style={
+                      files.length > 0 ? 
+                      { marginLeft: "10px", diplay: "inline"} : { display : "none"}
+                    }
+                    onClick={e => handleFileBatchUpload()}
+                  >
+                    파일 일괄 업로드
                   </Button>
 
                   <Button

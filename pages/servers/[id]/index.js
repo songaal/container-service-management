@@ -225,6 +225,7 @@ function ServerDetail() {
                                         color={"primary"}
                                         target="_blank"
                                         href={`/servers/${server['id']}/terminal`}
+                                        style={{marginLeft: "10px"}}
                                 >
                                     터미널 열기 <LaunchIcon color={"primary"} />
                                 </Button>

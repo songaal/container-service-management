@@ -172,7 +172,7 @@ function Service() {
                                            onKeyUp={event => event.keyCode === 13 ? handleSearch() : null}
 
                                 />
-                                <Button style={{height: '40px'}} variant={"outlined"} color={"default"} onClick={handleSearch}>검색</Button>
+                                <Button style={{height: '40px', marginLeft: '5px'}} variant={"outlined"} color={"default"} onClick={handleSearch}>검색</Button>
                             </Grid>
                             <Grid item xs={4}>
                                 <Box align={"right"}>

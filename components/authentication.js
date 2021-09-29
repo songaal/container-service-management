@@ -121,12 +121,12 @@ function Authentication() {
                             )}
                             style={{display: "inline"}}
                             renderInput={(params) => (
-                                <TextField {...params} variant="outlined" label="권한 부여" placeholder="" style={{minWidth: 300}} />
+                                <TextField {...params} variant="outlined" label="권한 부여" placeholder="" style={{width: 400}} />
                             )}
                             onChange={(event, data) => setSelectedUserList(data)}
                             onKeyUp={event => event.keyCode === 13 ? handleAddUserList() : null}
                         />
-                        <Button variant={"outlined"} color={"primary"} style={{height: '40px'}} onClick={handleAddUserList}>추가</Button>
+                        <Button variant={"outlined"} color={"primary"} style={{height: '40px', marginLeft: '5px'}} onClick={handleAddUserList}>추가</Button>
                     </Box>
 
                     <Table my={2}>
