@@ -36,6 +36,8 @@ import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import Link from "@material-ui/core/Link";
+import LaunchIcon from "@material-ui/icons/Launch";
+
 const schedule = require("node-cron")
 
 const useStyles = makeStyles( theme => ({
@@ -368,6 +370,24 @@ function ServiceEdit() {
                                     })
                                 }
                             </List>
+                        </Grid>
+                    </Grid>
+
+                    <br />
+
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <Box align={"right"}>
+                                <Button variant={"outlined"}
+                                        target="_blank"
+                                        size={"small"}
+                                        href={`https://docs.docker.com/compose/compose-file/compose-file-v2/`}
+                                        style={{marginLeft: "10px"}}
+                                        color={"primary"}
+                                >
+                                    도커 작성 가이드 <LaunchIcon color={"primary"}/>
+                                </Button>
+                            </Box>
                         </Grid>
                     </Grid>
 
