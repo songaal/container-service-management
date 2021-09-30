@@ -24,6 +24,7 @@ import {useSnackbar} from 'notistack';
 import fetch from "isomorphic-unfetch"
 import {useRouter} from "next/router";
 import Link from '@material-ui/core/Link';
+import LaunchIcon from "@material-ui/icons/Launch";
 
 const schedule = require("node-cron")
 
@@ -149,6 +150,26 @@ function Services() {
                     enqueueSnackbar("서비스 등록 실패하였습니다.", {variant: "error"})
                 }
             })
+    }
+
+    const setSampleTemplate = () => {
+        setYaml(
+            `version: "2"
+services:
+  nginx-app:
+    image: nginx:latest
+    mem_limit: 1g
+    restart: "on-failure"
+    ports:
+     - 8080:80
+    environment:
+     - "TZ=Asia/Seoul"
+    volumes:
+     - "/etc/hosts:/etc/hosts:ro"
+    labels:
+     - "app: nginx-app"
+     - "app.manager: hong gil dong"`
+        );
     }
 
     return (
@@ -357,6 +378,31 @@ function Services() {
                     <br />
 
                     <Grid container>
+                        <Grid item xs={12}>
+                            <Box align={"right"}>
+                                <Button variant={"outlined"}                                        
+                                        size={"small"}
+                                        style={{marginLeft: "10px", height: "33px"}}
+                                        onClick={setSampleTemplate}
+                                >
+                                    기본 양식 불러오기
+                                </Button>
+                                <Button variant={"outlined"}
+                                        target="_blank"
+                                        size={"small"}
+                                        href={`https://docs.docker.com/compose/compose-file/compose-file-v2/`}
+                                        style={{marginLeft: "10px"}}
+                                        color={"primary"}
+                                >
+                                    도커 작성 가이드 <LaunchIcon color={"primary"}/>
+                                </Button>
+                            </Box>
+                        </Grid>
+                    </Grid>
+
+                    <br />
+
+                    <Grid container>
                         <Grid item xs={3} sm={1}>
                             <Box align={"right"} className={classes.label} style={{marginTop: 0}}>YAML</Box>
                         </Grid>
@@ -377,6 +423,7 @@ services:
     - 80:80`}
                                     setOptions={{ useWorker: false }}
                                     onChange={(value) => setYaml(value)}
+                                    value={yaml}
                                 />
                             </Box>
                         </Grid>

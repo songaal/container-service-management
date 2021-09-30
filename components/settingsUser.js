@@ -158,7 +158,7 @@ function SettingsUser() {
                                            onChange={event => setTmpKeyword(event.target.value)}
                                            onKeyUp={event => event.keyCode === 13 ? handleSearch(): null}
                                 />
-                                <Button style={{height: '40px'}}
+                                <Button style={{height: '40px',  marginLeft: '5px'}}
                                         variant={"outlined"}
                                         color={"default"}
                                         onClick={handleSearch}

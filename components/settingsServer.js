@@ -240,7 +240,7 @@ function SettingsServer() {
                                            onChange={event => setTmpKeyword(event.target.value)}
                                            onKeyUp={event => event.keyCode === 13 ? handleSearchKeyword() : null}
                                 />
-                                <Button style={{height: '40px'}}
+                                <Button style={{height: '40px',  marginLeft: '5px'}}
                                         variant={"outlined"}
                                         color={"default"}
                                         onClick={handleSearchKeyword}
@@ -310,6 +310,7 @@ function SettingsServer() {
                                                                 e.preventDefault();
                                                                 window.open(`/servers/${server['id']}/terminal`, `${server['name']}(${server['ip']})`)
                                                             }}
+                                                            style={{marginLeft: "10px"}}
                                                             // href={`/servers/${server['id']}/terminal`}
                                                     >
                                                         터미널 열기 <LaunchIcon color={"primary"} />

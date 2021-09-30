@@ -76,7 +76,7 @@ function SettingsService() {
                                            onChange={event => setTmpKeyword(event.target.value)}
                                            onKeyUp={event => event.keyCode === 13 ? handleSearch() : null}
                                 />
-                                <Button style={{height: '40px'}} variant={"outlined"} color={"default"}
+                                <Button style={{height: '40px',  marginLeft: '5px'}} variant={"outlined"} color={"default"}
                                         onClick={handleSearch}
                                 >
                                     검색
