@@ -1,7 +1,7 @@
 const yaml = require('js-yaml');
 const fs = require("fs")
 const path = require("path")
-const compose = require('docker-compose')
+const compose = require('../utils/docker-compose')
 
 const dockerComposeYaml = `version: "3.7"
 services:

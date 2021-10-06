@@ -1,6 +1,6 @@
 const fs = require("fs")
 const path = require("path")
-const compose = require('docker-compose')
+const compose = require("../utils/docker-compose")
 
 
 

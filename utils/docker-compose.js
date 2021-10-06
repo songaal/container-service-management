@@ -58,7 +58,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.version = exports.port = exports.logs = exports.restartOne = exports.restartMany = exports.restartAll = exports.push = exports.ps = exports.configVolumes = exports.configServices = exports.config = exports.pullOne = exports.pullMany = exports.pullAll = exports.buildOne = exports.buildMany = exports.buildAll = exports.run = exports.exec = exports.rm = exports.kill = exports.unpauseOne = exports.pauseOne = exports.stopOne = exports.stop = exports.down = exports.upOne = exports.upMany = exports.upAll = exports.execCompose = exports.mapPsOutput = void 0;
 var child_process_1 = __importDefault(require("child_process"));
 var yaml_1 = __importDefault(require("yaml"));
-var map_ports_1 = __importDefault(require("../../../TEST_HOME/docker-compose/dist/map-ports"));
+var map_ports_1 = __importDefault(require("./map-ports"));
 var nonEmptyString = function (v) { return v !== ''; };
 var mapPsOutput = function (output) {
     var services = output

@@ -12,7 +12,7 @@ async function TaskJob(service) {
         }
         sync[`${service['groupId']}_${service['id']}`] = true
         const Path = require("path")
-        const compose = require('docker-compose')
+        const compose = require('../utils/docker-compose')
         const Client = require('ssh2').Client;
 
         if (!service['serverId']) {
