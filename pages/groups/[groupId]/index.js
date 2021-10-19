@@ -21,6 +21,7 @@ import useMediaQuery from "@material-ui/core/useMediaQuery/useMediaQuery";
 import ArrowDropDownIcon from '@material-ui/icons/ArrowDropDown';
 import Service from "../../../components/service";
 import Authentication from "../../../components/authentication";
+import Deploy from "../../../components/deploy";
 import Server from "../../../components/server";
 import fetch from "isomorphic-unfetch"
 import { SnackbarProvider, useSnackbar } from 'notistack';
@@ -233,6 +234,7 @@ function GroupDetail() {
                                 <Tab label="서비스" {...a11yProps(0)} />
                                 <Tab label="서버" {...a11yProps(1)} />
                                 <Tab label="권한" {...a11yProps(2)} />
+                                <Tab label="배포" {...a11yProps(3)} />
                             </Tabs>
                         </AppBar>
                         <TabPanel value={tabIndex} index={0}>
@@ -243,6 +245,9 @@ function GroupDetail() {
                         </TabPanel>
                         <TabPanel value={tabIndex} index={2}>
                             <Authentication />
+                        </TabPanel>
+                        <TabPanel value={tabIndex} index={3}>
+                            <Deploy />
                         </TabPanel>
                     </Box>
                 </Container>
