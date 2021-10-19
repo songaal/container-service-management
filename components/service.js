@@ -200,7 +200,7 @@ function Service() {
                             {
                                 viewServices.length === 0 && viewShareServices.length === 0 ?
                                     <TableRow>
-                                        <TableCell colSpan={8} align={"center"}>
+                                        <TableCell colSpan={9} align={"center"}>
                                             <Box align={"center"}>
                                                 <CircularProgress style={{display: ready ? "block" : "none"}}/>
                                             </Box>
