@@ -41,9 +41,9 @@ const useStyles = makeStyles((theme) => ({
 
 function Deploy() {
   const classes = useStyles();
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
-  const [users, setUsers] = React.useState([]);
-  const [groupAuthList, setGroupAuthList] = React.useState([]);
+//   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+//   const [users, setUsers] = React.useState([]);
+//   const [groupAuthList, setGroupAuthList] = React.useState([]);
   const [isEditable, setIsEditable] = React.useState(false);
   const [openExecLog, setOpenExecLog] = React.useState(false);
 
@@ -107,22 +107,22 @@ function Deploy() {
     sample_arr.push(_Nodename)
   );
 
-  React.useEffect(() => {
-    init();
-  }, []);
+//   React.useEffect(() => {
+//     init();
+//   }, []);
 
-  const init = () => {
-    fetch(`/api${location.pathname}/users`)
-      .then((res) => res.json())
-      .then((body) => {
-        if (body["status"] === "success") {
-          setUsers(body["users"]);
-          setGroupAuthList(body["groupAuthList"]);
-        } else {
-          enqueueSnackbar(body["message"], { variant: "error" });
-        }
-      });
-  };
+//   const init = () => {
+//     fetch(`/api${location.pathname}/users`)
+//       .then((res) => res.json())
+//       .then((body) => {
+//         if (body["status"] === "success") {
+//           setUsers(body["users"]);
+//           setGroupAuthList(body["groupAuthList"]);
+//         } else {
+//           enqueueSnackbar(body["message"], { variant: "error" });
+//         }
+//       });
+//   };
 
   return (
     <div className={classes.root}>
