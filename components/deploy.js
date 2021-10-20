@@ -77,6 +77,21 @@ function Deploy() {
     WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
 
     exit
+
+    Step 1.
+    request: http://esapi1.danawa.com:7090/seed-update { body ... }
+    response: 200 {status: “success”}
+
+    Service Restart …… 
+
+    Step 2.
+    request: http://esapi2.danawa.com:7090/seed-update { body ... }
+    response: 200 {status: “success”}
+
+    Step 3.
+    WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
+
+    exit
     `;
 
   let config = {
@@ -127,9 +142,11 @@ function Deploy() {
   return (
     <div className={classes.root}>
       <Card>
-        <CardContent style={{ marginLeft: "5%" }}>
-          <Box my={2}>
-            <Box>배포 타입</Box>
+        <CardContent style={{ marginLeft: "7%" }}>
+        
+        <Grid container spacing={1}>
+          <Grid item xs={12} md={11}>
+          <Box>배포 타입</Box>
             <Box>
               <FormControl
                 autoFocus={true}
@@ -137,7 +154,7 @@ function Deploy() {
                 variant={"outlined"}
                 color={"primary"}
                 className={classes.select}
-                style={{ width: "90%" }}
+                style={{ width: "100%" }}
               >
                 <Select value={1}>
                   {
@@ -148,10 +165,9 @@ function Deploy() {
                 </Select>
               </FormControl>
             </Box>
-          </Box>
-
-          <Box my={2}>
-            <Box>서비스 선택</Box>
+          </Grid>
+          <Grid item xs={8} md={10}>
+          <Box>서비스 선택</Box>
             <Box>
               <Autocomplete
                 multiple
@@ -172,27 +188,33 @@ function Deploy() {
                     {option}
                   </React.Fragment>
                 )}
-                style={{ width: "90%", float: "left" }}
+                style={{ width: "100%", float: "left" }}
                 renderInput={(params) => (
                   <TextField {...params} variant="outlined" />
                 )}
               />
             </Box>
+          </Grid>
+          <Grid item xs={4} md={1}>
+          <Box>  
             <Button
-              style={{ height: "40px", marginLeft: "5px" }}
-              variant={"outlined"}
-              color={"primary"}
-              onClick={() => {
-                setOpenExecLog(true);
-              }}
-            >
+                style={{ height: "40px", width: "100%", marginTop: "19.8px" }}
+                variant={"outlined"}
+                color={"primary"}
+                onClick={() => {
+                  setOpenExecLog(true);
+                }}
+              >
               실행
             </Button>
-          </Box>
+            </Box>
+          </Grid>
+        </Grid>
 
-          <Grid container style={{ width: "90%" }}>
+                
+          <Grid container style={{ width: "92%", marginTop: "20px"}}>
             <Grid style={{ width: "100%" }}>
-              <Box>
+              <Box style={isEditable === false ? {cursor:"none", pointerEvents:"none" } : {pointerEvents:"all"}}>
                 <AceEditor
                   mode="text"
                   fontSize="15px"
@@ -200,8 +222,8 @@ function Deploy() {
                   width="100%"
                   tabSize={2}
                   value={JSON.stringify(config, null, "\t")}
-                  setOptions={{ useWorker: false }}
                   readOnly={isEditable === false ? true : false}
+                  highlightActiveLine={isEditable === false ? false : true}                                                
                 />
               </Box>
               <Button
@@ -280,8 +302,7 @@ function Deploy() {
                 <CloseIcon />
               </IconButton>
             </DialogTitle>
-            <DialogContent>
-              <Box>
+            <DialogContent style={{backgroundColor: "black", border:"1.5px solid white"}}>
                 <Grid container>
                   <Grid item xs={12}>
                     <TextareaAutosize
@@ -291,13 +312,15 @@ function Deploy() {
                         backgroundColor: "black",
                         color: "white",
                         fontSize: "16px",
+                        border:"none"
                       }}
+                      readOnly={true}
+                      disabled={true}
                       value={sampleErrorLog}
                       spellCheck={false}
                     />
                   </Grid>
                 </Grid>
-              </Box>
             </DialogContent>
             <DialogActions>
               <Box>
