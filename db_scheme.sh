@@ -19,3 +19,5 @@ sequelize model:create --name group_auth --attributes userId:string,groupId:stri
 sequelize model:create --name file_hst --attributes userId:string,fileName:string,fileSize:string,phase:string,path:string,type:string,fileKey:string,checkTime:date,errorMsg:string
 
 sequelize model:create --name deploy --attributes deploy_json:string,deploy_type:string
+
+sequelize model:create --name deploy_history --attributes deployTime:date,user:string,result:string,service:string
