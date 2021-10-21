@@ -82,10 +82,11 @@ const useStyles = makeStyles((theme) => ({
 function Deploy() {
   const classes = useStyles();
   const [isDeployMode, setIsDeployMode] = React.useState(false);
+  const [deployScript, setDeployScript] = React.useState(config);
+  const [deployService, setDeployService] = React.useState([]);
   const [isEditable, setIsEditable] = React.useState(false);
   const [openExecLog, setOpenExecLog] = React.useState(false);
   const [openAlert, setOpenAlert] = React.useState(false);
-  const [deployScript, setDeployScript] = React.useState(config);
 
   // 실행 다이얼로그 오픈
   const handleOpenExecDialog = () => {
@@ -107,6 +108,8 @@ function Deploy() {
       console.log(e);
     }
   };
+
+  const selectAllMsg = "전체 서비스 선택";
 
   let sampleErrorLog = `
     Step 1.
@@ -163,7 +166,7 @@ function Deploy() {
     `;
 
   // 서버에서 가져올 서비스
-  let sample_arr = [];
+  const sample_arr = [selectAllMsg];
 
   Object.keys(config["service_url"]).map((_Nodename) =>
     sample_arr.push(_Nodename)
@@ -174,139 +177,174 @@ function Deploy() {
       date: "2021/10/20 12:30:31",
       service:
         "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
-    { date: "2021/10/20 12:30:31", service: "esdata1" },
+    { date: "2021/10/20 12:30:31", service: "esdata1", result: "성공" },
     {
       date: "2021/09/10 10:48:51",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-    },
-    {
-      date: "2021/09/10 10:48:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "[Error] esdata2에서 정지",
     },
     {
       date: "2021/09/10 10:48:51",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "[Error] esdata5에서 정지",
     },
     {
       date: "2021/09/10 10:48:51",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "[Error] 응답없음",
     },
     {
       date: "2021/09/10 10:48:51",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
     },
     {
       date: "2021/09/10 10:48:51",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
+    },
+    {
+      date: "2021/09/10 10:48:51",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
     {
       date: "2021/10/20 16:44:30",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "[Error] esdata4 서버 응답 없음",
     },
     {
       date: "2021/10/20 16:44:30",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
     {
       date: "2021/09/10 09:02:06",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
     },
     {
       date: "2021/09/10 09:02:06",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
+    },
+    {
+      date: "2021/09/10 09:02:06",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
     {
       date: "2021/09/10 09:02:06",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
+    },
+    {
+      date: "2021/09/10 09:02:06",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
     {
       date: "2021/09/10 09:02:06",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
     },
     {
       date: "2021/10/20 13:41:51",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
     },
     {
       date: "2021/10/20 13:41:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
-    { date: "2021/09/10 11:45:58", 
-      service: "esdata1, esdata2" 
+    {
+      date: "2021/09/10 11:45:58",
+      service: "esdata1, esdata2",
+      result: "성공",
     },
     {
       date: "2021/09/10 11:45:58",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
+    },
+    {
+      date: "2021/09/10 11:45:58",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
     {
       date: "2021/09/10 11:45:58",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
     },
     {
       date: "2021/09/10 11:45:58",
       service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      result: "성공",
     },
     {
       date: "2021/09/10 11:45:58",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
+      service:
+        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
+      result: "성공",
     },
   ];
 
   return (
     <div className={classes.root}>
       <Card>
-
-
-      <Grid container spacing={3}>
-        <Grid item xs>
-          <Typography variant={"h5"} style={isDeployMode ? {marginLeft: "33.5%", marginTop: "30px"} : {marginLeft: "50px", marginTop: "40px"}}>
-            {isDeployMode ? "배포하기" : "배포 히스토리"}
-          </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs>
+            <Typography
+              variant={"h5"}
+              style={
+                isDeployMode
+                  ? { marginLeft: "33.5%", marginTop: "50px" }
+                  : { marginLeft: "50px", marginTop: "30px" }
+              }
+            >
+              {isDeployMode ? "배포하기" : "배포 히스토리"}
+            </Typography>
+          </Grid>
+          <Grid item xs={6}></Grid>
+          <Grid item xs>
+            <Button
+              style={
+                isDeployMode === true
+                  ? {
+                      height: "40px",
+                      margin: "50px 36% 0 15px",
+                      float: "right",
+                    }
+                  : {
+                      height: "40px",
+                      margin: "40px 20px 0 15px",
+                      float: "right",
+                    }
+              }
+              variant={"contained"}
+              color={isDeployMode === true ? "default" : "primary"}
+              onClick={() => {
+                if (isDeployMode === false) {
+                  setIsDeployMode(true);
+                } else {
+                  setIsDeployMode(false);
+                }
+              }}
+            >
+              {isDeployMode === true ? "배포내역 보기" : "배포하기"}
+            </Button>
+          </Grid>
         </Grid>
-        <Grid item xs={6}>
-        </Grid>
-        <Grid item xs>
-        <Button
-          style={
-            isDeployMode === true ? 
-          {
-            height: "40px",
-            margin: "40px 36% 0 15px",
-            float: "right",
-          }
-          :  
-          {
-            height: "40px",
-            margin: "40px 20px 0 15px",
-            float: "right",
-          }}
-          variant={"contained"}
-          color={isDeployMode === true ? "default" : "primary"}
-          onClick={() => {
-            if (isDeployMode === false) {
-              setIsDeployMode(true);
-            } else {
-              setIsDeployMode(false);
-            }
-          }}
-        >
-          {isDeployMode === true ? "배포내역 보기" : "배포하기"}
-        </Button>
-        </Grid>
-      </Grid>
 
         <CardContent
           style={
@@ -319,12 +357,13 @@ function Deploy() {
                 <TableCell>#</TableCell>
                 <TableCell>배포일시</TableCell>
                 <TableCell>참여 서비스</TableCell>
+                <TableCell>결과</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {sample_history.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} align={"center"}>
+                  <TableCell colSpan={4} align={"center"}>
                     배포 내역이 없습니다.
                   </TableCell>
                 </TableRow>
@@ -335,6 +374,7 @@ function Deploy() {
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{hst.date}</TableCell>
                       <TableCell>{hst.service}</TableCell>
+                      <TableCell>{hst.result}</TableCell>
                     </TableRow>
                   );
                 })
@@ -379,24 +419,46 @@ function Deploy() {
                   size="small"
                   options={sample_arr}
                   disableCloseOnSelect
-                  getOptionLabel={(option) => {
-                      return option + "(" + deployScript["service_url"][option] + ")"
+                  onChange={(e, service) => {
+                    setDeployService(service);
+                    console.log(deployService);
+                  }}
+                  getOptionLabel={(service) => {
+                    return (
+                      service +
+                      (service === selectAllMsg
+                        ? ""
+                        : "(" + deployScript["service_url"][service] + ")")
+                    );
+                  }}
+                  renderOption={(option, { selected }) => {
+                    const selectServiceIndex = deployService.findIndex(
+                      (service) => service === selectAllMsg
+                    );
+
+                    if (selectServiceIndex > -1) {
+                      selected = true;
                     }
-                  }
-                  renderOption={(option, { selected }) => (
-                    <React.Fragment>
-                      <Checkbox
-                        icon={icon}
-                        checkedIcon={checkedIcon}
-                        style={{ marginRight: 8 }}
-                        checked={selected}
-                      />
-                      {option}
-                    </React.Fragment>
-                  )}
+
+                    return (
+                      <React.Fragment>
+                        <Checkbox
+                          icon={icon}
+                          checkedIcon={checkedIcon}
+                          style={{ marginRight: 8 }}
+                          checked={selected}
+                        />
+                        {option}
+                      </React.Fragment>
+                    );
+                  }}
                   style={{ width: "100%", float: "left" }}
                   renderInput={(params) => (
-                    <TextField {...params} variant="outlined" />
+                    <TextField
+                      {...params}
+                      variant="outlined"
+                      placeholder="서비스를 선택하세요"
+                    />
                   )}
                 />
               </Box>
@@ -404,8 +466,8 @@ function Deploy() {
             <Grid item xs={4} md={1}>
               <Box>
                 <Button
-                  style={{ height: "40px", width: "100%", marginTop: "19.7px" }}
-                  variant={"outlined"}
+                  style={{ height: "40px", width: "100%", marginTop: "19px" }}
+                  variant={"contained"}
                   color={"primary"}
                   onClick={() => {
                     setOpenAlert(true);
@@ -417,13 +479,13 @@ function Deploy() {
             </Grid>
           </Grid>
 
-          <Grid container style={{ width: "91.5%", marginTop: "20px" }}>
+          <Grid container style={{ width: "91.5%", marginTop: "15px" }}>
             <Grid style={{ width: "100%" }}>
               <Box>
                 <AceEditor
                   mode="text"
                   fontSize="15px"
-                  height="420px"
+                  height="520px"
                   width="100%"
                   tabSize={2}
                   value={JSON.stringify(deployScript, null, "\t")}
@@ -454,7 +516,8 @@ function Deploy() {
               >
                 내용 수정{" "}
                 <EditIcon
-                  style={{ border: "3px solid #949494", marginLeft: "4px" }}
+                  fontSize={"small"}
+                  style={{ marginTop: "-3.8px", marginLeft: "8px" }}
                 />
               </Button>
               <Button
@@ -468,7 +531,7 @@ function Deploy() {
                       }
                     : { display: "none" }
                 }
-                variant={"outlined"}
+                variant={"contained"}
                 color={"primary"}
                 onClick={() => {
                   handleSaveDepolyScript();
@@ -484,11 +547,12 @@ function Deploy() {
                         marginTop: "15px",
                         marginLeft: "5px",
                         float: "right",
+                        backgroundColor: "#D5455A",
+                        color: "white",
                       }
                     : { display: "none" }
                 }
-                variant={"outlined"}
-                color={"secondary"}
+                variant={"contained"}
                 onClick={() => {
                   setIsEditable(false);
                   setDeployScript(config);
@@ -516,7 +580,13 @@ function Deploy() {
               </IconButton>
             </DialogTitle>
             <DialogContent
-              style={{ backgroundColor: "black", border: "1.5px solid white", padding:"0", margin:"0", height:"700px"}}
+              style={{
+                backgroundColor: "black",
+                border: "1.5px solid white",
+                padding: "0",
+                margin: "0",
+                height: "700px",
+              }}
             >
               <Grid container>
                 <Grid item xs={12}>
@@ -526,7 +596,7 @@ function Deploy() {
                       backgroundColor: "black",
                       color: "white",
                       fontSize: "16px",
-                      border: "none",                      
+                      border: "none",
                     }}
                     readOnly={true}
                     disabled={true}
@@ -579,10 +649,19 @@ function Deploy() {
                 onClick={() => {
                   setOpenAlert(false);
                 }}
+                style={{
+                  backgroundColor: "#D5455A",
+                  color: "white",
+                }}
               >
                 취소
               </Button>
-              <Button onClick={handleOpenExecDialog} autoFocus>
+              <Button
+                variant={"contained"}
+                color={"primary"}
+                onClick={handleOpenExecDialog}
+                autoFocus
+              >
                 실행
               </Button>
             </DialogActions>
