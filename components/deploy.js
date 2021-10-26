@@ -1,7 +1,6 @@
 import React from "react";
 import {
   Box,
-  TextField,
   Card,
   CardContent,
   FormControl,
@@ -18,25 +17,16 @@ import {
 import { makeStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
 import Grid from "@material-ui/core/Grid";
-import CheckBoxOutlineBlankIcon from "@material-ui/icons/CheckBoxOutlineBlank";
-import CheckBoxIcon from "@material-ui/icons/CheckBox";
-import Autocomplete from "@material-ui/lab/Autocomplete";
-import Checkbox from "@material-ui/core/Checkbox";
 import dynamic from "next/dynamic";
 import DialogTitle from "@material-ui/core/DialogTitle";
 import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
-import IconButton from "@material-ui/core/IconButton";
-import CloseIcon from "@material-ui/icons/Close";
 import EditIcon from "@material-ui/icons/Edit";
 import DialogContentText from "@material-ui/core/DialogContentText";
+import MultiSelect from "./MultiSelect";
 
 const AceEditor = dynamic(import("react-ace"), { ssr: false });
-
-const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-const checkedIcon = <CheckBoxIcon fontSize="small" />;
-
 
 // DB에서 불러와야할내용
 let config = {
@@ -87,6 +77,7 @@ function Deploy() {
   const [isEditable, setIsEditable] = React.useState(false);
   const [openExecLog, setOpenExecLog] = React.useState(false);
   const [openAlert, setOpenAlert] = React.useState(false);
+  const [selectedOptions, setSelectedOptions] = React.useState([]);
 
   // 실행 다이얼로그 오픈
   const handleOpenExecDialog = () => {
@@ -108,8 +99,6 @@ function Deploy() {
       console.log(e);
     }
   };
-
-  const selectAllMsg = "전체 서비스 선택";
 
   let sampleErrorLog = `
     Step 1.
@@ -166,10 +155,10 @@ function Deploy() {
     `;
 
   // 서버에서 가져올 서비스
-  const sample_arr = [selectAllMsg];
+  const sample_arr = [];
 
   Object.keys(config["service_url"]).map((_Nodename) =>
-    sample_arr.push(_Nodename)
+    sample_arr.push({ label: _Nodename, value: _Nodename })
   );
 
   let sample_history = [
@@ -307,9 +296,7 @@ function Deploy() {
             <Typography
               variant={"h5"}
               style={
-                isDeployMode
-                  ? { marginLeft: "33.5%", marginTop: "50px" }
-                  : { marginLeft: "50px", marginTop: "30px" }
+                { marginLeft: "20px", marginTop: "20px" }
               }
             >
               {isDeployMode ? "배포하기" : "배포 히스토리"}
@@ -319,17 +306,11 @@ function Deploy() {
           <Grid item xs>
             <Button
               style={
-                isDeployMode === true
-                  ? {
-                      height: "40px",
-                      margin: "50px 36% 0 15px",
-                      float: "right",
-                    }
-                  : {
-                      height: "40px",
-                      margin: "40px 20px 0 15px",
-                      float: "right",
-                    }
+                 {
+                  height: "40px",
+                  margin: "40px 20px 0 15px",
+                  float: "right",
+                 }
               }
               variant={"contained"}
               color={isDeployMode === true ? "default" : "primary"}
@@ -385,12 +366,12 @@ function Deploy() {
         <CardContent
           style={
             isDeployMode === true
-              ? { display: "inherit", marginLeft: "7%" }
+              ? { display: "inherit"}
               : { display: "none" }
           }
         >
           <Grid container spacing={1}>
-            <Grid item xs={12} md={11}>
+            <Grid item xs={12} md={12}>
               <Box>배포 타입</Box>
               <Box>
                 <FormControl
@@ -411,62 +392,33 @@ function Deploy() {
                 </FormControl>
               </Box>
             </Grid>
-            <Grid item xs={8} md={10}>
+            <Grid item xs={8} md={11}>
               <Box>서비스 선택</Box>
               <Box>
-                <Autocomplete
-                  multiple
-                  size="small"
-                  options={sample_arr}
-                  disableCloseOnSelect
-                  onChange={(e, service) => {
-                    setDeployService(service);
-                    console.log(deployService);
-                  }}
-                  getOptionLabel={(service) => {
-                    return (
-                      service +
-                      (service === selectAllMsg
-                        ? ""
-                        : "(" + deployScript["service_url"][service] + ")")
-                    );
-                  }}
-                  renderOption={(option, { selected }) => {
-                    const selectServiceIndex = deployService.findIndex(
-                      (service) => service === selectAllMsg
-                    );
-
-                    if (selectServiceIndex > -1) {
-                      selected = true;
+                <MultiSelect
+                  items={sample_arr}
+                  getOptionLabel={(option) => `${option.label}`}
+                  selectedValues={selectedOptions}
+                  placeholder="서비스를 선택하세요"
+                  selectAllLabel="모두 선택하기"
+                  onToggleOption={(selectedOptions) =>
+                    setSelectedOptions(selectedOptions)
+                  }
+                  onClearOptions={() => setSelectedOptions([])}
+                  onSelectAll={(isSelected) => {
+                    if (isSelected) {
+                      setSelectedOptions(sample_arr);
+                    } else {
+                      setSelectedOptions([]);
                     }
-
-                    return (
-                      <React.Fragment>
-                        <Checkbox
-                          icon={icon}
-                          checkedIcon={checkedIcon}
-                          style={{ marginRight: 8 }}
-                          checked={selected}
-                        />
-                        {option}
-                      </React.Fragment>
-                    );
                   }}
-                  style={{ width: "100%", float: "left" }}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      variant="outlined"
-                      placeholder="서비스를 선택하세요"
-                    />
-                  )}
                 />
               </Box>
             </Grid>
             <Grid item xs={4} md={1}>
               <Box>
                 <Button
-                  style={{ height: "40px", width: "100%", marginTop: "19px" }}
+                  style={{ height: "40px", width: "100%", marginTop: "10px" }}
                   variant={"contained"}
                   color={"primary"}
                   onClick={() => {
@@ -479,7 +431,7 @@ function Deploy() {
             </Grid>
           </Grid>
 
-          <Grid container style={{ width: "91.5%", marginTop: "15px" }}>
+          <Grid container style={{ width: "100%", marginTop: "15px" }}>
             <Grid style={{ width: "100%" }}>
               <Box>
                 <AceEditor
@@ -566,18 +518,10 @@ function Deploy() {
           <Dialog
             maxWidth={"lg"}
             fullWidth={true}
-            open={openExecLog}
-            onClose={() => setOpenExecLog(false)}
+            open={openExecLog}            
           >
             <DialogTitle>
               실행 로그
-              <IconButton
-                aria-label="close"
-                onClick={() => setOpenExecLog(false)}
-                style={{ float: "right", marginTop: "-10px" }}
-              >
-                <CloseIcon />
-              </IconButton>
             </DialogTitle>
             <DialogContent
               style={{

@@ -17,7 +17,11 @@ module.exports = (sequelize, DataTypes) => {
     deployTime: DataTypes.DATE,
     user: DataTypes.STRING,
     result: DataTypes.STRING,
-    service: DataTypes.STRING
+    service: DataTypes.STRING,
+    groupId: DataTypes.STRING,
+    deployId: DataTypes.STRING,
+    deployEndTime: DataTypes.DATE,
+    deployType: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'deploy_history',

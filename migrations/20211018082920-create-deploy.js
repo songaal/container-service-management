@@ -8,6 +8,9 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      groupId : {
+        type: Sequelize.STRING
+      },
       deploy_json: {
         type: Sequelize.STRING
       },
