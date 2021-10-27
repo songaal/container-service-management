@@ -10,19 +10,27 @@ async function groupsService(req, res) {
     await AuthService.validate(req, res);
 
     try {
+        const groupId = req.query['groupId'];
+
         if (req.method === "GET") {
             res.send({
                 status: "success",
-                histories: await GroupDeployHstService.findAllDeployHistory(),
-                jsonAndType: await GroupDeployService.findDeploy()
+                histories: await GroupDeployHstService.findDeployHistory(groupId),
+                json: await GroupDeployService.findDeploy(groupId)
             })
         } else if(req.method === "POST"){
-            console.log(req.body);
-            if(req.body.type === "history"){
+            const body = JSON.parse(req.body);
+
+            if(body.type === "history"){
                 res.send({
                     status: "success",
-                    histories: await GroupDeployHstService.newDeployHistory(JSON.parse(req.body))
+                    histories: await GroupDeployHstService.newDeployHistory(body)
                 })    
+            } else if(body.type === "deployJson"){
+                res.send({
+                    status: "success",
+                    json: await GroupDeployService.newDeploy(body)
+                })
             }
         }
     } catch (error) {

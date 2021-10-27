@@ -20,4 +20,4 @@ sequelize model:create --name file_hst --attributes userId:string,fileName:strin
 
 sequelize model:create --name deploy --attributes groupId:string,deploy_json:string,deploy_type:string
 
-sequelize model:create --name deploy_history --attributes deployTime:date,user:string,result:string,service:string,deployId:string,deployEndTime:string,deployType:string
+sequelize model:create --name deploy_history --attributes groupId:string,deployTime:date,user:string,result:string,service:string,deployId:string,deployEndTime:string,deployType:string

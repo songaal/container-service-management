@@ -8,6 +8,9 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      groupId: {
+        type : Sequelize.STRING
+      },
       deployTime: {
         type: Sequelize.DATE
       },

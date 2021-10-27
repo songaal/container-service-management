@@ -17,10 +17,10 @@ export default {
             }
         }
     }, 
-    findDeploy: async () => {
-        return await Deploy.findAll()
+    findDeploy: async (groupId) => {
+        return await Deploy.findAll({where: {groupId: groupId}})
     },
     removeDeploy: async () => {
-        await Deploy.destroy({where:{id:1}})
+        await Deploy.destroy({where: {groupId: "1"}})
     },
 }
