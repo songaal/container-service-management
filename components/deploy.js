@@ -25,41 +25,41 @@ import Dialog from "@material-ui/core/Dialog";
 import EditIcon from "@material-ui/icons/Edit";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import MultiSelect from "./MultiSelect";
+import { SnackbarProvider, useSnackbar } from 'notistack';
 
 const AceEditor = dynamic(import("react-ace"), { ssr: false });
 
-// DB에서 불러와야할내용
-let config = {
-  indexing: [
+// 검색 서비스 기본 템플릿 JSON
+let default_json = `{
+  "indexing": [
     {
-      url: "http:;//esapi1.danawa.com/8100/managements/consume",
-      consume_size: 2, // 재시작 시작은 무조건 0, 완료후 컨슘 사이즈를 설정
-      queue: "VM,aa",
-    },
-    // ...
+      "url": "http:;//esapi1.danawa.com/8100/managements/consume",
+      "consume_size": "2 // 재시작 시작은 무조건 0, 완료후 컨슘 사이즈를 설정",
+      "queue": "VM,aa"
+    }
   ],
-  target: "search  # search or office", // 검색API에선 상품,오피스 구분이 필요함.
-  search_api: [
+  "target": "search  # search or office, // 검색API에선 상품,오피스 구분이 필요함.",
+  "search_api": [
     "http://esapi1.danawa.com:7090/seed-update",
     "http://esapi2.danawa.com:7090/seed-update",
-    "http://esapi3.danawa.com:7090/seed-update",
+    "http://esapi3.danawa.com:7090/seed-update"
   ],
-  service_url: {
-    esdata1: "http://192.168.1.141:9200",
-    esdata2: "http://192.168.1.142:9200",
-    esdata3: "http://192.168.1.143:9200",
-    esdata4: "http://192.168.1.144:9200",
-    esdata5: "http://192.168.1.145:9200",
-    esdata6: "http://192.168.1.146:9200",
-    esdata7: "http://192.168.1.147:9200",
-    esdata8: "http://192.168.1.148:9200",
-    esdata9: "http://192.168.1.148:9200",
-    esdata10: "http://192.168.1.148:9200",
+  "service_url": {
+    "esdata1": "http://192.168.1.141:9200",
+    "esdata2": "http://192.168.1.142:9200",
+    "esdata3": "http://192.168.1.143:9200",
+    "esdata4": "http://192.168.1.144:9200",
+    "esdata5": "http://192.168.1.145:9200",
+    "esdata6": "http://192.168.1.146:9200",
+    "esdata7": "http://192.168.1.147:9200",
+    "esdata8": "http://192.168.1.148:9200",
+    "esdata9": "http://192.168.1.148:9200",
+    "esdata10": "http://192.168.1.148:9200"
   },
-  node_ready_time: 300, // seconds
-  allocate_disable_url: "dsearch-server.danawa.io / ~~~?on or off",
-  node_ready_check_uri: "/check", // 상품명분석기 사전로딩 API 필요,,
-};
+  "node_ready_time": "300, // seconds",
+  "allocate_disable_url": "dsearch-server.danawa.io / ~~~?on or off,",
+  "node_ready_check_uri": "/check // 상품명분석기 사전로딩 API 필요,,"
+}`;
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -72,12 +72,67 @@ const useStyles = makeStyles((theme) => ({
 function Deploy() {
   const classes = useStyles();
   const [isDeployMode, setIsDeployMode] = React.useState(false);
-  const [deployScript, setDeployScript] = React.useState(config);
+  const [deployScript, setDeployScript] = React.useState(default_json);
   const [deployService, setDeployService] = React.useState([]);
+  const [deployHistory, setDeployHistory] = React.useState([]);
   const [isEditable, setIsEditable] = React.useState(false);
   const [openExecLog, setOpenExecLog] = React.useState(false);
   const [openAlert, setOpenAlert] = React.useState(false);
   const [selectedOptions, setSelectedOptions] = React.useState([]);
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const [services, setServices] = React.useState([]);
+
+  React.useEffect(() => {
+      init()
+  }, [])
+  
+  const init = async () => {
+    let tmpService = [];
+
+    // 그룹 내 서비스 조회
+    await fetch(`/api${location.pathname}/services`)
+    .then(res => res.json())
+    .then(body => {
+        if (body['status'] === 'error') {
+            console.error(body)
+            enqueueSnackbar('조회 중 에러가 발생하였습니다.', {
+                variant: "error"
+            });
+        } else {
+            setServices(body['services'])
+            tmpService = body['services'];
+        }
+    })
+
+    // 그룹의 배포 히스토리 및 구성 JSON 조회
+    await fetch(`/api${location.pathname}/deploy`)
+    .then(res => res.json())
+    .then(body => {
+        if (body['status'] === 'error') {
+          console.error(body)
+          enqueueSnackbar('조회 중 에러가 발생하였습니다.', {
+              variant: "error"
+          });
+        } else {
+          setDeployHistory(body['histories'])
+          // JSON의 서비스
+          let target = body['json'].length === 0 ? JSON.parse(default_json)["service_url"] : body['json'].deploy_json["service_url"];
+          let tempArr = [];
+
+          // JSON VS 그룹서비스
+          Object.keys(target).map((_Nodename) => {
+              tmpService.forEach(myService => {
+                if(myService.name === _Nodename){
+                  tempArr.push({ label: _Nodename, value: _Nodename })
+                }
+              })              
+            }            
+          );
+
+          setDeployService(tempArr);
+        }
+    })
+  }
 
   // 실행 다이얼로그 오픈
   const handleOpenExecDialog = () => {
@@ -85,16 +140,52 @@ function Deploy() {
     setOpenExecLog(true);
   };
 
-  // 수정내용 저장, 취소시 복원용
+  // 구성 JSON 저장
+  // const saveDeployJson = () => {
+  //   fetch(`/api${location.pathname}/deploy`, {
+  //     method: "POST",
+  //     body:{deploy_json:deployScript, deploy_type}
+  //   })
+  //   .then(res => res.json())
+  //   .then(body => {
+  //       if (body['status'] === 'error') {
+  //           console.error(body)
+  //           enqueueSnackbar('저장 중 에러가 발생하였습니다.', {
+  //               variant: "error"
+  //           });
+  //       } else {
+  //           setServices(body['services'])
+  //       }
+  //   })
+  // }
+
+
+  // 수정내용 저장
   const handleSaveDepolyScript = () => {
     setIsEditable(false);
-    config = deployScript;
+
+    // 저장 API
+    saveDeployJson(deployScript);
+
+    let tempArr = [];
+    let target = JSON.parse(deployScript)["service_url"];
+
+    Object.keys(target).map((_Nodename) => {
+        services.forEach(myService => {
+          if(myService.name === _Nodename){
+            tempArr.push({ label: _Nodename, value: _Nodename })
+          }
+        })              
+      }            
+    );
+
+    setDeployService(tempArr);
   };
 
   // 내용수정
   const setJsonDeployScript = (e) => {
     try {
-      setDeployScript(JSON.parse(e));
+      setDeployScript(e);
     } catch (e) {
       console.log(e);
     }
@@ -113,180 +204,7 @@ function Deploy() {
 
     Step 3.
     WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
-
-    Step 1.
-    request: http://esapi1.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Service Restart …… 
-
-    Step 2.
-    request: http://esapi2.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Step 3.
-    WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
-
-    Step 1.
-    request: http://esapi1.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Service Restart …… 
-
-    Step 2.
-    request: http://esapi2.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Step 3.
-    WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
-
-    Step 1.
-    request: http://esapi1.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Service Restart …… 
-
-    Step 2.
-    request: http://esapi2.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Step 3.
-    WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
     `;
-
-  // 서버에서 가져올 서비스
-  const sample_arr = [];
-
-  Object.keys(config["service_url"]).map((_Nodename) =>
-    sample_arr.push({ label: _Nodename, value: _Nodename })
-  );
-
-  let sample_history = [
-    {
-      date: "2021/10/20 12:30:31",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    { date: "2021/10/20 12:30:31", service: "esdata1", result: "성공" },
-    {
-      date: "2021/09/10 10:48:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "[Error] esdata2에서 정지",
-    },
-    {
-      date: "2021/09/10 10:48:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "[Error] esdata5에서 정지",
-    },
-    {
-      date: "2021/09/10 10:48:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "[Error] 응답없음",
-    },
-    {
-      date: "2021/09/10 10:48:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 10:48:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 10:48:51",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    {
-      date: "2021/10/20 16:44:30",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "[Error] esdata4 서버 응답 없음",
-    },
-    {
-      date: "2021/10/20 16:44:30",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 09:02:06",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/10/20 13:41:51",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/10/20 13:41:51",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service: "esdata1, esdata2",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service: "esdata1, esdata2, esdata3, esdata4, esdata5",
-      result: "성공",
-    },
-    {
-      date: "2021/09/10 11:45:58",
-      service:
-        "esdata1, esdata2, esdata3, esdata4, esdata5, esdata6, esdata7, esdata8, esdata9, esdata10",
-      result: "성공",
-    },
-  ];
 
   return (
     <div className={classes.root}>
@@ -342,18 +260,18 @@ function Deploy() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {sample_history.length === 0 ? (
+              {deployHistory.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align={"center"}>
                     배포 내역이 없습니다.
                   </TableCell>
                 </TableRow>
               ) : (
-                sample_history.map((hst, index) => {
+                deployHistory.map((hst, index) => {
                   return (
                     <TableRow key={index}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell>{hst.date}</TableCell>
+                      <TableCell>{hst.deployTime}</TableCell>
                       <TableCell>{hst.service}</TableCell>
                       <TableCell>{hst.result}</TableCell>
                     </TableRow>
@@ -384,9 +302,13 @@ function Deploy() {
                 >
                   <Select value={1}>
                     {
-                      <MenuItem key={1} value={1}>
-                        검색 서비스
-                      </MenuItem>
+                      deployServiceType.map((item, index) => {
+                        return (
+                          <MenuItem key={1}>
+                            item.name
+                          </MenuItem>
+                        );
+                      })
                     }
                   </Select>
                 </FormControl>
@@ -396,18 +318,18 @@ function Deploy() {
               <Box>서비스 선택</Box>
               <Box>
                 <MultiSelect
-                  items={sample_arr}
+                  items={deployService}
                   getOptionLabel={(option) => `${option.label}`}
                   selectedValues={selectedOptions}
                   placeholder="서비스를 선택하세요"
-                  selectAllLabel="모두 선택하기"
+                  selectAllLabel="모두 선택하기"                  
                   onToggleOption={(selectedOptions) =>
                     setSelectedOptions(selectedOptions)
                   }
                   onClearOptions={() => setSelectedOptions([])}
                   onSelectAll={(isSelected) => {
                     if (isSelected) {
-                      setSelectedOptions(sample_arr);
+                      setSelectedOptions(deployService);
                     } else {
                       setSelectedOptions([]);
                     }
@@ -440,7 +362,7 @@ function Deploy() {
                   height="520px"
                   width="100%"
                   tabSize={2}
-                  value={JSON.stringify(deployScript, null, "\t")}
+                  value={deployScript}
                   readOnly={isEditable === false ? true : false}
                   highlightActiveLine={isEditable === false ? false : true}
                   style={{ border: "0.1px solid #E0E0E0" }}
@@ -507,7 +429,7 @@ function Deploy() {
                 variant={"contained"}
                 onClick={() => {
                   setIsEditable(false);
-                  setDeployScript(config);
+                  setDeployScript(default_json);
                 }}
               >
                 취소
