@@ -8,9 +8,6 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      groupId : {
-        type: Sequelize.STRING
-      },
       deployTime: {
         type: Sequelize.DATE
       },
@@ -24,13 +21,13 @@ module.exports = {
         type: Sequelize.STRING
       },
       deployId: { 
-        type : DataTypes.STRING 
+        type : Sequelize.STRING 
       },
       deployEndTime: {
-        type : DataTypes.DATE
+        type : Sequelize.DATE
       },
       deployType: {
-        type : DataTypes.STRING
+        type : Sequelize.STRING
       },
       createdAt: {
         allowNull: false,
