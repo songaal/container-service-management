@@ -20,6 +20,19 @@ export default {
     findDeploy: async (groupId) => {
         return await Deploy.findAll({where: {groupId: groupId}})
     },
+    findExistDeploy: async (groupId, deploy_type) => {
+        return await Deploy.findOne({where: {groupId: groupId, deploy_type: deploy_type}})
+    },
+    updateDeploy:  async (deploy) => {
+        await Deploy.update({
+            deploy_json: deploy.deploy_json
+        }, {
+            where: {
+                groupId: deploy.groupId,
+                deploy_type: deploy.deploy_type
+            }
+        })
+    },
     removeDeploy: async () => {
         await Deploy.destroy({where: {groupId: "1"}})
     },

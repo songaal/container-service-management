@@ -27,10 +27,21 @@ async function groupsService(req, res) {
                     histories: await GroupDeployHstService.newDeployHistory(body)
                 })    
             } else if(body.type === "deployJson"){
-                res.send({
-                    status: "success",
-                    json: await GroupDeployService.newDeploy(body)
-                })
+                body['groupId'] = groupId;
+
+                const isExist = await GroupDeployService.findExistDeploy(body['groupId'], body['deploy_type']);
+
+                if(isExist){
+                    res.send({
+                        status: "success",
+                        json: await GroupDeployService.updateDeploy(body)
+                    })
+                } else {
+                    res.send({
+                        status: "success",
+                        json: await GroupDeployService.newDeploy(body)
+                    })
+                }
             }
         }
     } catch (error) {

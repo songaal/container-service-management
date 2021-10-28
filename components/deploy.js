@@ -25,7 +25,7 @@ import Dialog from "@material-ui/core/Dialog";
 import EditIcon from "@material-ui/icons/Edit";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import MultiSelect from "./MultiSelect";
-import { SnackbarProvider, useSnackbar } from 'notistack';
+import { SnackbarProvider, useSnackbar } from "notistack";
 
 const AceEditor = dynamic(import("react-ace"), { ssr: false });
 
@@ -72,7 +72,7 @@ const useStyles = makeStyles((theme) => ({
 function Deploy() {
   const classes = useStyles();
   const [isDeployMode, setIsDeployMode] = React.useState(false);
-  const [deployScript, setDeployScript] = React.useState(default_json);
+  const [deployScript, setDeployScript] = React.useState("");
   const [deployService, setDeployService] = React.useState([]);
   const [deployHistory, setDeployHistory] = React.useState([]);
   const [isEditable, setIsEditable] = React.useState(false);
@@ -81,105 +81,134 @@ function Deploy() {
   const [selectedOptions, setSelectedOptions] = React.useState([]);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [services, setServices] = React.useState([]);
+  const [deployServiceType, setDeployServiceType] = React.useState([
+    { id: "1", name: "검색 서비스" },
+  ]);
+  const [serviceType, setServiceType] = React.useState("1");
+  const [alertContents, setAlertContents] = React.useState("");
+  const [alertTitle, setAlertTitle] = React.useState("");
+  const [alertType, setAlertType] = React.useState("");
 
   React.useEffect(() => {
-      init()
-  }, [])
-  
+    init();
+  }, []);
+
   const init = async () => {
     let tmpService = [];
 
     // 그룹 내 서비스 조회
     await fetch(`/api${location.pathname}/services`)
-    .then(res => res.json())
-    .then(body => {
-        if (body['status'] === 'error') {
-            console.error(body)
-            enqueueSnackbar('조회 중 에러가 발생하였습니다.', {
-                variant: "error"
-            });
+      .then((res) => res.json())
+      .then((body) => {
+        if (body["status"] === "error") {
+          console.error(body);
+          enqueueSnackbar("조회 중 에러가 발생하였습니다.", {
+            variant: "error",
+          });
         } else {
-            setServices(body['services'])
-            tmpService = body['services'];
+          setServices(body["services"]);
+          tmpService = body["services"];
         }
-    })
+      });
 
     // 그룹의 배포 히스토리 및 구성 JSON 조회
     await fetch(`/api${location.pathname}/deploy`)
-    .then(res => res.json())
-    .then(body => {
-        if (body['status'] === 'error') {
-          console.error(body)
-          enqueueSnackbar('조회 중 에러가 발생하였습니다.', {
-              variant: "error"
+      .then((res) => res.json())
+      .then((body) => {
+        if (body["status"] === "error") {
+          console.error(body);
+          enqueueSnackbar("조회 중 에러가 발생하였습니다.", {
+            variant: "error",
           });
         } else {
-          setDeployHistory(body['histories'])
+          setDeployHistory(body["histories"]);
+          
+          let service_url;
+          
           // JSON의 서비스
-          let target = body['json'].length === 0 ? JSON.parse(default_json)["service_url"] : body['json'].deploy_json["service_url"];
+          if(body["json"].length === 0) { // 그룹에 저장된 템플릿이 없을경우
+            service_url = JSON.parse(default_json)["service_url"];
+            setDeployScript(default_json)
+          } else {
+            service_url = JSON.parse(body["json"][0].deploy_json)["service_url"]
+            setDeployScript(body["json"][0].deploy_json);
+
+            //취소시 되돌리기용
+            default_json = body["json"][0].deploy_json;
+          }
+
           let tempArr = [];
 
           // JSON VS 그룹서비스
-          Object.keys(target).map((_Nodename) => {
-              tmpService.forEach(myService => {
-                if(myService.name === _Nodename){
-                  tempArr.push({ label: _Nodename, value: _Nodename })
-                }
-              })              
-            }            
-          );
+          Object.keys(service_url).map((_Nodename) => {
+            tmpService.forEach((myService) => {
+              if (myService.name === _Nodename) {
+                tempArr.push({ label: _Nodename, value: _Nodename });
+              }
+            });
+          });
 
           setDeployService(tempArr);
         }
-    })
-  }
-
-  // 실행 다이얼로그 오픈
-  const handleOpenExecDialog = () => {
-    setOpenAlert(false);
-    setOpenExecLog(true);
+      });
   };
 
-  // 구성 JSON 저장
-  // const saveDeployJson = () => {
-  //   fetch(`/api${location.pathname}/deploy`, {
-  //     method: "POST",
-  //     body:{deploy_json:deployScript, deploy_type}
-  //   })
-  //   .then(res => res.json())
-  //   .then(body => {
-  //       if (body['status'] === 'error') {
-  //           console.error(body)
-  //           enqueueSnackbar('저장 중 에러가 발생하였습니다.', {
-  //               variant: "error"
-  //           });
-  //       } else {
-  //           setServices(body['services'])
-  //       }
-  //   })
-  // }
+  const handleDialog = () => {
+    setOpenAlert(false);
 
+    switch(alertType){
+      case "excute" : 
+        return setOpenExecLog(true);
+      case "jsonSave" : 
+        return handleSaveDepolyScript();
+    }
+  };
 
   // 수정내용 저장
   const handleSaveDepolyScript = () => {
     setIsEditable(false);
 
     // 저장 API
+    default_json = deployScript;
     saveDeployJson(deployScript);
 
     let tempArr = [];
     let target = JSON.parse(deployScript)["service_url"];
 
     Object.keys(target).map((_Nodename) => {
-        services.forEach(myService => {
-          if(myService.name === _Nodename){
-            tempArr.push({ label: _Nodename, value: _Nodename })
-          }
-        })              
-      }            
-    );
+      services.forEach((myService) => {
+        if (myService.name === _Nodename) {
+          tempArr.push({ label: _Nodename, value: _Nodename });
+        }
+      });
+    });
 
     setDeployService(tempArr);
+  };
+
+  // 구성 JSON 저장
+  const saveDeployJson = () => {
+    fetch(`/api${location.pathname}/deploy`, {
+      method: "POST",
+      body: JSON.stringify({
+        type: "deployJson",
+        deploy_json: deployScript,
+        deploy_type: serviceType,
+      }),
+    })
+      .then((res) => res.json())
+      .then((body) => {
+        if (body["status"] === "error") {
+          console.error(body);
+          enqueueSnackbar("저장 중 에러가 발생하였습니다.", {
+            variant: "error",
+          });
+        } else {
+          enqueueSnackbar("구성이 성공적으로 저장되었습니다.", {
+            variant: "success",
+          });
+        }
+      });
   };
 
   // 내용수정
@@ -213,9 +242,7 @@ function Deploy() {
           <Grid item xs>
             <Typography
               variant={"h5"}
-              style={
-                { marginLeft: "20px", marginTop: "20px" }
-              }
+              style={{ marginLeft: "20px", marginTop: "20px" }}
             >
               {isDeployMode ? "배포하기" : "배포 히스토리"}
             </Typography>
@@ -223,13 +250,11 @@ function Deploy() {
           <Grid item xs={6}></Grid>
           <Grid item xs>
             <Button
-              style={
-                 {
-                  height: "40px",
-                  margin: "40px 20px 0 15px",
-                  float: "right",
-                 }
-              }
+              style={{
+                height: "40px",
+                margin: "40px 20px 0 15px",
+                float: "right",
+              }}
               variant={"contained"}
               color={isDeployMode === true ? "default" : "primary"}
               onClick={() => {
@@ -283,9 +308,7 @@ function Deploy() {
         </CardContent>
         <CardContent
           style={
-            isDeployMode === true
-              ? { display: "inherit"}
-              : { display: "none" }
+            isDeployMode === true ? { display: "inherit" } : { display: "none" }
           }
         >
           <Grid container spacing={1}>
@@ -300,16 +323,15 @@ function Deploy() {
                   className={classes.select}
                   style={{ width: "100%" }}
                 >
-                  <Select value={1}>
-                    {
-                      deployServiceType.map((item, index) => {
-                        return (
-                          <MenuItem key={1}>
-                            item.name
-                          </MenuItem>
-                        );
-                      })
-                    }
+                  <Select
+                    value={serviceType}
+                    onChange={(event) => setServiceType(event.target.value)}
+                  >
+                    {deployServiceType.map((type) => (
+                      <MenuItem key={type["id"]} value={type["id"]}>
+                        {type["name"]}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Box>
@@ -320,9 +342,9 @@ function Deploy() {
                 <MultiSelect
                   items={deployService}
                   getOptionLabel={(option) => `${option.label}`}
-                  selectedValues={selectedOptions}
+                  selectedValues={selectedOptions}ㄴ
                   placeholder="서비스를 선택하세요"
-                  selectAllLabel="모두 선택하기"                  
+                  selectAllLabel={deployService.length > 0 ? "모두 선택하기" : "구성과 일치하는 서비스가 없습니다."}
                   onToggleOption={(selectedOptions) =>
                     setSelectedOptions(selectedOptions)
                   }
@@ -343,8 +365,18 @@ function Deploy() {
                   style={{ height: "40px", width: "100%", marginTop: "10px" }}
                   variant={"contained"}
                   color={"primary"}
-                  onClick={() => {
-                    setOpenAlert(true);
+                  onClick={() => {                    
+                    if(selectedOptions.length > 0){
+                      setOpenAlert(true);
+                      setAlertType("excute");
+                      setAlertTitle("배포를 실행하시겠습니까?");
+                      setAlertContents(`작성한 내용으로 배포를 실행합니다. 실행하시려면 확인 버튼을
+                      누르세요.`);
+                    } else {
+                      enqueueSnackbar("선택된 서비스가 없습니다. 서비스를 선택해주세요.", {
+                        variant: "warning",
+                      });
+                    }
                   }}
                 >
                   실행
@@ -408,7 +440,11 @@ function Deploy() {
                 variant={"contained"}
                 color={"primary"}
                 onClick={() => {
-                  handleSaveDepolyScript();
+                  setOpenAlert(true);
+                  setAlertType("jsonSave")
+                  setAlertTitle("입력한 내용을 저장하시겠습니까?");
+                  setAlertContents(`작성한 내용으로 배포 구성을 저장합니다. 저장하려면 확인 버튼을
+                  누르세요.`);
                 }}
               >
                 저장
@@ -437,14 +473,8 @@ function Deploy() {
             </Grid>
           </Grid>
 
-          <Dialog
-            maxWidth={"lg"}
-            fullWidth={true}
-            open={openExecLog}            
-          >
-            <DialogTitle>
-              실행 로그
-            </DialogTitle>
+          <Dialog maxWidth={"lg"} fullWidth={true} open={openExecLog}>
+            <DialogTitle>실행 로그</DialogTitle>
             <DialogContent
               style={{
                 backgroundColor: "black",
@@ -475,11 +505,10 @@ function Deploy() {
             <DialogActions>
               <Box>
                 <Button
-                  style={{ position: "absolute", left: "0.5%", color: "red" }}
-                  variant={"outlined"}
+                  style={{ position: "absolute", left: "0.5%", backgroundColor: "#D5455A", color: "white"}}
+                  variant={"contained"}
                   color={"secondary"}
                   onClick={() => setOpenExecLog(false)}
-                  color="default"
                 >
                   강제 중지
                 </Button>
@@ -502,12 +531,11 @@ function Deploy() {
             }}
           >
             <DialogTitle id="alert-dialog-title">
-              {"배포를 실행하시겠습니까?"}
+              {alertTitle}
             </DialogTitle>
             <DialogContent>
               <DialogContentText>
-                작성한 내용으로 배포를 실행합니다. 실행하시려면 실행 버튼을
-                누르세요.
+                {alertContents}
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -525,13 +553,15 @@ function Deploy() {
               <Button
                 variant={"contained"}
                 color={"primary"}
-                onClick={handleOpenExecDialog}
+                onClick={handleDialog}
                 autoFocus
               >
-                실행
+                확인
               </Button>
             </DialogActions>
           </Dialog>
+
+
         </CardContent>
       </Card>
     </div>

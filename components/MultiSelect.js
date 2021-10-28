@@ -41,6 +41,7 @@ const MultiSelect = ({
       option.value === "select-all" // To control the state of 'select-all' checkbox
         ? { checked: allSelected }
         : {};
+
     return (
       <>
         <Checkbox
