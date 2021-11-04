@@ -12,6 +12,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableContainer,
   Typography,
 } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -23,43 +24,66 @@ import DialogContent from "@material-ui/core/DialogContent";
 import DialogActions from "@material-ui/core/DialogActions";
 import Dialog from "@material-ui/core/Dialog";
 import EditIcon from "@material-ui/icons/Edit";
+import HelpIcon from "@material-ui/icons/Help";
 import DialogContentText from "@material-ui/core/DialogContentText";
 import MultiSelect from "./MultiSelect";
 import { SnackbarProvider, useSnackbar } from "notistack";
+import LinearProgress from "@material-ui/core/LinearProgress";
 
 const AceEditor = dynamic(import("react-ace"), { ssr: false });
+
+// API 호출 간격
+const loopInterval = 5000;
 
 // 검색 서비스 기본 템플릿 JSON
 let default_json = `{
   "indexing": [
     {
-      "url": "http:;//esapi1.danawa.com/8100/managements/consume",
-      "consume_size": "2 // 재시작 시작은 무조건 0, 완료후 컨슘 사이즈를 설정",
-      "queue": "VM,aa"
+      "url": "",
+      "consume_size": "2",
+      "queue": ""
     }
   ],
-  "target": "search  # search or office, // 검색API에선 상품,오피스 구분이 필요함.",
+  "target": "search",
   "search_api": [
-    "http://esapi1.danawa.com:7090/seed-update",
-    "http://esapi2.danawa.com:7090/seed-update",
-    "http://esapi3.danawa.com:7090/seed-update"
   ],
   "service_url": {
-    "esdata1": "http://192.168.1.141:9200",
-    "esdata2": "http://192.168.1.142:9200",
-    "esdata3": "http://192.168.1.143:9200",
-    "esdata4": "http://192.168.1.144:9200",
-    "esdata5": "http://192.168.1.145:9200",
-    "esdata6": "http://192.168.1.146:9200",
-    "esdata7": "http://192.168.1.147:9200",
-    "esdata8": "http://192.168.1.148:9200",
-    "esdata9": "http://192.168.1.148:9200",
-    "esdata10": "http://192.168.1.148:9200"
   },
-  "node_ready_time": "300, // seconds",
-  "allocate_disable_url": "dsearch-server.danawa.io / ~~~?on or off,",
-  "node_ready_check_uri": "/check // 상품명분석기 사전로딩 API 필요,,"
+  "node_ready_time": "300",
+  "allocate_disable_url": ""
 }`;
+
+function createData(name, desc) {
+  return { name, desc };
+}
+
+const rows = [
+  createData(
+    "indexing.url",
+    `"http://queue-indexer:8100/managements/consume", //큐인덱서 URL`
+  ),
+  createData("indexing.consume_size", `2, // 컨슘 원복 갯수`),
+  createData(
+    "indexing.queue",
+    `VM,PDM,APL,AC,..." // 큐선택 ,(콤마) 구분으로 입력`
+  ),
+  createData("target", `"search", // "search" or "office" 배포 선택`),
+  createData(
+    "search_api",
+    `"http://search-api:7090/seed-update", //  시드정보는 서비스URL기반으로 자동 할당됩니다. \n ex) body { target: "office", seeds: [ ... ] }`
+  ),
+  createData("service_url", `search_api 전송될 시드 목록입니다. `),
+  createData("node_ready_time", `300 // 서비스 재시작 후 대기시간 (단위: 초)`),
+  createData("node_ready_check_url", `/check" // 서비스 상태체크 url`),
+  createData(
+    "allocate_enable_url",
+    "/clusters/check?flag=true // Dsearch 서버 점검모드 시작 API 주소"
+  ),
+  createData(
+    "allocate_disable_url",
+    "/clusters/check?flag=false // Dsearch 서버 점검모드 종료 API 주소"
+  ),
+];
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -69,6 +93,14 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
+function getRandomUuid() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    let r = (Math.random() * 16) | 0,
+      v = c == "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
 function Deploy() {
   const classes = useStyles();
   const [isDeployMode, setIsDeployMode] = React.useState(false);
@@ -76,7 +108,9 @@ function Deploy() {
   const [deployService, setDeployService] = React.useState([]);
   const [deployHistory, setDeployHistory] = React.useState([]);
   const [isEditable, setIsEditable] = React.useState(false);
+  const [isDisable, setIsDisable] = React.useState(false);
   const [openExecLog, setOpenExecLog] = React.useState(false);
+  const [execLogContents, setExecLogContents] = React.useState("");
   const [openAlert, setOpenAlert] = React.useState(false);
   const [selectedOptions, setSelectedOptions] = React.useState([]);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
@@ -88,6 +122,8 @@ function Deploy() {
   const [alertContents, setAlertContents] = React.useState("");
   const [alertTitle, setAlertTitle] = React.useState("");
   const [alertType, setAlertType] = React.useState("");
+  const [displayProgressBar, setDisplayProgressBar] = React.useState(false);
+  const [processList, setProcessList] = React.useState([]);
 
   React.useEffect(() => {
     init();
@@ -122,15 +158,18 @@ function Deploy() {
           });
         } else {
           setDeployHistory(body["histories"]);
-          
+
           let service_url;
-          
+
           // JSON의 서비스
-          if(body["json"].length === 0) { // 그룹에 저장된 템플릿이 없을경우
+          if (body["json"].length === 0) {
+            // 그룹에 저장된 템플릿이 없을경우
             service_url = JSON.parse(default_json)["service_url"];
-            setDeployScript(default_json)
+            setDeployScript(default_json);
           } else {
-            service_url = JSON.parse(body["json"][0].deploy_json)["service_url"]
+            service_url = JSON.parse(body["json"][0].deploy_json)[
+              "service_url"
+            ];
             setDeployScript(body["json"][0].deploy_json);
 
             //취소시 되돌리기용
@@ -143,7 +182,7 @@ function Deploy() {
           Object.keys(service_url).map((_Nodename) => {
             tmpService.forEach((myService) => {
               if (myService.name === _Nodename) {
-                tempArr.push({ label: _Nodename, value: _Nodename });
+                tempArr.push({ label: _Nodename, value: myService.id });
               }
             });
           });
@@ -153,15 +192,213 @@ function Deploy() {
       });
   };
 
-  const handleDialog = () => {
+  const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+
+  const handleDialogAction = () => {
     setOpenAlert(false);
 
-    switch(alertType){
-      case "excute" : 
-        return setOpenExecLog(true);
-      case "jsonSave" : 
+    switch (alertType) {
+      case "excute":
+        return handleServiceExcute();
+      case "jsonSave":
         return handleSaveDepolyScript();
+      case "pauseService":
+        return handleServicePause();
     }
+  };
+
+  // 요청 실행
+  const handleServiceExcute = async () => {
+    setOpenExecLog(true);
+    setDisplayProgressBar(true);
+    setExecLogContents("");
+
+    let taskId = getRandomUuid();
+
+    // 검색 서비스 실행
+    if (serviceType === "1") {
+      // 작업 목록
+      let taskUrlList = JSON.parse(deployScript)["service_url"];
+      let taskList = [];
+
+      // 선택한 이름으로 서비스ID 찾아서 매칭
+      Object.keys(taskUrlList).map(async (name) => {
+        deployService.forEach((service) => {
+          if (service.label === name) {
+            taskList.push({ id: service.value, name: name });
+          }
+        });
+      });
+
+      if ((await execService(taskId, taskList)) === false) {
+        setExecLogContents(
+          (execLogContents) =>
+            execLogContents + "\n실행 API 호출시 에러가 발생했습니다."
+        );
+      }
+    }
+  };
+
+  // 작업 중단
+  const handleServicePause = () => {
+    let taskId = "";
+
+    processList.forEach((ele) => {
+      if (ele.serviceType === serviceType) {
+        if (ele.step === "run") {
+          taskId = ele.taskId;
+
+          processList.forEach((ele) => {
+            if (taskId === ele.taskId) {
+              if (ele.step === "done" || ele.step === "fail") {
+                taskId = "";
+              }
+            }
+          });
+        }
+      }
+    });
+
+    if (taskId !== "") {
+      fetch(`/api${location.pathname}/deploy`, {
+        method: "PUT",
+        body: JSON.stringify({
+          serviceType: "pause",
+          taskId: taskId,
+        }),
+      })
+        .then((res) => res.json())
+        .then((body) => {
+          if (body.status === "success") {
+            getLogMessage(taskId, 0);
+          } else {
+            enqueueSnackbar("정지중 오류가 발생하였습니다.", {
+              variant: "error",
+            });
+          }
+        });
+      setIsDisable(true);
+    } else {
+      enqueueSnackbar("정지할 작업이 존재하지 않습니다.", {
+        variant: "warning",
+      });
+    }
+  };
+
+  // 서비스 실행 API
+  const execService = async (taskId, taskList) => {
+    let result = false;
+
+    setProcessList((processList) => [
+      ...processList,
+      { taskId: taskId, serviceType: serviceType, step: "run" },
+    ]);
+    setIsDisable(false);
+
+    try {
+      await fetch(`/api${location.pathname}/deploy`, {
+        method: "PUT",
+        body: JSON.stringify({
+          serviceType: serviceType,
+          taskId: taskId,
+          taskList: taskList,
+          option: JSON.parse(deployScript),
+          loopInterval: loopInterval,
+        }),
+      })
+        .then((res) => res.json())
+        .then((body) => {
+          if (body.status === "success") {
+            result = true;
+            loggerLoop(true, body.taskId, loopInterval);
+            getLogMessage(taskId, 0);
+          } else {
+            result = false;
+            setDisplayProgressBar(false);
+            enqueueSnackbar("실행 중 오류가 발생하였습니다.", {
+              variant: "error",
+            });
+            setExecLogContents(body.message);
+          }
+        });
+    } catch (e) {
+      enqueueSnackbar("서비스 호출중 에러가 발생했습니다" + e, {
+        variant: "error",
+      });
+      result = false;
+      return result;
+    }
+
+    return result;
+  };
+
+  // 로그 수집 호출
+  const loggerLoop = async (enable, taskId, loopInterval) => {
+    while (enable === true) {
+      await sleep(loopInterval);
+      if ((await getLogMessage(taskId, loopInterval)) === false) {
+        break;
+      }
+    }
+  };
+
+  // 로그 수집 API
+  const getLogMessage = async (taskId) => {
+    let logMessage = "";
+    let isWorking = true;
+
+    await fetch(`/api${location.pathname}/deploy?taskId=${taskId}`)
+      .then((res) => res.json())
+      .then((body) => {
+        body["taskLogger"].forEach((ele) => {
+          if (ele.taskId === taskId) {
+            logMessage = `${ele.message}`;
+
+            if (ele.result === "run") {
+              isWorking = true;
+            } else if (ele.result === "done") {
+              setProcessList((processList) => [
+                ...processList,
+                { taskId: taskId, serviceType: serviceType, step: "done" },
+              ]);
+              enqueueSnackbar("실행이 완료되었습니다.", {
+                variant: "success",
+              });
+              setDisplayProgressBar(false);
+              setIsDisable(true);
+              isWorking = false;
+            } else {
+              setProcessList((processList) => [
+                ...processList,
+                { taskId: taskId, serviceType: serviceType, step: "fail" },
+              ]);
+              enqueueSnackbar("실행 중 오류가 발생하였습니다.", {
+                variant: "error",
+              });
+              setIsDisable(true);
+              setDisplayProgressBar(false);
+              isWorking = false;
+            }
+          }
+        });
+
+        if (body["status"] === "error") {
+          enqueueSnackbar("로그 수집중에 오류가 발생하였습니다.", {
+            variant: "error",
+          });
+          setIsDisable(true);
+          setProcessList((processList) => [
+            ...processList,
+            { taskId: taskId, serviceType: serviceType, step: "fail" },
+          ]);
+          setDisplayProgressBar(false);
+          isWorking = false;
+        }
+
+        setExecLogContents(logMessage);
+      });
+
+    return isWorking;
   };
 
   // 수정내용 저장
@@ -178,7 +415,7 @@ function Deploy() {
     Object.keys(target).map((_Nodename) => {
       services.forEach((myService) => {
         if (myService.name === _Nodename) {
-          tempArr.push({ label: _Nodename, value: _Nodename });
+          tempArr.push({ label: _Nodename, value: myService.id });
         }
       });
     });
@@ -211,6 +448,62 @@ function Deploy() {
       });
   };
 
+  const checkInputJsonData = (e) => {
+    try {
+      let flag = true;
+      let json = JSON.parse(deployScript);
+
+      if (!json.indexing) {
+        enqueueSnackbar("indexing 항목의 값이 없습니다.", {
+          variant: "error",
+        });
+        flag = false;
+      } else if (!json.service_url) {
+        enqueueSnackbar("service_url 항목의 값이 없습니다.", {
+          variant: "error",
+        });
+        flag = false;
+      } else if (!json.search_api) {
+        enqueueSnackbar("search_api 항목의 값이 없습니다.", {
+          variant: "error",
+        });
+        flag = false;
+      } else if (!json.target) {
+        enqueueSnackbar("target 항목의 값이 없습니다.", {
+          variant: "error",
+        });
+        flag = false;
+      }
+
+      return flag;
+    } catch (error) {
+      enqueueSnackbar(error + "", {
+        variant: "error",
+      });
+      return false;
+    }
+  };
+
+  const checkEnableExcute = async () => {
+    let isEnable = true;
+
+    // 실행 여부 조회
+    await fetch(`/api${location.pathname}/deploy?serviceType=${serviceType}`)
+      .then((res) => res.json())
+      .then((body) => {
+        if (body["status"] === "error") {
+          console.error(body);
+          enqueueSnackbar("실행여부 조회 중 에러가 발생하였습니다.", {
+            variant: "error",
+          });
+        } else {
+          isEnable = body["enable"];
+        }
+      });
+
+    return isEnable;
+  };
+
   // 내용수정
   const setJsonDeployScript = (e) => {
     try {
@@ -220,20 +513,13 @@ function Deploy() {
     }
   };
 
-  let sampleErrorLog = `
-    Step 1.
-    request: http://esapi1.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Service Restart …… 
-
-    Step 2.
-    request: http://esapi2.danawa.com:7090/seed-update { body ... }
-    response: 200 {status: “success”}
-
-    Step 3.
-    WARNING [http-nio-8080-exec-6] org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver.logException Resolved [org.springframework.web.HttpMediaTypeNotSupportedException: Content type 'application/json;charset=UTF-8' not supported]
-    `;
+  const pauseDeployService = () => {
+    setOpenAlert(true);
+    setAlertType("pauseService");
+    setAlertTitle("배포 서비스가 진행중입니다. 중지하시겠습니까?");
+    setAlertContents(`작업이 중간에 종료됩니다. 중지하려면 확인 버튼을
+    누르세요.`);
+  };
 
   return (
     <div className={classes.root}>
@@ -257,10 +543,11 @@ function Deploy() {
               }}
               variant={"contained"}
               color={isDeployMode === true ? "default" : "primary"}
-              onClick={() => {
-                if (isDeployMode === false) {
+              onClick={async () => {
+                if (isDeployMode === false) {                
                   setIsDeployMode(true);
                 } else {
+                  init();
                   setIsDeployMode(false);
                 }
               }}
@@ -342,9 +629,13 @@ function Deploy() {
                 <MultiSelect
                   items={deployService}
                   getOptionLabel={(option) => `${option.label}`}
-                  selectedValues={selectedOptions}ㄴ
+                  selectedValues={selectedOptions}
                   placeholder="서비스를 선택하세요"
-                  selectAllLabel={deployService.length > 0 ? "모두 선택하기" : "구성과 일치하는 서비스가 없습니다."}
+                  selectAllLabel={
+                    deployService.length > 0
+                      ? "모두 선택하기"
+                      : "구성과 일치하는 서비스가 없습니다."
+                  }
                   onToggleOption={(selectedOptions) =>
                     setSelectedOptions(selectedOptions)
                   }
@@ -365,17 +656,38 @@ function Deploy() {
                   style={{ height: "40px", width: "100%", marginTop: "10px" }}
                   variant={"contained"}
                   color={"primary"}
-                  onClick={() => {                    
-                    if(selectedOptions.length > 0){
-                      setOpenAlert(true);
-                      setAlertType("excute");
-                      setAlertTitle("배포를 실행하시겠습니까?");
-                      setAlertContents(`작성한 내용으로 배포를 실행합니다. 실행하시려면 확인 버튼을
-                      누르세요.`);
+                  disabled={isEditable}
+                  onClick={async () => {
+                    if (selectedOptions.length > 0) {
+                      let checkInputBool = false;
+                      let checkExcuteBool = false;
+
+                      checkInputBool = checkInputJsonData();
+                      checkExcuteBool = await checkEnableExcute();
+
+                      if (checkExcuteBool === false) {
+                        enqueueSnackbar(
+                          "현재 그룹에서 서비스 배포가 진행중입니다. 잠시후에 시도해주세요. ",
+                          {
+                            variant: "warning",
+                          }
+                        );
+                      } else {
+                        if (checkInputBool) {
+                          setOpenAlert(true);
+                          setAlertType("excute");
+                          setAlertTitle("배포를 실행하시겠습니까?");
+                          setAlertContents(`작성한 내용으로 배포를 실행합니다. 실행하시려면 확인 버튼을
+                          누르세요.`);
+                        }
+                      }
                     } else {
-                      enqueueSnackbar("선택된 서비스가 없습니다. 서비스를 선택해주세요.", {
-                        variant: "warning",
-                      });
+                      enqueueSnackbar(
+                        "선택된 서비스가 없습니다. 서비스를 선택해주세요.",
+                        {
+                          variant: "warning",
+                        }
+                      );
                     }
                   }}
                 >
@@ -440,11 +752,24 @@ function Deploy() {
                 variant={"contained"}
                 color={"primary"}
                 onClick={() => {
-                  setOpenAlert(true);
-                  setAlertType("jsonSave")
-                  setAlertTitle("입력한 내용을 저장하시겠습니까?");
-                  setAlertContents(`작성한 내용으로 배포 구성을 저장합니다. 저장하려면 확인 버튼을
-                  누르세요.`);
+                  let checkInputBool = false;
+
+                  checkInputBool = checkInputJsonData();
+
+                  if (default_json === deployScript) {
+                    enqueueSnackbar("변경된 내용이 없습니다.", {
+                      variant: "warning",
+                    });
+                    checkInputBool = false;
+                  }
+
+                  if (checkInputBool) {
+                    setOpenAlert(true);
+                    setAlertType("jsonSave");
+                    setAlertTitle("입력한 내용을 저장하시겠습니까?");
+                    setAlertContents(`작성한 내용으로 배포 구성을 저장합니다. 저장하려면 확인 버튼을
+                    누르세요.`);
+                  }
                 }}
               >
                 저장
@@ -470,6 +795,27 @@ function Deploy() {
               >
                 취소
               </Button>
+              <Button
+                style={{
+                  height: "40px",
+                  marginTop: "15px",
+                  marginLeft: "5px",
+                  float: "right",
+                }}
+                variant={"outlined"}
+                color={"default"}
+                onClick={() => {
+                  setOpenAlert(true);
+                  setAlertType("jsonGuide");
+                  setAlertTitle("검색서비스 배포 구성 가이드");
+                }}
+              >
+                작성 가이드{" "}
+                <HelpIcon
+                  fontSize={"small"}
+                  style={{ marginTop: "-3.8px", marginLeft: "8px" }}
+                />
+              </Button>
             </Grid>
           </Grid>
 
@@ -491,24 +837,33 @@ function Deploy() {
                       width: "100%",
                       backgroundColor: "black",
                       color: "white",
-                      fontSize: "16px",
+                      fontSize: "18px",
                       border: "none",
+                      padding: "6px",
                     }}
                     readOnly={true}
                     disabled={true}
-                    value={sampleErrorLog}
+                    value={execLogContents}
                     spellCheck={false}
                   />
                 </Grid>
               </Grid>
             </DialogContent>
+            <LinearProgress
+              style={
+                displayProgressBar === true
+                  ? { height: "11px" }
+                  : { display: "none" }
+              }
+            />
             <DialogActions>
               <Box>
                 <Button
-                  style={{ position: "absolute", left: "0.5%", backgroundColor: "#D5455A", color: "white"}}
-                  variant={"contained"}
-                  color={"secondary"}
-                  onClick={() => setOpenExecLog(false)}
+                  style={{ position: "absolute", left: "0.5%" }}
+                  variant={"outlined"}
+                  color={"default"}
+                  onClick={() => pauseDeployService()}
+                  disabled={isDisable}
                 >
                   강제 중지
                 </Button>
@@ -525,17 +880,40 @@ function Deploy() {
           </Dialog>
 
           <Dialog
+            maxWidth={"md"}
+            fullWidth={true}
             open={openAlert}
             onClose={() => {
               setOpenAlert(false);
             }}
           >
-            <DialogTitle id="alert-dialog-title">
-              {alertTitle}
-            </DialogTitle>
+            <DialogTitle id="alert-dialog-title">{alertTitle}</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                {alertContents}
+                {alertType === "jsonGuide" ? (
+                  <TableContainer>
+                    <Table sx={{ minWidth: 650 }}>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>필드명</TableCell>
+                          <TableCell align="left">예시 및 설명</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {rows.map((row) => (
+                          <TableRow key={row.name}>
+                            <TableCell component="th" scope="row">
+                              {row.name}
+                            </TableCell>
+                            <TableCell align="left">{row.desc}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  alertContents
+                )}
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -543,25 +921,29 @@ function Deploy() {
                 onClick={() => {
                   setOpenAlert(false);
                 }}
-                style={{
-                  backgroundColor: "#D5455A",
-                  color: "white",
-                }}
+                style={
+                  alertType === "jsonGuide"
+                    ? {
+                        display: "none",
+                      }
+                    : {
+                        backgroundColor: "#D5455A",
+                        color: "white",
+                      }
+                }
               >
                 취소
               </Button>
               <Button
                 variant={"contained"}
                 color={"primary"}
-                onClick={handleDialog}
+                onClick={handleDialogAction}
                 autoFocus
               >
                 확인
               </Button>
             </DialogActions>
           </Dialog>
-
-
         </CardContent>
       </Card>
     </div>
