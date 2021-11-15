@@ -50,7 +50,13 @@ let default_json = `{
   "service_url": {
   },
   "node_ready_time": "300",
-  "allocate_disable_url": ""
+  "node_ready_check_uri": "",
+  "checkMode": {
+    "url": "http://dsearch-server.danawa.io/clusters/check?flag=",
+    "clusterId": "abcd-1234-bbsargg-athah",
+    "enableValue": "true",
+    "disableValue": "false"
+  }
 }`;
 
 function createData(name, desc) {
@@ -70,18 +76,26 @@ const rows = [
   createData("target", `"search", // "search" or "office" 배포 선택`),
   createData(
     "search_api",
-    `"http://search-api:7090/seed-update", //  시드정보는 서비스URL기반으로 자동 할당됩니다. \n ex) body { target: "office", seeds: [ ... ] }`
+    `"http://search-api:7090/managements/update-seeds", //  시드정보는 서비스URL기반으로 자동 할당됩니다. \n ex) body { target: "office", seeds: [ ... ] }`
   ),
   createData("service_url", `search_api 전송될 시드 목록입니다. `),
   createData("node_ready_time", `300 // 서비스 재시작 후 대기시간 (단위: 초)`),
   createData("node_ready_check_url", `/check" // 서비스 상태체크 url`),
   createData(
-    "allocate_enable_url",
-    "/clusters/check?flag=true // Dsearch 서버 점검모드 시작 API 주소"
+    "checkMode.url",
+    "http://dsearch-server.danawa.io/clusters/check?flag= // Dsearch 서버 점검모드 ON/OFF API 주소"
   ),
   createData(
-    "allocate_disable_url",
-    "/clusters/check?flag=false // Dsearch 서버 점검모드 종료 API 주소"
+    "checkMode.clusterId",
+    "abcd-1234-bbsargg-athah // 클러스터 아이디"
+  ),
+  createData(
+    "checkMode.enableValue",
+    "true 점검모드 활성화"
+  ),
+  createData(
+    "checkMode.disableValue",
+    "false 점검모드 비활성화"
   ),
 ];
 
@@ -99,6 +113,22 @@ function getRandomUuid() {
       v = c == "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+function dateFormat(date) {
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+  let hour = date.getHours();
+  let minute = date.getMinutes();
+  let second = date.getSeconds();
+
+  month = month >= 10 ? month : '0' + month;
+  day = day >= 10 ? day : '0' + day;
+  hour = hour >= 10 ? hour : '0' + hour;
+  minute = minute >= 10 ? minute : '0' + minute;
+  second = second >= 10 ? second : '0' + second;
+
+  return date.getFullYear() + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
 }
 
 function Deploy() {
@@ -148,7 +178,7 @@ function Deploy() {
       });
 
     // 그룹의 배포 히스토리 및 구성 JSON 조회
-    await fetch(`/api${location.pathname}/deploy`)
+    await fetch(`/api${location.pathname}/deploy_action`)
       .then((res) => res.json())
       .then((body) => {
         if (body["status"] === "error") {
@@ -260,7 +290,7 @@ function Deploy() {
     });
 
     if (taskId !== "") {
-      fetch(`/api${location.pathname}/deploy`, {
+      fetch(`/api${location.pathname}/deploy_action`, {
         method: "PUT",
         body: JSON.stringify({
           serviceType: "pause",
@@ -270,7 +300,7 @@ function Deploy() {
         .then((res) => res.json())
         .then((body) => {
           if (body.status === "success") {
-            getLogMessage(taskId, 0);
+            getLogMessage(taskId);
           } else {
             enqueueSnackbar("정지중 오류가 발생하였습니다.", {
               variant: "error",
@@ -296,7 +326,7 @@ function Deploy() {
     setIsDisable(false);
 
     try {
-      await fetch(`/api${location.pathname}/deploy`, {
+      await fetch(`/api${location.pathname}/deploy_action`, {
         method: "PUT",
         body: JSON.stringify({
           serviceType: serviceType,
@@ -310,8 +340,7 @@ function Deploy() {
         .then((body) => {
           if (body.status === "success") {
             result = true;
-            loggerLoop(true, body.taskId, loopInterval);
-            getLogMessage(taskId, 0);
+            getLogMessage(taskId);
           } else {
             result = false;
             setDisplayProgressBar(false);
@@ -330,75 +359,74 @@ function Deploy() {
     }
 
     return result;
-  };
-
-  // 로그 수집 호출
-  const loggerLoop = async (enable, taskId, loopInterval) => {
-    while (enable === true) {
-      await sleep(loopInterval);
-      if ((await getLogMessage(taskId, loopInterval)) === false) {
-        break;
-      }
-    }
-  };
+  };  
 
   // 로그 수집 API
   const getLogMessage = async (taskId) => {
     let logMessage = "";
     let isWorking = true;
-
-    await fetch(`/api${location.pathname}/deploy?taskId=${taskId}`)
+    let result = false;
+    await fetch(`/api${location.pathname}/deploy_action?taskId=${taskId}`)
       .then((res) => res.json())
       .then((body) => {
-        body["taskLogger"].forEach((ele) => {
-          if (ele.taskId === taskId) {
-            logMessage = `${ele.message}`;
-
-            if (ele.result === "run") {
-              isWorking = true;
-            } else if (ele.result === "done") {
-              setProcessList((processList) => [
-                ...processList,
-                { taskId: taskId, serviceType: serviceType, step: "done" },
-              ]);
-              enqueueSnackbar("실행이 완료되었습니다.", {
-                variant: "success",
-              });
-              setDisplayProgressBar(false);
-              setIsDisable(true);
-              isWorking = false;
-            } else {
-              setProcessList((processList) => [
-                ...processList,
-                { taskId: taskId, serviceType: serviceType, step: "fail" },
-              ]);
-              enqueueSnackbar("실행 중 오류가 발생하였습니다.", {
-                variant: "error",
-              });
-              setIsDisable(true);
-              setDisplayProgressBar(false);
-              isWorking = false;
+        if(body["taskLogger"].length > 0){
+          body["taskLogger"].forEach((ele) => {
+            if (ele.taskId === taskId) {
+              logMessage = `${ele.message}`;
+  
+              if (ele.result === "run") {
+                isWorking = true;
+              } else if (ele.result === "done") {
+                setProcessList((processList) => [
+                  ...processList,
+                  { taskId: taskId, serviceType: serviceType, step: "done" },
+                ]);
+                enqueueSnackbar("실행이 완료되었습니다.", {
+                  variant: "success",
+                });
+                setDisplayProgressBar(false);
+                setIsDisable(true);
+                isWorking = false;
+              } else {
+                setProcessList((processList) => [
+                  ...processList,
+                  { taskId: taskId, serviceType: serviceType, step: "fail" },
+                ]);
+                enqueueSnackbar("실행 중 오류가 발생하였습니다.", {
+                  variant: "error",
+                });
+                setIsDisable(true);
+                setDisplayProgressBar(false);
+                isWorking = false;
+              }
             }
-          }
-        });
-
-        if (body["status"] === "error") {
-          enqueueSnackbar("로그 수집중에 오류가 발생하였습니다.", {
-            variant: "error",
           });
-          setIsDisable(true);
-          setProcessList((processList) => [
-            ...processList,
-            { taskId: taskId, serviceType: serviceType, step: "fail" },
-          ]);
-          setDisplayProgressBar(false);
-          isWorking = false;
-        }
 
-        setExecLogContents(logMessage);
-      });
+          if (body["status"] === "error") {
+            enqueueSnackbar("로그 수집중에 오류가 발생하였습니다.", {
+              variant: "error",
+            });
+            setIsDisable(true);
+            setProcessList((processList) => [
+              ...processList,
+              { taskId: taskId, serviceType: serviceType, step: "fail" },
+            ]);
+            setDisplayProgressBar(false);
+            isWorking = false;
+          }
+  
+          setExecLogContents(logMessage);
+       }
+    });
+    
+    if(isWorking && loopInterval){
+      await sleep(loopInterval);
+      getLogMessage(taskId)
+     } else {
+      result = isWorking;
+     }
 
-    return isWorking;
+     return result;
   };
 
   // 수정내용 저장
@@ -425,7 +453,7 @@ function Deploy() {
 
   // 구성 JSON 저장
   const saveDeployJson = () => {
-    fetch(`/api${location.pathname}/deploy`, {
+    fetch(`/api${location.pathname}/deploy_action`, {
       method: "POST",
       body: JSON.stringify({
         type: "deployJson",
@@ -452,9 +480,30 @@ function Deploy() {
     try {
       let flag = true;
       let json = JSON.parse(deployScript);
-
-      if (!json.indexing) {
+      
+      if(!json.indexing){
         enqueueSnackbar("indexing 항목의 값이 없습니다.", {
+          variant: "error",
+        });
+        flag = false;   
+      } else {
+        json.indexing.forEach((ele, idx) => {
+          if((!ele.url || ele.url === "") ||
+          (!ele.consume_size || ele.consume_size === "") || 
+          (!ele.queue || ele.queue === "")){
+            enqueueSnackbar(`indexing ${idx+1}번째 항목의 값이 없습니다.`, {
+              variant: "error",
+            });
+            flag = false;
+          }
+        });
+      }  
+      
+      if (!json.checkMode || (!json.checkMode.url || json.checkMode.url === "") ||
+          (!json.checkMode.clusterId || json.checkMode.clusterId === "") || 
+          (!json.checkMode.enableValue || json.checkMode.enableValue === "") ||
+          (!json.checkMode.disableValue || json.checkMode.disableValue === "")) {
+        enqueueSnackbar("checkMode 항목의 값이 없습니다.", {
           variant: "error",
         });
         flag = false;
@@ -488,7 +537,7 @@ function Deploy() {
     let isEnable = true;
 
     // 실행 여부 조회
-    await fetch(`/api${location.pathname}/deploy?serviceType=${serviceType}`)
+    await fetch(`/api${location.pathname}/deploy_action?serviceType=${serviceType}`)
       .then((res) => res.json())
       .then((body) => {
         if (body["status"] === "error") {
@@ -583,7 +632,7 @@ function Deploy() {
                   return (
                     <TableRow key={index}>
                       <TableCell>{index + 1}</TableCell>
-                      <TableCell>{hst.deployTime}</TableCell>
+                      <TableCell>{dateFormat(new Date(hst.deployTime))}</TableCell>
                       <TableCell>{hst.service}</TableCell>
                       <TableCell>{hst.result}</TableCell>
                     </TableRow>
