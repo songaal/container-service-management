@@ -182,6 +182,7 @@ function Deploy() {
       .then((res) => res.json())
       .then((body) => {
         if (body["status"] === "error") {
+          debugger;
           console.error(body);
           enqueueSnackbar("조회 중 에러가 발생하였습니다.", {
             variant: "error",
