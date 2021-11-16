@@ -3,7 +3,7 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class deploy_hst extends Model {
+  class history_deploy extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
@@ -13,18 +13,18 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
     }
   };
-  deploy_hst.init({
+  history_deploy.init({
     groupId: DataTypes.STRING,
-    deployTime: DataTypes.DATE,
+    deployTime: DataTypes.STRING,
     user: DataTypes.STRING,
     result: DataTypes.STRING,
     service: DataTypes.STRING,
     deployId: DataTypes.STRING,
-    deployEndTime: DataTypes.DATE,
+    deployEndTime: DataTypes.STRING,
     deployType: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'deploy_hst',
+    modelName: 'history_deploy',
   });
-  return deploy_hst;
+  return history_deploy;
 };

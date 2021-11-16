@@ -1,7 +1,7 @@
 'use strict';
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('deploy_hsts', {
+    await queryInterface.createTable('history_deploys', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -12,7 +12,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       deployTime: {
-        type: Sequelize.DATE
+        type: Sequelize.STRING
       },
       user: {
         type: Sequelize.STRING
@@ -27,7 +27,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       deployEndTime: {
-        type: Sequelize.DATE
+        type: Sequelize.STRING
       },
       deployType: {
         type: Sequelize.STRING
@@ -43,6 +43,6 @@ module.exports = {
     });
   },
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('deploy_hsts');
+    await queryInterface.dropTable('history_deploys');
   }
 };

@@ -1,4 +1,4 @@
-const { Deploy, DeployHistory } = require("../models");
+const { Deploy, HistoryDeploy } = require("../models");
 
 export default {
   newDeploy: async (deploy) => {
@@ -38,7 +38,7 @@ export default {
   },
   newDeployHistory: async (history) => {
     try {
-      let registerHst = await DeployHistory.create(history);
+      let registerHst = await HistoryDeploy.create(history);
       return {
         status: "success",
         deployHistory: registerHst,
@@ -52,15 +52,19 @@ export default {
     }
   },
   findDeployHistory: async (groupId) => {
-    return await DeployHistory.findAll({
-      where: { groupId: groupId },
-      order: [
-        ["deployTime", "DESC"],
-        ["id", "DESC"],
-      ],
-    });
+    try {
+      return await HistoryDeploy.findAll({
+        where: { groupId: groupId },
+        order: [
+          ["deployTime", "DESC"],
+          ["id", "DESC"],
+        ],
+      });
+    } catch (e){
+      throw Error(e)
+    }
   },
   removeDeployHistory: async () => {
-    await DeployHistory.destroy();
+    await HistoryDeploy.destroy();
   },
 };
