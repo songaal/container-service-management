@@ -9,7 +9,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       groupId: {
-        type : Sequelize.STRING
+        type: Sequelize.STRING
       },
       deployTime: {
         type: Sequelize.DATE
@@ -23,14 +23,14 @@ module.exports = {
       service: {
         type: Sequelize.STRING
       },
-      deployId: { 
-        type : Sequelize.STRING 
+      deployId: {
+        type: Sequelize.STRING
       },
       deployEndTime: {
-        type : Sequelize.DATE
+        type: Sequelize.STRING
       },
       deployType: {
-        type : Sequelize.STRING
+        type: Sequelize.STRING
       },
       createdAt: {
         allowNull: false,
