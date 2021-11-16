@@ -366,7 +366,9 @@ async function excuteDeployService(deployType, user, groupId, taskId, taskList, 
           console.log(startAndHealth);
 
           updateTaskLogger(taskId, "[ "+ taskInfo.name + " ] " + "서비스 재시작 완료하였습니다.");
-          updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time} 초) ...`); 
+          updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time_sec} 초) ...`); 
+
+          await sleep(option.node_ready_time_sec);
 
           // if(option["node_ready_check_uri"] && option["node_ready_check_uri"] !== ""){
           //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 ...`);
@@ -376,10 +378,10 @@ async function excuteDeployService(deployType, user, groupId, taskId, taskList, 
           //     if(await intervalCheckUri(option['service_url'][taskInfo.name] + option["node_ready_check_uri"]) === true){
           //       break;
           //     }
-          //     await sleep((option.node_ready_time / url_check_div));
+          //     await sleep((option.node_ready_time_sec / url_check_div));
           //   }
           // } else {
-          //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time} 초) ...`);
+          //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time_sec} 초) ...`);
           // }
         }
       } 

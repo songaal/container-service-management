@@ -49,7 +49,7 @@ let default_json = `{
   ],
   "service_url": {
   },
-  "node_ready_time": "300",
+  "node_ready_time_sec": "300",
   "node_ready_check_uri": "",
   "checkMode": {
     "url": "http://dsearch-server.danawa.io/clusters/check?flag=",
@@ -79,7 +79,7 @@ const rows = [
     `"http://search-api:7090/managements/update-seeds", //  시드정보는 서비스URL기반으로 자동 할당됩니다. \n ex) body { target: "office", seeds: [ ... ] }`
   ),
   createData("service_url", `search_api 전송될 시드 목록입니다. `),
-  createData("node_ready_time", `300 // 서비스 재시작 후 대기시간 (단위: 초)`),
+  createData("node_ready_time_sec", `300 // 서비스 재시작 후 대기시간 (단위: 초)`),
   createData("node_ready_check_url", `/check" // 서비스 상태체크 url`),
   createData(
     "checkMode.url",
@@ -172,13 +172,13 @@ function Deploy() {
             variant: "error",
           });
         } else {
-          setServices(body["services"]);
-          tmpService = body["services"];
+          tmpService = body["services"].filter(service => service["serverId"] !== '-1');
+          setServices(tmpService);
         }
       });
 
     // 그룹의 배포 히스토리 및 구성 JSON 조회
-    await fetch(`/api${location.pathname}/deploy_action`)
+    await fetch(`/api${location.pathname}/deploy`)
       .then((res) => res.json())
       .then((body) => {
         if (body["status"] === "error") {
@@ -232,8 +232,8 @@ function Deploy() {
         return handleServiceExcute();
       case "jsonSave":
         return handleSaveDepolyScript();
-      case "pauseService":
-        return handleServicePause();
+      case "stopService":
+        return handleServiceStop();
     }
   };
 
@@ -270,7 +270,7 @@ function Deploy() {
   };
 
   // 작업 중단
-  const handleServicePause = () => {
+  const handleServiceStop = () => {
     let taskId = "";
 
     processList.forEach((ele) => {
@@ -290,10 +290,10 @@ function Deploy() {
     });
 
     if (taskId !== "") {
-      fetch(`/api${location.pathname}/deploy_action`, {
+      fetch(`/api${location.pathname}/deploy/action`, {
         method: "PUT",
         body: JSON.stringify({
-          serviceType: "pause",
+          serviceType: "stop",
           taskId: taskId,
         }),
       })
@@ -326,7 +326,7 @@ function Deploy() {
     setIsDisable(false);
 
     try {
-      await fetch(`/api${location.pathname}/deploy_action`, {
+      await fetch(`/api${location.pathname}/deploy/action`, {
         method: "PUT",
         body: JSON.stringify({
           serviceType: serviceType,
@@ -366,41 +366,37 @@ function Deploy() {
     let logMessage = "";
     let isWorking = true;
     let result = false;
-    await fetch(`/api${location.pathname}/deploy_action?taskId=${taskId}`)
+    await fetch(`/api${location.pathname}/deploy/action?taskId=${taskId}`)
       .then((res) => res.json())
       .then((body) => {
-        if(body["taskLogger"].length > 0){
-          body["taskLogger"].forEach((ele) => {
-            if (ele.taskId === taskId) {
-              logMessage = `${ele.message}`;
-  
-              if (ele.result === "run") {
-                isWorking = true;
-              } else if (ele.result === "done") {
-                setProcessList((processList) => [
-                  ...processList,
-                  { taskId: taskId, serviceType: serviceType, step: "done" },
-                ]);
-                enqueueSnackbar("실행이 완료되었습니다.", {
-                  variant: "success",
-                });
-                setDisplayProgressBar(false);
-                setIsDisable(true);
-                isWorking = false;
-              } else {
-                setProcessList((processList) => [
-                  ...processList,
-                  { taskId: taskId, serviceType: serviceType, step: "fail" },
-                ]);
-                enqueueSnackbar("실행 중 오류가 발생하였습니다.", {
-                  variant: "error",
-                });
-                setIsDisable(true);
-                setDisplayProgressBar(false);
-                isWorking = false;
-              }
-            }
-          });
+        if(body["taskLogger"]){
+          logMessage = `${body["taskLogger"].message}`;
+
+          if (body["taskLogger"].result === "run") {
+            isWorking = true;
+          } else if (body["taskLogger"].result === "done") {
+            setProcessList((processList) => [
+              ...processList,
+              { taskId: taskId, serviceType: serviceType, step: "done" },
+            ]);
+            enqueueSnackbar("실행이 완료되었습니다.", {
+              variant: "success",
+            });
+            setDisplayProgressBar(false);
+            setIsDisable(true);
+            isWorking = false;
+          } else {
+            setProcessList((processList) => [
+              ...processList,
+              { taskId: taskId, serviceType: serviceType, step: "fail" },
+            ]);
+            enqueueSnackbar("실행 중 오류가 발생하였습니다.", {
+              variant: "error",
+            });
+            setIsDisable(true);
+            setDisplayProgressBar(false);
+            isWorking = false;
+          }
 
           if (body["status"] === "error") {
             enqueueSnackbar("로그 수집중에 오류가 발생하였습니다.", {
@@ -453,7 +449,7 @@ function Deploy() {
 
   // 구성 JSON 저장
   const saveDeployJson = () => {
-    fetch(`/api${location.pathname}/deploy_action`, {
+    fetch(`/api${location.pathname}/deploy`, {
       method: "POST",
       body: JSON.stringify({
         type: "deployJson",
@@ -537,7 +533,7 @@ function Deploy() {
     let isEnable = true;
 
     // 실행 여부 조회
-    await fetch(`/api${location.pathname}/deploy_action?serviceType=${serviceType}`)
+    await fetch(`/api${location.pathname}/deploy/action?serviceType=${serviceType}`)
       .then((res) => res.json())
       .then((body) => {
         if (body["status"] === "error") {
@@ -562,9 +558,9 @@ function Deploy() {
     }
   };
 
-  const pauseDeployService = () => {
+  const stopDeployService = () => {
     setOpenAlert(true);
-    setAlertType("pauseService");
+    setAlertType("stopService");
     setAlertTitle("배포 서비스가 진행중입니다. 중지하시겠습니까?");
     setAlertContents(`작업이 중간에 종료됩니다. 중지하려면 확인 버튼을
     누르세요.`);
@@ -911,7 +907,7 @@ function Deploy() {
                   style={{ position: "absolute", left: "0.5%" }}
                   variant={"outlined"}
                   color={"default"}
-                  onClick={() => pauseDeployService()}
+                  onClick={() => stopDeployService()}
                   disabled={isDisable}
                 >
                   강제 중지
