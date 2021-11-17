@@ -14,9 +14,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   };
   deploy.init({
-    deploy_json: DataTypes.STRING,
-    deploy_type: DataTypes.STRING,
     groupId: DataTypes.STRING,
+    deploy_json: DataTypes.STRING,
+    deploy_type: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'deploy',
