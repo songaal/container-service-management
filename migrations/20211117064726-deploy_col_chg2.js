@@ -2,13 +2,13 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    queryInterface.changeColumn('deploy_histories', 'deployEndTime', {
+    queryInterface.changeColumn('history_deploys', 'deployEndTime', {
       type: Sequelize.DATE,
       allowNull: true,
     })
   },
   down: async (queryInterface, Sequelize) => {
-    queryInterface.changeColumn('deploy_histories', 'deployEndTime', {
+    queryInterface.changeColumn('history_deploys', 'deployEndTime', {
       type: Sequelize.DATE,
       allowNull: true,
     })

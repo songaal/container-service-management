@@ -27,7 +27,7 @@ module.exports = {
         type: Sequelize.STRING
       },
       deployEndTime: {
-        type: Sequelize.STRING
+        type: Sequelize.DATE
       },
       deployType: {
         type: Sequelize.STRING
