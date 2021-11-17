@@ -46,6 +46,7 @@ async function groupsServiceDeploy(req, res) {
       }
     }
   } catch (error) {
+    console.log(error);
     res.send({
       status: "error",
       message: error

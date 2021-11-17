@@ -52,13 +52,21 @@ export default {
     }
   },
   findDeployHistory: async (groupId) => {
-    return await HistoryDeploy.findAll({
-      where: { groupId: groupId },
-      order: [
-        ["deployTime", "DESC"],
-        ["id", "DESC"],
-      ],
-    });
+    try {
+      return await HistoryDeploy.findAll({
+        where: { groupId: groupId },
+        order: [
+          ["deployTime", "DESC"],
+          ["id", "DESC"],
+        ],
+      }); 
+    } catch (e){
+      console.log(e);
+      return {
+        status: "error",
+        message: e,
+      };
+    }
   },
   removeDeployHistory: async () => {
     await HistoryDeploy.destroy();
