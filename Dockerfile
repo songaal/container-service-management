@@ -14,15 +14,15 @@ RUN npm install
 
 COPY  . .
 
+RUN npx sequelize-cli db:migrate
+
+RUN npx sequelize db:seed:all
+
 RUN npm run build
 
 RUN mkdir -p /data/dockerComposeFiles
 
 RUN chmod 777 /data/dockerComposeFiles
-
-RUN npx sequelize-cli db:migrate
-
-RUN npx sequelize db:seed:all
 
 RUN mkdir -p public/tempFiles
 

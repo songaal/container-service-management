@@ -14,6 +14,24 @@ module.exports = {
       deployTime: {
         type: Sequelize.STRING
       },
+      user: {
+        type: Sequelize.STRING
+      },
+      result: {
+        type: Sequelize.STRING
+      },
+      service: {
+        type: Sequelize.STRING
+      },
+      deployId: {
+        type: Sequelize.STRING
+      },
+      deployEndTime: {
+        type: Sequelize.STRING
+      },
+      deployType: {
+        type: Sequelize.STRING
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

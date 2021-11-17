@@ -15,7 +15,13 @@ module.exports = (sequelize, DataTypes) => {
   };
   history_deploy.init({
     groupId: DataTypes.STRING,
-    deployTime: DataTypes.STRING
+    deployTime: DataTypes.STRING,
+    user: DataTypes.STRING,
+    result: DataTypes.STRING,
+    service: DataTypes.STRING,
+    deployId: DataTypes.STRING,
+    deployEndTime: DataTypes.STRING,
+    deployType: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'history_deploy',
