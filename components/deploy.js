@@ -115,7 +115,7 @@ function getRandomUuid() {
   });
 }
 
-function dateFormat(date) {
+function dateFieldFormat(date) {
   let month = date.getMonth() + 1;
   let day = date.getDate();
   let hour = date.getHours();
@@ -129,6 +129,29 @@ function dateFormat(date) {
   second = second >= 10 ? second : '0' + second;
 
   return date.getFullYear() + '-' + month + '-' + day + ' ' + hour + ':' + minute + ':' + second;
+}
+
+function serviceFieldFormat(data) {
+  try {
+    let serviceArr = JSON.parse(data);
+    let serviceName = "";
+
+    serviceArr.forEach(ele => {
+      serviceName = serviceName + ele.name + " "
+    })
+
+    return serviceName;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+function userFieldFormat(data){
+  try {
+    return JSON.parse(data).name
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 function Deploy() {
@@ -611,10 +634,12 @@ function Deploy() {
           <Table my={2}>
             <TableHead>
               <TableRow>
-                <TableCell>#</TableCell>
-                <TableCell>배포일시</TableCell>
-                <TableCell>참여 서비스</TableCell>
-                <TableCell>결과</TableCell>
+                <TableCell style={{textAlign:"center"}}>#</TableCell>
+                <TableCell style={{textAlign:"center"}}>배포일시</TableCell>
+                <TableCell style={{textAlign:"center"}}>결과</TableCell>
+                <TableCell style={{textAlign:"center"}}>배포타입</TableCell>
+                <TableCell style={{textAlign:"center"}}>참여 서비스</TableCell>
+                <TableCell style={{textAlign:"center"}}>배포자</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -628,10 +653,12 @@ function Deploy() {
                 deployHistory.map((hst, index) => {
                   return (
                     <TableRow key={index}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>{dateFormat(new Date(hst.deployTime))}</TableCell>
-                      <TableCell>{hst.service}</TableCell>
-                      <TableCell>{hst.result}</TableCell>
+                      <TableCell style={{textAlign:"center"}}>{index + 1}</TableCell>
+                      <TableCell style={{textAlign:"center"}}>{dateFieldFormat(new Date(hst.deployTime)) + ' ~ ' + dateFieldFormat(new Date(hst.deployEndTime))}</TableCell>
+                      <TableCell style={hst.result === "성공" ? {backgroundColor:"#C2DA4A", textAlign:"center"} : {backgroundColor:"#E6998A", textAlign:"center"}}>{hst.result}</TableCell>
+                      <TableCell style={{textAlign:"center"}}>{hst.deployType === "1" ? "검색 서비스" : ""}</TableCell>
+                      <TableCell style={{textAlign:"center"}}>{serviceFieldFormat(hst.service)}</TableCell>
+                      <TableCell style={{textAlign:"center"}}>{userFieldFormat(hst.user)}</TableCell>
                     </TableRow>
                   );
                 })
