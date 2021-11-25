@@ -38,11 +38,6 @@ const loopInterval = 5000;
 // 검색 서비스 기본 템플릿 JSON
 let default_json = `{
   "indexing": [
-    {
-      "url": "",
-      "consume_size": "2",
-      "queue": ""
-    }
   ],
   "target": "search",
   "search_api": [
@@ -65,8 +60,8 @@ function createData(name, desc) {
 
 const rows = [
   createData(
-    "indexing.url",
-    `"http://queue-indexer:8100/managements/consume", //큐인덱서 URL`
+    "indexing",
+    `"http://queue-indexer:8100/managements/consume-all", //큐인덱서 URL`
   ),
   createData("indexing.consume_size", `2, // 컨슘 원복 갯수`),
   createData(
@@ -501,23 +496,12 @@ function Deploy() {
       let flag = true;
       let json = JSON.parse(deployScript);
       
-      if(!json.indexing){
+      if(!json.indexing || json.indexing.length === 0){
         enqueueSnackbar("indexing 항목의 값이 없습니다.", {
           variant: "error",
         });
         flag = false;   
-      } else {
-        json.indexing.forEach((ele, idx) => {
-          if((!ele.url || ele.url === "") ||
-          (!ele.consume_size || ele.consume_size === "") || 
-          (!ele.queue || ele.queue === "")){
-            enqueueSnackbar(`indexing ${idx+1}번째 항목의 값이 없습니다.`, {
-              variant: "error",
-            });
-            flag = false;
-          }
-        });
-      }  
+      }
       
       if (!json.checkMode || (!json.checkMode.url || json.checkMode.url === "") ||
           (!json.checkMode.clusterId || json.checkMode.clusterId === "") || 
@@ -645,7 +629,7 @@ function Deploy() {
             <TableBody>
               {deployHistory.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} align={"center"}>
+                  <TableCell colSpan={6} align={"center"}>
                     배포 내역이 없습니다.
                   </TableCell>
                 </TableRow>
