@@ -162,43 +162,41 @@ async function updateServiceSeed(updateList, option) {
   return resultData;
 }
 
+async function setDymicEnable(taskId, enable, dymic_info){
+  for (const dymic_enable_url of dymic_info) {
+    // 동적색인 OFF
+    let url = {
+      uri: dymic_enable_url,
+      method: "PUT",
+      body: {
+        enable: enable,
+      },
+      json: true,
+    };
+
+    await request(url, function (err, res, body) {
+      console.log("동적 색인 ON/OFF 호출", url, res.statusCode);
+
+      if (res.statusCode === 200) {
+        updateTaskLogger(taskId, "큐 인덱서 [ "+ dymic_enable_url + " ] 동적 색인 "+ (enable ? "ON" : "OFF") +" 되었습니다.");
+        return "true";
+      } else {
+        return "error";
+      }
+    }).catch((err) => {
+      throw new Error("동적색인 ON/OFF 중 에러발생 ! " + err);
+    });
+  }
+}
+
+
+
 async function controlDymicAndInsp(enable, dymic_info, check_info, taskId) {
   try {
     let resultData = { result: "true" };
 
     if (enable === false) {
-      // 막는 로직
-
-      for (const dymic_info_item of dymic_info) {
-        // "queue1, queue2" 한번에 처리가 안되서 스플릿 && 반복문
-        let queueList = dymic_info_item.queue.replace(/(\s*)/g, "").split(",");
-
-        // 동적색인 OFF
-        for (const queue of queueList) {
-          let url = {
-            uri: dymic_info_item.url,
-            method: "PUT",
-            body: {
-              queue: queue,
-              size: 0,
-            },
-            json: true,
-          };
-
-          await request(url, function (err, res, body) {
-            console.log("동적 색인 OFF 호출", url, res.statusCode);
-
-            if (res.statusCode === 200) {
-              resultData.result = "true";
-              updateTaskLogger(taskId, queue + " 동적 색인 OFF 되었습니다.");
-            } else {
-              resultData.result = "error";
-            }
-          }).catch((err) => {
-            throw new Error("동적색인 ON/OFF 중 에러발생 ! " + err);
-          });
-        }
-      }
+      resultData.result = await setDymicEnable(taskId, enable, dymic_info);
 
       // 점검모드 ON
       let url = {
@@ -268,35 +266,7 @@ async function controlDymicAndInsp(enable, dymic_info, check_info, taskId) {
       });
 
       // 동적색인 ON
-      for (const dymic_info_item of dymic_info) {
-        // "queue1, queue2" 한번에 처리가 안되서 스플릿 && 반복문
-        let queueList = dymic_info_item.queue.replace(/(\s*)/g, "").split(",");
-
-        // 동적색인 OFF
-        for (const queue of queueList) {
-          let url = {
-            uri: dymic_info_item.url,
-            method: "PUT",
-            body: {
-              queue: queue,
-              size: dymic_info_item.consume_size,
-            },
-            json: true,
-          };
-
-          await request(url, function (err, res, body) {
-            console.log("동적 색인 ON 호출", url, res.statusCode);
-            if (res.statusCode === 200) {
-              resultData.result = "true";
-              updateTaskLogger(taskId, queue + " 동적 색인 ON 되었습니다.");
-            } else {
-              resultData.result = "error";
-            }
-          }).catch((err) => {
-            throw new Error("동적색인 ON/OFF 중 에러발생 ! " + err);
-          });
-        }
-      }
+      resultData.result = await setDymicEnable(taskId, enable, dymic_info);
     }
 
     return resultData;
