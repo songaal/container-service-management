@@ -76,21 +76,37 @@ function dateFormat(date) {
   );
 }
 
-async function dockerServiceRestart(user, groupId, id) {    
+async function dockerServiceRestart(user, groupId, taskInfo, option, taskId) {    
   try {
+    console.log(taskId,
+      "[ " + taskInfo.name + " ] " + "서비스 재시작 진행합니다.");
+
+    updateTaskLogger(
+      taskId,
+      "[ " + taskInfo.name + " ] " + "서비스 재시작 진행합니다."
+    );
+
+
      // 서비스 재시작
-    await GroupSvcService.stopServices(user, groupId, id);
+    await GroupSvcService.stopServices(user, groupId, taskInfo.id);
+    await GroupSvcService.startServices(user, groupId, taskInfo.id);
 
-    let stopAndHealth = await GroupSvcService.getState(groupId, id);
+    updateTaskLogger(
+      taskId,
+      "[ " + taskInfo.name + " ] " + "서비스 재시작 완료하였습니다."
+    );
 
-    console.log(stopAndHealth);
+    console.log(taskId,
+        "[ " + taskInfo.name + " ] " + "서비스 재시작 완료하였습니다.");
     
-    await GroupSvcService.startServices(user, groupId, id);
+    updateTaskLogger(
+      taskId,
+      `${"[ " + taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${
+        option.node_ready_time_sec
+      } 초) ...`
+    );
 
-    let startAndHealth = await GroupSvcService.getState(groupId, id);
-
-    console.log(startAndHealth);
-
+    await sleep(option.node_ready_time_sec);
   } catch (e) {
     console.log(e);
   }
@@ -125,8 +141,18 @@ async function intervalCheckUri(es_check_url) {
 const sleep = (delay) =>
   new Promise((resolve) => setTimeout(resolve, delay * 1000));
 
-async function updateServiceSeed(updateList, option) {
+async function updateServiceSeed(option, selectAll, taskInfo, taskId) {
   let resultData = { message: "", result: "true" };
+  let updateList = [];
+  let tempName = [];
+
+  // 업데이트 대상 선별
+  Object.keys(option["service_url"]).map((name) => {
+    if (selectAll || (selectAll === false && taskInfo.name !== name)) {
+      updateList.push(option["service_url"][name]);
+      tempName.push(name);
+    }
+  });
 
   for (const search_api_url of option["search_api"]) {
     const url = {
@@ -140,11 +166,11 @@ async function updateServiceSeed(updateList, option) {
     };
 
     await request(url, function (err, res, body) {
-        console.log(
-            "searchApi 호출 :",
-            url,
-            res.statusCode
-          );
+      console.log(
+          "searchApi 호출 :",
+          url,
+          res.statusCode
+      );
       
       if (err) {
         resultData.message = err;
@@ -157,6 +183,23 @@ async function updateServiceSeed(updateList, option) {
       resultData.message = err.error;
       resultData.result = "error";
     });
+
+
+    console.log( taskId,
+      "searchApi : " +
+        updateList +
+        " 시드 정보 교체 완료했습니다. [ " +
+        tempName +
+        " ] ")
+        
+    updateTaskLogger(
+      taskId,
+      "searchApi : " +
+        updateList +
+        " 시드 정보 교체 완료했습니다. [ " +
+        tempName +
+        " ] "
+    );
   }
 
   return resultData;
@@ -164,7 +207,7 @@ async function updateServiceSeed(updateList, option) {
 
 async function setDymicEnable(taskId, enable, dymic_info){
   for (const dymic_enable_url of dymic_info) {
-    // 동적색인 OFF
+    // 동적색인 ON, OFF
     let url = {
       uri: dymic_enable_url,
       method: "PUT",
@@ -179,7 +222,7 @@ async function setDymicEnable(taskId, enable, dymic_info){
 
       if (res.statusCode === 200) {
         updateTaskLogger(taskId, "큐 인덱서 [ "+ dymic_enable_url + " ] 동적 색인 "+ (enable ? "ON" : "OFF") +" 되었습니다.");
-        return "true";
+        return "success";
       } else {
         return "error";
       }
@@ -189,83 +232,41 @@ async function setDymicEnable(taskId, enable, dymic_info){
   }
 }
 
+async function setInspEnable(taskId, enable, check_info){
+  // 점검모드 ON, OFF
+  let url = {
+    uri: check_info.url + (enable ? check_info.disableValue : check_info.enableValue),
+    method: "PUT",
+    headers: {
+      "cluster-id": `${check_info.clusterId}`
+    },
+    json: true,
+  };
+
+  await request(url, function (err, res, body) {
+    console.log("점검 모드 ON/OFF 호출", url, res.statusCode);
+    if (res.statusCode === 200) {
+      updateTaskLogger(taskId, "점검 모드가 "+ (enable ? "OFF" : "ON") +" 되었습니다.");
+      return "success";
+    } else {
+      return "error";
+    }
+  }).catch((err) => {
+    throw new Error("점검모드 ON/OFF 중 에러발생 ! " + err);
+  });
+}
 
 
+// false => 동적색인 OFF, 점검모드 ON, true는 반대
 async function controlDymicAndInsp(enable, dymic_info, check_info, taskId) {
   try {
     let resultData = { result: "true" };
 
     if (enable === false) {
       resultData.result = await setDymicEnable(taskId, enable, dymic_info);
-
-      // 점검모드 ON
-      let url = {
-        uri: check_info.url + check_info.enableValue,
-        method: "PUT",
-        headers: {
-          "cluster-id": `${check_info.clusterId}`,
-        },
-        body: {
-          transient: {
-            cluster: {
-              routing: {
-                allocation: {
-                  enable: "none",
-                },
-              },
-            },
-          },
-        },
-        json: true,
-      };
-
-      await request(url, function (err, res, body) {
-        console.log("점검 모드 ON 호출", url, res.statusCode);
-        if (res.statusCode === 200) {
-          resultData.result = resultData.result === "error" ? "error" : "true";
-          updateTaskLogger(taskId, "점검 모드가 ON 되었습니다.");
-        } else {
-          resultData.result = "error";
-        }
-      }).catch((err) => {
-        throw new Error("점검모드 ON/OFF 중 에러발생 ! " + err);
-      });
+      resultData.result = await setInspEnable(taskId, enable, check_info);
     } else if (enable === true) {
-      // 푸는 로직
-      // 점검모드 OFF
-      let url = {
-        uri: check_info.url + check_info.disableValue,
-        method: "PUT",
-        headers: {
-          "cluster-id": `${check_info.clusterId}`,
-        },
-        body: {
-          transient: {
-            cluster: {
-              routing: {
-                allocation: {
-                  enable: "all",
-                },
-              },
-            },
-          },
-        },
-        json: true,
-      };
-
-      await request(url, function (err, res, body) {
-        console.log("점검 모드 OFF 호출", url, res.statusCode);
-        if (res.statusCode === 200) {
-          resultData.result = "true";
-          updateTaskLogger(taskId, "점검 모드가 OFF 되었습니다.");
-        } else {
-          resultData.result = "error";
-        }
-      }).catch((err) => {
-        throw new Error("점검모드 ON/OFF 중 에러발생 ! " + err);
-      });
-
-      // 동적색인 ON
+      resultData.result = await setInspEnable(taskId, enable, check_info);
       resultData.result = await setDymicEnable(taskId, enable, dymic_info);
     }
 
@@ -274,6 +275,49 @@ async function controlDymicAndInsp(enable, dymic_info, check_info, taskId) {
     throw new Error(error);
   }
 }
+
+async function restartContainer(taskId, taskList, option, user, groupId){
+  for (const taskInfo of taskList) {
+    if (taskLogger[taskId].stop === false) {
+      // 시드 업데이트
+      await updateServiceSeed(option, false, taskInfo, taskId).then((res) => {
+        if (res.result === "error") {
+          throw new Error(
+            "시드 업데이트 중 오류가 발생했습니다 " + res.message + ""
+          );
+        }
+      });
+
+      await dockerServiceRestart(user, groupId, taskInfo, option, taskId);
+
+      // if(option["node_ready_check_uri"] && option["node_ready_check_uri"] !== ""){
+      //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 ...`);
+
+      //   간격을 N등분하여 URL 호출
+      //   for(var i = 0; i < url_check_div; i++){
+      //     if(await intervalCheckUri(option['service_url'][taskInfo.name] + option["node_ready_check_uri"]) === true){
+      //       break;
+      //     }
+      //     await sleep((option.node_ready_time_sec / url_check_div));
+      //   }
+      // } else {
+      //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time_sec} 초) ...`);
+      // }
+    }
+  }
+  
+  // 전체 시드 업데이트
+  if (taskLogger[taskId].stop === false) {
+    await updateServiceSeed(option, true, {name:null}, taskId).then((res) => {
+      if (res.result === false) {
+        throw new Error(
+          "시드 업데이트 중 오류가 발생했습니다 " + res.message + ""
+        );
+      }
+    });
+  }
+}
+
 
 export default {
   findTaskLog: async (taskId) => {
@@ -347,116 +391,9 @@ export default {
         });
       }
 
-      // 반복문 형태 [{id : 2, name : es1}, {id : 3, name : es2}, {id : 4, name : es3}]
+      // 시드 업데이트와 컨테이너 재시작
       if (taskLogger[taskId].stop === false) {
-        for (const taskInfo of taskList) {
-          if (taskLogger[taskId].stop === false) {
-            let updateList = [];
-            let tempName = [];
-
-            // 업데이트 대상 선별
-            Object.keys(option["service_url"]).map((name) => {
-              if (taskInfo.name !== name) {
-                updateList.push(option["service_url"][name]);
-                tempName.push(name);
-              }
-            });
-
-            await updateServiceSeed(updateList, option).then((res) => {
-              if (res.result === "error") {
-                throw new Error(
-                  "시드 업데이트 중 오류가 발생했습니다 " + res.message + ""
-                );
-              } else {
-                console.log( taskId,
-                    "searchApi : " +
-                      updateList +
-                      " 시드 정보 교체 완료했습니다. [ " +
-                      tempName +
-                      " ] ")
-                updateTaskLogger(
-                  taskId,
-                  "searchApi : " +
-                    updateList +
-                    " 시드 정보 교체 완료했습니다. [ " +
-                    tempName +
-                    " ] "
-                );
-              }
-            });
-
-            console.log(taskId,
-                "[ " + taskInfo.name + " ] " + "서비스 재시작 진행합니다.");
-
-            updateTaskLogger(
-              taskId,
-              "[ " + taskInfo.name + " ] " + "서비스 재시작 진행합니다."
-            );
-
-            await dockerServiceRestart(user, groupId, taskInfo.id);
-
-            updateTaskLogger(
-              taskId,
-              "[ " + taskInfo.name + " ] " + "서비스 재시작 완료하였습니다."
-            );
-
-            console.log(taskId,
-                "[ " + taskInfo.name + " ] " + "서비스 재시작 완료하였습니다.");
-            
-            updateTaskLogger(
-              taskId,
-              `${"[ " + taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${
-                option.node_ready_time_sec
-              } 초) ...`
-            );
-
-            await sleep(option.node_ready_time_sec);
-
-            // if(option["node_ready_check_uri"] && option["node_ready_check_uri"] !== ""){
-            //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 ...`);
-
-            //   간격을 N등분하여 URL 호출
-            //   for(var i = 0; i < url_check_div; i++){
-            //     if(await intervalCheckUri(option['service_url'][taskInfo.name] + option["node_ready_check_uri"]) === true){
-            //       break;
-            //     }
-            //     await sleep((option.node_ready_time_sec / url_check_div));
-            //   }
-            // } else {
-            //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time_sec} 초) ...`);
-            // }
-          }
-        }
-      }
-
-      // 전체 시드 업데이트
-      if (taskLogger[taskId].stop === false) {
-        // 업데이트 대상 선별
-        let allUpdateList = [];
-        let allTempName = [];
-
-        Object.keys(option["service_url"]).map((name) => {
-          allUpdateList.push(option["service_url"][name]);
-          allTempName.push(name);
-        });
-
-        await updateServiceSeed(allUpdateList, option).then((res) => {
-          if (res.result === false) {
-            throw new Error(
-              "시드 업데이트 중 오류가 발생했습니다 " + res.message + ""
-            );
-          } else {
-            updateTaskLogger(
-              taskId,
-              "searchApi : " +
-                allUpdateList +
-                " 전체 시드 정보 교체 완료했습니다." +
-                "[ " +
-                allTempName +
-                " ] "
-            );
-          }
-        });
+        await restartContainer(taskId, taskList, option, user, groupId);
       }
 
       // 동적색인과 점검모드 ON/OFF
@@ -482,6 +419,20 @@ export default {
           "사용자의 요청으로 강제 중지 되었습니다.",
           "done"
         );
+
+        // enable 처리
+        await controlDymicAndInsp(
+          true,
+          option["indexing"],
+          option["checkMode"],
+          taskId
+        ).then((res) => {
+          if (res.result === "error") {
+            throw new Error(
+              "동적색인과 점검모드 ON/OFF 중 오류가 발생했습니다 "
+            );
+          }
+        });
       }
 
       DeployHistoryService.newDeployHistory({
@@ -495,7 +446,9 @@ export default {
         deployType: deployType,
       });
 
-      updateTaskLogger(taskId, "작업이 완료되었습니다.", "done");
+      if (taskLogger[taskId].stop === true) {
+        updateTaskLogger(taskId, "작업이 완료되었습니다.", "done");
+      }
     } catch (e) {
       DeployHistoryService.newDeployHistory({
         deployTime: initTime,
@@ -507,6 +460,21 @@ export default {
         deployEndTime: new Date(),
         deployType: deployType,
       });
+      
+      // enable 처리
+      await controlDymicAndInsp(
+        true,
+        option["indexing"],
+        option["checkMode"],
+        taskId
+      ).then((res) => {
+        if (res.result === "error") {
+          throw new Error(
+            "동적색인과 점검모드 ON/OFF 중 오류가 발생했습니다 "
+          );
+        }
+      });
+
       updateTaskLogger(
         taskId,
         textLengthOverCut("" + e) + "\n작업이 종료되었습니다.",
