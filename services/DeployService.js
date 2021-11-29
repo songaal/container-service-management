@@ -227,6 +227,12 @@ async function setDymicEnable(taskId, enable, dymic_info){
         return "error";
       }
     }).catch((err) => {
+      updateTaskLogger(
+        taskId,
+        textLengthOverCut(err + ""),
+        "fail"
+      );
+
       throw new Error("동적색인 ON/OFF 중 에러발생 ! " + err);
     });
   }
@@ -446,7 +452,7 @@ export default {
         deployType: deployType,
       });
 
-      if (taskLogger[taskId].stop === true) {
+      if (taskLogger[taskId].stop === false) {
         updateTaskLogger(taskId, "작업이 완료되었습니다.", "done");
       }
     } catch (e) {
