@@ -249,10 +249,14 @@ function Deploy() {
     switch (alertType) {
       case "excute":
         return handleServiceExcute();
+      case "excuteLog":
+        return setOpenExecLog(true);
       case "jsonSave":
         return handleSaveDepolyScript();
       case "stopService":
         return handleServiceStop();
+      case "closeDialog":
+        return setOpenExecLog(false);
     }
   };
 
@@ -574,6 +578,14 @@ function Deploy() {
     누르세요.`);
   };
 
+  const closeDeployDialog = () => {
+    setOpenAlert(true);
+    setAlertType("closeDialog");
+    setAlertTitle("배포 서비스가 진행중입니다. 닫으시겠습니까?");
+    setAlertContents(`실행 로그 조회창이 닫힙니다. 닫으시려면 확인 버튼을
+    누르세요.`);
+  };
+
   return (
     <div className={classes.root}>
       <Card>
@@ -723,12 +735,11 @@ function Deploy() {
                       checkExcuteBool = await checkEnableExcute();
 
                       if (checkExcuteBool === false) {
-                        enqueueSnackbar(
-                          "현재 그룹에서 서비스 배포가 진행중입니다. 잠시후에 시도해주세요. ",
-                          {
-                            variant: "warning",
-                          }
-                        );
+                        setOpenAlert(true);
+                        setAlertType("excuteLog");
+                        setAlertTitle("현재 그룹에서 서비스 배포가 진행중입니다.");
+                        setAlertContents(`배포중인 내용을 확인하시겠습니까?. 조회하시려면 확인 버튼을
+                        누르세요.`);
                       } else {
                         if (checkInputBool) {
                           setOpenAlert(true);
@@ -927,7 +938,7 @@ function Deploy() {
 
                 <Button
                   variant={"outlined"}
-                  onClick={() => setOpenExecLog(false)}
+                  onClick={() => closeDeployDialog()}
                   color="default"
                 >
                   닫기
