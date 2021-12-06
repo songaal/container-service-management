@@ -9,7 +9,6 @@ export default {
             deploy: registerDep
         }
     } catch (e) {
-        console.log(e)
         return {
             status: "error",
             message: "에러가 발생하였습니다."
@@ -17,7 +16,6 @@ export default {
     }
   }, 
   findDeploy: async (groupId) => {
-      console.log("  findDeploy", groupId);
       return await Deploy.findAll({where: {groupId: groupId}})
   },
   findExistDeploy: async (groupId, deploy_type) => {
@@ -44,7 +42,6 @@ export default {
         deployHistory: registerHst,
       };
     } catch (e) {
-      console.log(e);
       return {
         status: "error",
         message: "에러가 발생하였습니다.",
@@ -61,7 +58,6 @@ export default {
         ],
       }); 
     } catch (e){
-      console.log(e);
       return {
         status: "error",
         message: e,

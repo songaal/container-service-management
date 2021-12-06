@@ -99,43 +99,45 @@ async function dockerServiceRestart(user, groupId, taskInfo, option, taskId) {
     console.log(taskId,
         "[ " + taskInfo.name + " ] " + "서비스 재시작 완료하였습니다.");
     
-    updateTaskLogger(
-      taskId,
-      `${"[ " + taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${
-        option.node_ready_time_sec
-      } 초) ...`
-    );
-
-    await sleep(option.node_ready_time_sec);
+    updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 ...`);    
+    if(option["node_ready_check_uri"] && option["node_ready_check_uri"] !== ""){
+      // 설정한 시간 / 10 간격으로 총 10번 URL 호출한다.
+      for(var i = 0; i < url_check_div; i++){
+        await sleep(option.node_ready_time_sec / url_check_div);
+        if(await intervalCheckUri(option['service_url'][taskInfo.name] + option["node_ready_check_uri"])){
+          break;
+        }
+      }
+    } else {
+      await sleep(option.node_ready_time_sec);
+    }      
   } catch (e) {
     console.log(e);
   }
 }
 
 async function intervalCheckUri(es_check_url) {
-  let resultData = { message: "", result: "true" };
+  console.log("es_check_url 호출 : ", es_check_url);
+  let result = false;
 
-  // const url = {
-  //   uri: es_check_url,
-  //   method: 'GET'
-  // }
+  const url = {
+    uri: es_check_url,
+    method: 'GET',
+    json: true
+  }
 
-  // await request(url, function(err, res, body) {
-  //   if(err){
-  //     resultData.message = err;
-  //     resultData.result = "error";
-  //   } else {
-  //     console.log(res);
-  //     console.log(body);
-  //     resultData.message = body.message;
-  //     resultData.result = body.result;
-  //   }
-  // }).catch((err)=> {
-  //   resultData.message = err.error;
-  //   resultData.result = "error";
-  // })
+  await request(url, function(err, res, body) {
+    if(res){
+      if(res.statusCode === 200){
+        console.log("ES 사전 로딩 여부 (dict.loaded)", body.loaded);
+        result = body.loaded
+      }
+    }
+  }).catch((err) => {
+    console.log(err)
+  });
 
-  return false;
+  return result;
 }
 
 const sleep = (delay) =>
@@ -258,6 +260,11 @@ async function setInspEnable(taskId, enable, check_info){
       return "error";
     }
   }).catch((err) => {
+    updateTaskLogger(
+      taskId,
+      textLengthOverCut(err + ""),
+      "fail"
+    );
     throw new Error("점검모드 ON/OFF 중 에러발생 ! " + err);
   });
 }
@@ -278,6 +285,11 @@ async function controlDymicAndInsp(enable, dymic_info, check_info, taskId) {
 
     return resultData;
   } catch (error) {
+    updateTaskLogger(
+      taskId,
+      textLengthOverCut(error + ""),
+      "fail"
+    );
     throw new Error(error);
   }
 }
@@ -295,20 +307,6 @@ async function restartContainer(taskId, taskList, option, user, groupId){
       });
 
       await dockerServiceRestart(user, groupId, taskInfo, option, taskId);
-
-      // if(option["node_ready_check_uri"] && option["node_ready_check_uri"] !== ""){
-      //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 ...`);
-
-      //   간격을 N등분하여 URL 호출
-      //   for(var i = 0; i < url_check_div; i++){
-      //     if(await intervalCheckUri(option['service_url'][taskInfo.name] + option["node_ready_check_uri"]) === true){
-      //       break;
-      //     }
-      //     await sleep((option.node_ready_time_sec / url_check_div));
-      //   }
-      // } else {
-      //   updateTaskLogger(taskId,  `${"[ "+ taskInfo.name + " ] "}서비스 재시작 후 대기 중 (${option.node_ready_time_sec} 초) ...`);
-      // }
     }
   }
   
@@ -383,18 +381,7 @@ export default {
 
       // 동적색인과 점검모드 ON/OFF
       if (taskLogger[taskId].stop === false) {
-        await controlDymicAndInsp(
-          false,
-          option["indexing"],
-          option["checkMode"],
-          taskId
-        ).then((res) => {
-          if (res.result === "error") {
-            throw new Error(
-              "동적색인과 점검모드 ON/OFF 중 오류가 발생했습니다 "
-            );
-          }
-        });
+        await controlDymicAndInsp(false, option["indexing"], option["checkMode"], taskId)
       }
 
       // 시드 업데이트와 컨테이너 재시작
@@ -404,41 +391,15 @@ export default {
 
       // 동적색인과 점검모드 ON/OFF
       if (taskLogger[taskId].stop === false) {
-        await controlDymicAndInsp(
-          true,
-          option["indexing"],
-          option["checkMode"],
-          taskId
-        ).then((res) => {
-          if (res.result === "error") {
-            throw new Error(
-              "동적색인과 점검모드 ON/OFF 중 오류가 발생했습니다 "
-            );
-          }
-        });
+        await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId)
       }
 
       // 강제종료시
       if (taskLogger[taskId].stop === true) {
-        updateTaskLogger(
-          taskId,
-          "사용자의 요청으로 강제 중지 되었습니다.",
-          "done"
-        );
+        updateTaskLogger(taskId, "사용자의 요청으로 강제 중지 되었습니다.", "done");
 
         // enable 처리
-        await controlDymicAndInsp(
-          true,
-          option["indexing"],
-          option["checkMode"],
-          taskId
-        ).then((res) => {
-          if (res.result === "error") {
-            throw new Error(
-              "동적색인과 점검모드 ON/OFF 중 오류가 발생했습니다 "
-            );
-          }
-        });
+        await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId)
       }
 
       DeployHistoryService.newDeployHistory({
@@ -468,18 +429,7 @@ export default {
       });
       
       // enable 처리
-      await controlDymicAndInsp(
-        true,
-        option["indexing"],
-        option["checkMode"],
-        taskId
-      ).then((res) => {
-        if (res.result === "error") {
-          throw new Error(
-            "동적색인과 점검모드 ON/OFF 중 오류가 발생했습니다 "
-          );
-        }
-      });
+      await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId)
 
       updateTaskLogger(
         taskId,

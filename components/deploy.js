@@ -63,11 +63,6 @@ const rows = [
     "indexing",
     `"http://queue-indexer:8100/managements/consume-all", //큐인덱서 URL`
   ),
-  createData("indexing.consume_size", `2, // 컨슘 원복 갯수`),
-  createData(
-    "indexing.queue",
-    `VM,PDM,APL,AC,..." // 큐선택 ,(콤마) 구분으로 입력`
-  ),
   createData("target", `"search", // "search" or "office" 배포 선택`),
   createData(
     "search_api",
@@ -75,7 +70,7 @@ const rows = [
   ),
   createData("service_url", `search_api 전송될 시드 목록입니다. `),
   createData("node_ready_time_sec", `300 // 서비스 재시작 후 대기시간 (단위: 초)`),
-  createData("node_ready_check_url", `/check" // 서비스 상태체크 url`),
+  createData("node_ready_check_url", `/_analysis-product-name/check-dict // 서비스 상태체크 url`),
   createData(
     "checkMode.url",
     "http://dsearch-server.danawa.io/clusters/check?flag= // Dsearch 서버 점검모드 ON/OFF API 주소"
@@ -938,7 +933,7 @@ function Deploy() {
 
                 <Button
                   variant={"outlined"}
-                  onClick={() => closeDeployDialog()}
+                  onClick={() => displayProgressBar ? closeDeployDialog() : setOpenExecLog(false)}
                   color="default"
                 >
                   닫기
