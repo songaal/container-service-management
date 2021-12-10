@@ -79,12 +79,12 @@ function dateFormat(date) {
 async function dockerServiceRestart(user, groupId, taskInfo, option, taskId) {    
   try {
     if(option["update_delay_sec"]){
-        console.log("업데이트 후 대기중 "+ option["update_delay_sec"] + "초" + dateFormat(new Date()));
-        await sleep(option["update_delay_sec"]);
-      } else {
-        console.log("업데이트 후 대기중 "+ option["update_delay_sec"] + "초" + dateFormat(new Date()));
-        await sleep(10);
-      }
+      console.log("업데이트 후 대기중 "+ option["update_delay_sec"] + "초" + dateFormat(new Date()));
+      await sleep(option["update_delay_sec"]);
+    } else {
+      console.log("업데이트 후 대기중 "+ " 10초" + dateFormat(new Date()));
+      await sleep(10);
+    }
 
     console.log(taskId,
       "[ " + taskInfo.name + " ] " + "서비스 재시작 진행합니다.");
@@ -156,73 +156,79 @@ async function updateServiceSeed(option, selectAll, taskInfo, taskId) {
   let updateList = [];
   let tempName = [];
 
-  // 업데이트 대상 선별
-  Object.keys(option["service_url"]).map((name) => {
-    if (selectAll || (selectAll === false && taskInfo.name !== name)) {
-      updateList.push(option["service_url"][name]);
-      tempName.push(name);
-    }
-  });
-
-  for (const search_api_url of option["search_api"]) {
-    const url = {
-      uri: search_api_url,
-      method: "PUT",
-      body: {
-        target: option["target"],
-        seeds: updateList,
-      },
-      json: true,
-    };
-
-    console.log("searchApi 호출 :", url);
-
-    await request(url, function (err, res, body) {      
-      if(res){
-        if(res.statusCode === 200){
-          console.log( taskId,
-            "searchApi : " +
-              updateList +
-              " 시드 정보 교체 완료했습니다. [ " +
-              tempName +
-              " ] ")
-                
-          updateTaskLogger(
-            taskId,
-            "searchApi : " +
-              updateList +
-              " 시드 정보 교체 완료했습니다. [ " +
-              tempName +
-              " ] "
-          );
-        } else {
-          console.log( taskId,
-            "searchApi : " +
-              updateList +
-              " 시드 정보 교체 실패했습니다. [ " +
-              tempName +
-              " ] ")
-                
-          updateTaskLogger(
-            taskId,
-            "searchApi : " +
-              updateList +
-              " 시드 정보 교체 실패했습니다. [ " +
-              tempName +
-              " ] "
-          );
-        }
+  try {
+     // 업데이트 대상 선별
+    Object.keys(option["service_url"]).map((name) => {
+      if (selectAll || (selectAll === false && taskInfo.name !== name)) {
+        updateList.push(option["service_url"][name]);
+        tempName.push(name);
       }
-    }).catch((err) => {
-      updateTaskLogger(
-        taskId,
-        "searchApi : " +
-          updateList +
-          " 시드 정보 교체 실패했습니다. [ " +
-          tempName +
-          " ] " + textLengthOverCut(err + "")
-      );
     });
+
+    for (const search_api_url of option["search_api"]) {
+      const url = {
+        uri: search_api_url,
+        method: "PUT",
+        body: {
+          target: option["target"],
+          seeds: updateList,
+        },
+        json: true,
+      };
+
+      console.log("searchApi 호출 :", url);
+
+      await request(url, function (err, res, body) {      
+        if(res){
+          if(res.statusCode === 200){
+            console.log( taskId,
+              "searchApi : " +
+                updateList +
+                " 시드 정보 교체 완료했습니다. [ " +
+                tempName +
+                " ] ")
+                  
+            updateTaskLogger(
+              taskId,
+              "searchApi : " +
+                updateList +
+                " 시드 정보 교체 완료했습니다. [ " +
+                tempName +
+                " ] "
+            );
+          } else {
+            console.log( taskId,
+              "searchApi : " +
+                updateList +
+                " 시드 정보 교체 실패했습니다. [ " +
+                tempName +
+                " ] ")
+                  
+            updateTaskLogger(
+              taskId,
+              "searchApi : " +
+                updateList +
+                " 시드 정보 교체 실패했습니다. [ " +
+                tempName +
+                " ] "
+            );
+          }
+        }
+      }).catch((err) => {
+        console.log("error", err);
+
+        updateTaskLogger(
+          taskId,
+          "searchApi : " +
+            updateList +
+            " 시드 정보 교체 실패했습니다. [ " +
+            tempName +
+            " ] " + textLengthOverCut(err + "")
+        );
+      });
+    }
+  } catch (e){
+    console.log("error", e);
   }
 }
 
@@ -250,6 +256,7 @@ async function setDymicEnable(taskId, enable, dymic_info){
         }
       }
     }).catch((err) => {
+      console.log(err);
       updateTaskLogger(
         taskId,
         textLengthOverCut(err + ""),
@@ -326,13 +333,7 @@ async function restartContainer(taskId, taskList, option, user, groupId){
   
   // 전체 시드 업데이트
   if (taskLogger[taskId].stop === false) {
-    await updateServiceSeed(option, true, {name:null}, taskId).then((res) => {
-      if (res.result === false) {
-        throw new Error(
-          "시드 업데이트 중 오류가 발생했습니다 " + res.message + ""
-        );
-      }
-    });
+    await updateServiceSeed(option, true, {name:null}, taskId);
   }
 }
 
@@ -423,7 +424,7 @@ export default {
 
       // 동적색인과 점검모드 ON/OFF
       if (taskLogger[taskId].stop === false) {
-        await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId)
+        await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId);
       }
 
       // 강제종료시
