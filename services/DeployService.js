@@ -78,6 +78,14 @@ function dateFormat(date) {
 
 async function dockerServiceRestart(user, groupId, taskInfo, option, taskId) {    
   try {
+    if(option["update_delay_sec"]){
+        console.log("업데이트 후 대기중 "+ option["update_delay_sec"] + "초" + dateFormat(new Date()));
+        await sleep(option["update_delay_sec"]);
+      } else {
+        console.log("업데이트 후 대기중 "+ option["update_delay_sec"] + "초" + dateFormat(new Date()));
+        await sleep(10);
+      }
+
     console.log(taskId,
       "[ " + taskInfo.name + " ] " + "서비스 재시작 진행합니다.");
 
@@ -134,7 +142,8 @@ async function intervalCheckUri(es_check_url) {
       }
     }
   }).catch((err) => {
-    console.log(err)
+    console.log(textLengthOverCut(err + ""));
+    console.log("ES 사전 로딩 여부 (dict.loaded)", false);
   });
 
   return result;
@@ -144,7 +153,6 @@ const sleep = (delay) =>
   new Promise((resolve) => setTimeout(resolve, delay * 1000));
 
 async function updateServiceSeed(option, selectAll, taskInfo, taskId) {
-  let resultData = { message: "", result: "true" };
   let updateList = [];
   let tempName = [];
 
@@ -167,44 +175,55 @@ async function updateServiceSeed(option, selectAll, taskInfo, taskId) {
       json: true,
     };
 
-    await request(url, function (err, res, body) {
-      console.log(
-          "searchApi 호출 :",
-          url,
-          res.statusCode
-      );
-      
-      if (err) {
-        resultData.message = err;
-        resultData.result = "error";
-      } else {
-        resultData.message = body.message;
-        resultData.result = body.result;
+    console.log("searchApi 호출 :", url);
+
+    await request(url, function (err, res, body) {      
+      if(res){
+        if(res.statusCode === 200){
+          console.log( taskId,
+            "searchApi : " +
+              updateList +
+              " 시드 정보 교체 완료했습니다. [ " +
+              tempName +
+              " ] ")
+                
+          updateTaskLogger(
+            taskId,
+            "searchApi : " +
+              updateList +
+              " 시드 정보 교체 완료했습니다. [ " +
+              tempName +
+              " ] "
+          );
+        } else {
+          console.log( taskId,
+            "searchApi : " +
+              updateList +
+              " 시드 정보 교체 실패했습니다. [ " +
+              tempName +
+              " ] ")
+                
+          updateTaskLogger(
+            taskId,
+            "searchApi : " +
+              updateList +
+              " 시드 정보 교체 실패했습니다. [ " +
+              tempName +
+              " ] "
+          );
+        }
       }
     }).catch((err) => {
-      resultData.message = err.error;
-      resultData.result = "error";
+      updateTaskLogger(
+        taskId,
+        "searchApi : " +
+          updateList +
+          " 시드 정보 교체 실패했습니다. [ " +
+          tempName +
+          " ] " + textLengthOverCut(err + "")
+      );
     });
-
-
-    console.log( taskId,
-      "searchApi : " +
-        updateList +
-        " 시드 정보 교체 완료했습니다. [ " +
-        tempName +
-        " ] ")
-        
-    updateTaskLogger(
-      taskId,
-      "searchApi : " +
-        updateList +
-        " 시드 정보 교체 완료했습니다. [ " +
-        tempName +
-        " ] "
-    );
   }
-
-  return resultData;
 }
 
 async function setDymicEnable(taskId, enable, dymic_info){
@@ -222,11 +241,13 @@ async function setDymicEnable(taskId, enable, dymic_info){
     await request(url, function (err, res, body) {
       console.log("동적 색인 ON/OFF 호출", url, res.statusCode);
 
-      if (res.statusCode === 200) {
-        updateTaskLogger(taskId, "큐 인덱서 [ "+ dymic_enable_url + " ] 동적 색인 "+ (enable ? "ON" : "OFF") +" 되었습니다.");
-        return "success";
-      } else {
-        return "error";
+      if(res){
+        if (res.statusCode === 200) {
+          updateTaskLogger(taskId, "큐 인덱서 [ "+ dymic_enable_url + " ] 동적 색인 "+ (enable ? "ON" : "OFF") +" 되었습니다.");
+          return "success";
+        } else {
+          return "error";
+        }
       }
     }).catch((err) => {
       updateTaskLogger(
@@ -298,14 +319,7 @@ async function restartContainer(taskId, taskList, option, user, groupId){
   for (const taskInfo of taskList) {
     if (taskLogger[taskId].stop === false) {
       // 시드 업데이트
-      await updateServiceSeed(option, false, taskInfo, taskId).then((res) => {
-        if (res.result === "error") {
-          throw new Error(
-            "시드 업데이트 중 오류가 발생했습니다 " + res.message + ""
-          );
-        }
-      });
-
+      await updateServiceSeed(option, false, taskInfo, taskId);
       await dockerServiceRestart(user, groupId, taskInfo, option, taskId);
     }
   }
@@ -322,6 +336,31 @@ async function restartContainer(taskId, taskList, option, user, groupId){
   }
 }
 
+ async function initTask(deployType, user, groupId, taskId, taskList, initTime, result) {
+  taskLogger[taskId] = {
+    groupId: groupId,
+    deployType: deployType,
+    taskId: taskId,
+    message: `${dateFormat(new Date())} 작업이 실행되었습니다.`,
+    result: "run",
+    stop: false,
+  }
+
+  DeployHistoryService.newDeployHistory({
+    deployTime: initTime,
+    user: JSON.stringify(user),
+    result: result,
+    service: JSON.stringify(taskList),
+    groupId: groupId,
+    deployId: taskId,
+    deployEndTime: new Date(),
+    deployType: deployType,
+  });
+}
+
+async function updateTaskHistory (taskId, status) {
+  DeployHistoryService.updateDeployHistoryStatus(taskId, status)
+}
 
 export default {
   findTaskLog: async (taskId) => {
@@ -369,16 +408,9 @@ export default {
     loopInterval
   ) => {
     let initTime = new Date();
-    try {
-      taskLogger[taskId] = {
-        groupId: groupId,
-        deployType: deployType,
-        taskId: taskId,
-        message: `${dateFormat(new Date())} 작업이 실행되었습니다.`,
-        result: "run",
-        stop: false,
-      }
+    await initTask(deployType, user, groupId, taskId, taskList, initTime, "진행");
 
+    try {
       // 동적색인과 점검모드 ON/OFF
       if (taskLogger[taskId].stop === false) {
         await controlDymicAndInsp(false, option["indexing"], option["checkMode"], taskId)
@@ -400,34 +432,16 @@ export default {
 
         // enable 처리
         await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId)
+        await updateTaskHistory(taskId, "강제종료");
       }
-
-      DeployHistoryService.newDeployHistory({
-        deployTime: initTime,
-        user: JSON.stringify(user),
-        result: taskLogger[taskId].stop === true ? "강제 중지" : "성공",
-        service: JSON.stringify(taskList),
-        groupId: groupId,
-        deployId: taskId,
-        deployEndTime: new Date(),
-        deployType: deployType,
-      });
 
       if (taskLogger[taskId].stop === false) {
         updateTaskLogger(taskId, "작업이 완료되었습니다.", "done");
+        await updateTaskHistory(taskId, "성공");
       }
     } catch (e) {
-      DeployHistoryService.newDeployHistory({
-        deployTime: initTime,
-        user: JSON.stringify(user),
-        result: `실패`,
-        service: JSON.stringify(taskList),
-        groupId: groupId,
-        deployId: taskId,
-        deployEndTime: new Date(),
-        deployType: deployType,
-      });
-      
+      await updateTaskHistory(taskId, `실패`);
+
       // enable 처리
       await controlDymicAndInsp(true, option["indexing"], option["checkMode"], taskId)
 

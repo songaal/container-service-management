@@ -48,6 +48,15 @@ export default {
       };
     }
   },
+  updateDeployHistoryStatus : async (taskId, status) => {
+    await HistoryDeploy.update({
+        result: status
+    }, {
+        where: {
+          deployId : taskId
+        }
+    })
+  },
   findDeployHistory: async (groupId) => {
     try {
       return await HistoryDeploy.findAll({
