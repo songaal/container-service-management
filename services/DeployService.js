@@ -110,8 +110,10 @@ async function dockerServiceRestart(user, groupId, taskInfo, option, taskId) {
       const url_check_div = option["node_ready_check_div"] || 10; 
       // 설정한 간격으로 시간 간격을 나누어 URL 호출한다.
       for(var i = 0; i < url_check_div; i++){
-        await sleep(option['node_ready_time_sec'] / url_check_div);
+        console.log(option['node_ready_time_sec'] / url_check_div + " 초 대기 중");
+        await sleep(option['node_ready_time_sec'] / url_check_div);   
         if(await intervalCheckUri(option['service_url'][taskInfo.name] + option["node_ready_check_uri"])){
+          console.log("사전 로딩 완료");
           break;
         } else if(i === url_check_div - 1){
           // 마지막까지 반복문을 못빠져나갔을경우 에러로 처리한다.
@@ -148,7 +150,7 @@ async function intervalCheckUri(es_check_url) {
     result = body.loaded
     return result;
   } catch (e){
-    console.log(textLengthOverCut(e + ""));
+    console.log(e);
     console.log("ES 사전 로딩 여부 (dict.loaded)", false);
   } 
 }
