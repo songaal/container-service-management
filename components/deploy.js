@@ -45,6 +45,7 @@ let default_json = `{
   "service_url": {
   },
   "update_delay_sec": "10",
+  "node_ready_check_div": "10",
   "node_ready_time_sec": "300",
   "node_ready_check_uri": "",
   "checkMode": {
@@ -90,7 +91,11 @@ const rows = [
   ),
   createData(
     "update_delay_sec",
-    "시드업데이트 후 재시작전 대기시간"
+    "시드업데이트 후 재시작전 대기시간(디폴트 10초)"
+  ),
+  createData(
+    "node_ready_check_div",
+    "사전로딩체크 호출 간격 (ex 10 / 10 1초마다 총 10번 사전로딩여부 체크)"
   )
 ];
 
