@@ -44,6 +44,8 @@ let default_json = `{
   ],
   "service_url": {
   },
+  "update_delay_sec": "10",
+  "node_ready_check_div": "10",
   "node_ready_time_sec": "300",
   "node_ready_check_uri": "",
   "checkMode": {
@@ -63,11 +65,6 @@ const rows = [
     "indexing",
     `"http://queue-indexer:8100/managements/consume-all", //큐인덱서 URL`
   ),
-  createData("indexing.consume_size", `2, // 컨슘 원복 갯수`),
-  createData(
-    "indexing.queue",
-    `VM,PDM,APL,AC,..." // 큐선택 ,(콤마) 구분으로 입력`
-  ),
   createData("target", `"search", // "search" or "office" 배포 선택`),
   createData(
     "search_api",
@@ -75,7 +72,7 @@ const rows = [
   ),
   createData("service_url", `search_api 전송될 시드 목록입니다. `),
   createData("node_ready_time_sec", `300 // 서비스 재시작 후 대기시간 (단위: 초)`),
-  createData("node_ready_check_url", `/check" // 서비스 상태체크 url`),
+  createData("node_ready_check_uri", `/_analysis-product-name/check-dict // 서비스 상태체크 url`),
   createData(
     "checkMode.url",
     "http://dsearch-server.danawa.io/clusters/check?flag= // Dsearch 서버 점검모드 ON/OFF API 주소"
@@ -92,6 +89,14 @@ const rows = [
     "checkMode.disableValue",
     "false 점검모드 비활성화"
   ),
+  createData(
+    "update_delay_sec",
+    "시드업데이트 후 재시작전 대기시간(디폴트 10초)"
+  ),
+  createData(
+    "node_ready_check_div",
+    "사전로딩체크 호출 간격 (ex 10 / 10 1초마다 총 10번 사전로딩여부 체크)"
+  )
 ];
 
 const useStyles = makeStyles((theme) => ({
@@ -595,7 +600,7 @@ function Deploy() {
               variant={"h5"}
               style={{ marginLeft: "20px", marginTop: "20px" }}
             >
-              {isDeployMode ? "배포하기" : "배포 히스토리"}
+              {isDeployMode ? "배포 작성 및 실행" : "배포 히스토리"}
             </Typography>
           </Grid>
           <Grid item xs={6}></Grid>
@@ -607,7 +612,6 @@ function Deploy() {
                 float: "right",
               }}
               variant={"contained"}
-              color={isDeployMode === true ? "default" : "primary"}
               onClick={async () => {
                 if (isDeployMode === false) {                
                   setIsDeployMode(true);
@@ -617,7 +621,7 @@ function Deploy() {
                 }
               }}
             >
-              {isDeployMode === true ? "배포내역 보기" : "배포하기"}
+              {isDeployMode === true ? "배포내역 보기" : "배포작성 및 실행"}
             </Button>
           </Grid>
         </Grid>
@@ -651,7 +655,7 @@ function Deploy() {
                     <TableRow key={index}>
                       <TableCell style={{textAlign:"center"}}>{index + 1}</TableCell>
                       <TableCell style={{textAlign:"center"}}>{dateFieldFormat(new Date(hst.deployTime)) + ' ~ ' + dateFieldFormat(new Date(hst.deployEndTime))}</TableCell>
-                      <TableCell style={hst.result === "성공" ? {backgroundColor:"#C2DA4A", textAlign:"center"} : {backgroundColor:"#E6998A", textAlign:"center"}}>{hst.result}</TableCell>
+                      <TableCell style={hst.result === "성공" ? {backgroundColor:"#C2DA4A", textAlign:"center"} : (hst.result === "진행" ? {backgroundColor:"#4A88DA", textAlign:"center"} : {backgroundColor:"#E6998A", textAlign:"center"})}>{hst.result}</TableCell>
                       <TableCell style={{textAlign:"center"}}>{hst.deployType === "1" ? "검색 서비스" : ""}</TableCell>
                       <TableCell style={{textAlign:"center"}}>{serviceFieldFormat(hst.service)}</TableCell>
                       <TableCell style={{textAlign:"center"}}>{userFieldFormat(hst.user)}</TableCell>
@@ -938,7 +942,7 @@ function Deploy() {
 
                 <Button
                   variant={"outlined"}
-                  onClick={() => closeDeployDialog()}
+                  onClick={() => displayProgressBar ? closeDeployDialog() : setOpenExecLog(false)}
                   color="default"
                 >
                   닫기
