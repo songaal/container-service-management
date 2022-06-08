@@ -219,6 +219,7 @@ async function updateServiceSeed(option, selectAll, taskInfo, taskId) {
 
 async function setDynamicEnable(taskId, enable, dymic_info){
   try {
+    let result;
     for (const dymic_enable_url of dymic_info) {
       // 동적색인 ON, OFF
       let option = {
@@ -234,11 +235,12 @@ async function setDynamicEnable(taskId, enable, dymic_info){
       console.log("동적 색인 ON/OFF 호출", dymic_enable_url, res.status);
       if (res.status === 200) {
         updateTaskLogger(taskId, "큐 인덱서 [ "+ dymic_enable_url + " ] 동적 색인 "+ (enable ? "ON" : "OFF") +" 되었습니다.");
-        return "success";
+        result = "success";
       } else {
-        return "error";
+        result = "error";
       }
     }
+    return result;
   } catch (err){
     console.log(err);
     updateTaskLogger(
