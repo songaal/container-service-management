@@ -618,7 +618,7 @@ function ServicesDetail() {
 
                             <ShowField label={"스케줄"} val={`${service['isSchedule'] ? "동작 중" : "정지"} ( ${service['cron']||'' } )`} />
 
-                            <ShowField label={"API"} val={`/api/groups/${service['groupId']}/services/${serviceId}/update`} style={{display: service['type'] === 'container' ? "block" : "none"}}/>
+                            <ShowField label={"API"} val={`/api/groups/${service['groupId']}/services/${serviceId}/update 혹은 start, stop`}/>
 
                             <ShowField label={"토큰"} val={token}/>
 
