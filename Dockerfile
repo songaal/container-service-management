@@ -1,14 +1,10 @@
-FROM node:12
+FROM node:13
 
 ENV NODE_ENV=production
 
 ENV PORT 3000
 
-RUN apt update -y
-
-RUN curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-
-RUN chmod 755 /usr/local/bin/docker-compose
+RUN apt update && apt install -y docker-compose
 
 WORKDIR /app
 
