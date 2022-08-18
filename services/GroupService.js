@@ -140,7 +140,7 @@ export default {
             const result = await GroupAuth.count({where: { userId: userId, groupId: id}});
             if (result === 0) {
                 res.statusCode = 403;
-                res.send({
+                return res.send({
                     status: "fail",
                     message: "접근 권한이 없습니다."
                 });
@@ -148,7 +148,7 @@ export default {
         } catch (error) {
             console.error(error)
             res.statusCode = 403;
-            res.send({
+            return res.send({
                 status: "fail",
                 message: "접근 권한이 없습니다."
             });
