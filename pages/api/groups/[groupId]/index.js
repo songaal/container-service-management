@@ -25,10 +25,6 @@ async function groupsDetail(req, res) {
         }
     } catch (error) {
         console.error(error);
-        return res.send({
-            status: "error",
-            message: "에러가 발생하였습니다."
-        })
     }
 }
 
