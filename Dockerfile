@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY package.json .
 
-RUN npm run clean && npm install
+RUN rm -rf node_modules && npm install
 
 COPY  . .
 
