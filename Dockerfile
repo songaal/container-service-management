@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY package.json .
 
-RUN rm -rf node_modules && rm ./package-lock.json && npm install
+RUN npm run clean && npm install
 
 COPY  . .
 
