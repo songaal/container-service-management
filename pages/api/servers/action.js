@@ -12,11 +12,11 @@ async function serverTest(req, res) {
             if (req.query['type'] === "test") {
                 const clientInfo = JSON.parse(req.body)
                 const result = await ServerService.SshConnTest(clientInfo)
-                res.send(result)
+                return res.send(result)
             }
         } else if (req.method === 'GET') {
             if (req.query['type'] === "terminal") {
-                res.send({
+                return res.send({
                     status: "success",
                     terminalUrl: process.env.webssh_host
                 })
@@ -26,7 +26,7 @@ async function serverTest(req, res) {
 
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다."
         })

@@ -15,14 +15,14 @@ async function groupsService(req, res) {
         const serviceId = req.query['serviceId'];
         if (req.method === "GET") {
             const service = Object.assign({}, await GroupSvcService.findServiceById(serviceId))
-            res.send({
+            return res.send({
                 status: "success",
                 health: await GroupSvcService.findOneServiceHealth(service)
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다.",
             error: JSON.stringify(error)

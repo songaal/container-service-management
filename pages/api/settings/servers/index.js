@@ -13,22 +13,22 @@ async function settingsServer(req, res) {
 
     if (req.session.auth.user.admin === false) {
         res.statusCode = 403;
-        res.send({status: "fail", message: "접근 권한이 없습니다."});
+        return res.send({status: "fail", message: "접근 권한이 없습니다."});
     }
 
     try {
         if (req.method === 'GET') {
-            res.send({
+            return res.send({
                 status: "success",
                 servers: await SettingsService.getServerList()
             })
         } else if (req.method === 'POST') {
             const serverInfo = JSON.parse(req.body)
-            res.send(await SettingsService.addServerInfo(serverInfo))
+            return res.send(await SettingsService.addServerInfo(serverInfo))
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다."
         })

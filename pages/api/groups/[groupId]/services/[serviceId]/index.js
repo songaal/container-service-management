@@ -19,26 +19,26 @@ async function groupsService(req, res) {
         if (req.method === "GET") {
             const service = await GroupSvcService.findServiceById(serviceId)
             const token = String(SHA256(secretKey + "::" + service['groupId'] + "::" + serviceId)).substring(0, 10)
-            res.send({
+            return res.send({
                 status: "success",
                 service: service,
                 token: token
             })
         } else if (req.method === "PUT") {
             const user = req.session.auth.user
-            res.send({
+            return res.send({
                 status: "success",
                 service: await GroupSvcService.editService(user, serviceId, JSON.parse(req.body))
             })
         } else if (req.method === "DELETE") {
-            res.send({
+            return res.send({
                 status: "success",
                 service: await GroupSvcService.removeService(groupId, serviceId)
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다.",
             error: JSON.stringify(error)

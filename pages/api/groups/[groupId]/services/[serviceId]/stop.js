@@ -23,7 +23,7 @@ async function remoteStopService(req, res) {
                 remote: true,
                 headers: req.headers
             }
-            res.send({
+            return res.send({
                 status: "success",
                 result: await GroupSvcService.stopServices(user, groupId, serviceId)
             })
@@ -33,7 +33,7 @@ async function remoteStopService(req, res) {
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: error['message']||"에러가 발생하였습니다.",
             error: error

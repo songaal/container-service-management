@@ -13,26 +13,26 @@ async function settingsServices(req, res) {
 
     if (req.session.auth.user.admin === false) {
         res.statusCode = 403;
-        res.send({status: "fail", message: "접근 권한이 없습니다."});
+        return res.send({status: "fail", message: "접근 권한이 없습니다."});
     }
 
     try {
         const { userId } = req.query
         if (req.method === 'DELETE') {
-            res.send({
+            return res.send({
                 status: "success",
                 result: await UserService.removeUser(userId),
             })
         } else if (req.method === 'PUT') {
             const reqUserInfo = JSON.parse(req.body)
-            res.send({
+            return res.send({
                 status: "success",
                 result: await UserService.editUser(userId, reqUserInfo),
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다."
         })

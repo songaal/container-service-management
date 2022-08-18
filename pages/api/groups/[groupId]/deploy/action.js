@@ -13,13 +13,13 @@ async function groupsServiceDeployAction(req, res) {
 
     if (req.method === "GET") {
       if(req.query["taskId"]){
-        res.send({
+        return res.send({
           status: "success",
           taskId: req.query["taskId"],
           taskLogger: await DeployService.findTaskLog(req.query["taskId"]) 
         });
       } else if (req.query["serviceType"]){
-        res.send({
+        return res.send({
           status : "success",
           enable : await DeployService.checkCurrentWork(groupId, req.query["serviceType"])
         })
@@ -31,7 +31,7 @@ async function groupsServiceDeployAction(req, res) {
       if(body.serviceType === "1"){
         DeployService.excuteDeployService(body.serviceType, user, groupId, body.taskId, body.taskList, body.option, body.loopInterval);
 
-        res.send({
+        return res.send({
           status: "success",
           taskId: body.taskId
         });
@@ -41,14 +41,14 @@ async function groupsServiceDeployAction(req, res) {
 
         console.log("stop service", DeployService.findTaskLog(body.taskId));
 
-        res.send({
+        return res.send({
           status: "success",
           taskId: body.taskId
         });
       }
     }
   } catch (error) {
-    res.send({
+    return res.send({
       status: "error",
       message: ""+error
     });

@@ -7,7 +7,7 @@ async function logout(req, res) {
 
     delete req.session['auth']
 
-    res.send({});
+    return res.send({});
 }
 
 export default withSession(logout)

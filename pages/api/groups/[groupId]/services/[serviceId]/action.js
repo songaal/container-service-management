@@ -18,36 +18,36 @@ async function groupsService(req, res) {
         const type = req.query['type'];
         if (req.method === "GET") {
             if (type === 'stats') {
-                res.send({
+                return res.send({
                     status: "success",
                     state: await GroupSvcService.getState(groupId, serviceId)
                 })
             }
         } else if (req.method === "PUT") {
             if (type === 'start') {
-                res.send({
+                return res.send({
                     status: "success",
                     result: await GroupSvcService.startServices(user, groupId, serviceId)
                 })
             } else if (type === 'stop') {
-                res.send({
+                return res.send({
                     status: "success",
                     result: await GroupSvcService.stopServices(user, groupId, serviceId)
                 })
             } else if (type === 'update') {
-                res.send({
+                return res.send({
                     status: "success",
                     result: await GroupSvcService.updateServices(user, groupId, serviceId)
                 })
             } else if (type === 'share') {
                 const reqShare = JSON.parse(req.body)
-                res.send({
+                return res.send({
                     status: "success",
                     results: await GroupSvcService.shareServices(serviceId, groupId, reqShare['shareGroupIds'])
                 })
             } else if (type === 'schedule') {
                 const schedule = req.query['isSchedule'];
-                res.send({
+                return res.send({
                     status: "success",
                     results: await GroupSvcService.editSchedule(serviceId, groupId, schedule)
                 })
@@ -55,7 +55,7 @@ async function groupsService(req, res) {
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: error['message']||"에러가 발생하였습니다.",
             error: error

@@ -104,7 +104,7 @@ export default {
         } catch (error) {
             console.error(error)
             res.statusCode = 403;
-            res.send({
+            return res.send({
                 status: "fail",
                 message: "접근 권한이 없습니다."
             });

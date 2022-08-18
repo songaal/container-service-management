@@ -21,10 +21,10 @@ async function login(req, res) {
         if(auth['status'] === 'success') {
             req.session.auth = auth;
         }
-        res.send(auth);
+        return res.send(auth);
     } catch (error) {
         console.error(error)
-        res.send(error)
+        return res.send(error)
     }
 }
 

@@ -11,7 +11,7 @@ async function groupsServiceDeploy(req, res) {
     const groupId = req.query["groupId"];
 
     if (req.method === "GET") {
-        res.send({
+        return res.send({
           status: "success",
           histories: await GroupDeployHstService.findDeployHistory(groupId),
           json: await GroupDeployHstService.findDeploy(groupId),
@@ -20,7 +20,7 @@ async function groupsServiceDeploy(req, res) {
       const body = JSON.parse(req.body);
 
       if (body.type === "history") {
-        res.send({
+        return res.send({
           status: "success",
           histories: await GroupDeployHstService.newDeployHistory(body),
         });
@@ -33,12 +33,12 @@ async function groupsServiceDeploy(req, res) {
         );
 
         if (isExist) {
-          res.send({
+          return res.send({
             status: "success",
             json: await GroupDeployHstService.updateDeploy(body),
           });
         } else {
-          res.send({
+          return res.send({
             status: "success",
             json: await GroupDeployHstService.newDeploy(body),
           });
@@ -47,7 +47,7 @@ async function groupsServiceDeploy(req, res) {
     }
   } catch (error) {
     console.log(error);
-    res.send({
+    return res.send({
       status: "error",
       message: error
     });

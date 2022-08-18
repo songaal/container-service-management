@@ -17,7 +17,7 @@ async function server(req, res) {
             console.log('/api/servers ', id)
             let server = await ServerService.findServerById(id)
             server['password'] = Base64.btoa(server['password']);
-            res.send({
+            return res.send({
                 status: "success",
                 server: server
             });
@@ -25,7 +25,7 @@ async function server(req, res) {
             if (!req.session.auth.user.admin) {
                 throw new Error("관리자 전용 API 입니다.");
             }
-            res.send({
+            return res.send({
                 status: "success",
                 server: await ServerService.editServer(id, JSON.parse(req.body))
             });
@@ -33,7 +33,7 @@ async function server(req, res) {
             if (!req.session.auth.user.admin) {
                 throw new Error("관리자 전용 API 입니다.");
             }
-            res.send({
+            return res.send({
                 status: "success",
                 server: await ServerService.removeServer(id)
             });
@@ -41,7 +41,7 @@ async function server(req, res) {
 
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다.",
             error: JSON.stringify(error)

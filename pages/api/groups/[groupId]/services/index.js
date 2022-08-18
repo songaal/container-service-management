@@ -14,20 +14,20 @@ async function groupsService(req, res) {
     try {
         const groupId = req.query['groupId'];
         if (req.method === "GET") {
-            res.send({
+            return res.send({
                 status: "success",
                 services: await GroupSvcService.findServiceByGroupId(groupId),
                 shareServices: await GroupSvcService.findShareServiceByGroupId(groupId)
             })
         } else if(req.method === "POST") {
-            res.send({
+            return res.send({
                 status: "success",
                 service: await GroupSvcService.addService(groupId, JSON.parse(req.body))
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다.",
             error: JSON.stringify(error)

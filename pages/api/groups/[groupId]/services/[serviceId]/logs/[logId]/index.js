@@ -18,19 +18,19 @@ async function groupsService(req, res) {
         const logId = req.query['logId'];
 
         if (req.method === "GET") {
-            res.send({
+            return res.send({
                 status: "success",
                 logs: await TailLogsService.getLogs({serverId, groupId, serviceId, logId})
             })
         } else if (req.method === "POST") {
-            res.send({
+            return res.send({
                 status: "success",
                 result: await TailLogsService.start({groupId, serviceId, logId})
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다.",
             error: JSON.stringify(error)
