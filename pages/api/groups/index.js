@@ -22,16 +22,16 @@ async function groups(req, res) {
                 req.session.auth['groups'].push({id: group['id'], name: group['name']})
             }
 
-            res.send(group);
+            return res.send(group);
         } else if(req.method === "GET") {
-            res.send({
+            return res.send({
                 status: "success",
                 groups: await GroupService.findAll(id, admin)
             });
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다."
         })
