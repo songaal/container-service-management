@@ -18,14 +18,14 @@ async function groupsService(req, res) {
         const type = req.query['type'];
         if (req.method === "GET") {
             if (type === 'stats') {
-                return res.send({
+                res.send({
                     status: "success",
                     state: await GroupSvcService.getState(groupId, serviceId)
                 })
             }
         } else if (req.method === "PUT") {
             if (type === 'start') {
-                return res.send({
+                res.send({
                     status: "success",
                     result: await GroupSvcService.startServices(user, groupId, serviceId)
                 })
@@ -35,19 +35,19 @@ async function groupsService(req, res) {
                     result: await GroupSvcService.stopServices(user, groupId, serviceId)
                 })
             } else if (type === 'update') {
-                return res.send({
+                res.send({
                     status: "success",
                     result: await GroupSvcService.updateServices(user, groupId, serviceId)
                 })
             } else if (type === 'share') {
                 const reqShare = JSON.parse(req.body)
-                return res.send({
+                res.send({
                     status: "success",
                     results: await GroupSvcService.shareServices(serviceId, groupId, reqShare['shareGroupIds'])
                 })
             } else if (type === 'schedule') {
                 const schedule = req.query['isSchedule'];
-                return res.send({
+                res.send({
                     status: "success",
                     results: await GroupSvcService.editSchedule(serviceId, groupId, schedule)
                 })
