@@ -1,4 +1,4 @@
-FROM node:12
+FROM node:14
 
 ENV NODE_ENV=production
 
@@ -10,7 +10,7 @@ WORKDIR /app
 
 COPY package.json .
 
-RUN npm install
+RUN rm -rf node_modules && npm install
 
 COPY  . .
 
