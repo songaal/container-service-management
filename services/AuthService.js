@@ -58,7 +58,7 @@ export default {
                 return tmpAuth;
             } else {
                 res.statusCode = 401;
-                res.send({
+                return res.send({
                     status: "fail",
                     message: "로그인정보가 없습니다."
                 });
