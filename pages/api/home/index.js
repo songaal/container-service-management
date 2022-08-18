@@ -14,7 +14,7 @@ async function groups(req, res) {
 
     try {
         if (!req.session.auth) {
-            res.send({
+            return res.send({
                 status: "error",
                 message: "에러가 발생하였습니다."
             })
@@ -22,20 +22,20 @@ async function groups(req, res) {
         const id = req.session.auth.user.id;
 
         if(req.method === "GET") {
-            res.send({
+            return res.send({
                 status: "success",
                 stats: await HomeService.getStats(id)
             })
         } else if(req.method === "PUT") {
             const body = JSON.parse(req.body)
-            res.send({
+            return res.send({
                 status: "success",
                 favorites: await GroupAuthService.updateFavorites(id, body['groupId'], body['favorites'])
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다."
         })

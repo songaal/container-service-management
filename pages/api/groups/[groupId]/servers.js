@@ -14,14 +14,14 @@ async function groupsServers(req, res) {
     try {
         const groupId = req.query['groupId'];
         if (req.method === "GET") {
-            res.send({
+            return res.send({
                 status: "success",
                 servers: await ServerService.findServerByGroupId(groupId)
             })
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다.",
             error: JSON.stringify(error)

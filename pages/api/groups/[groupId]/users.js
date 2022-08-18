@@ -16,7 +16,7 @@ async function groups(req, res) {
         const admin = req.session.auth.user.admin;
 
         if (req.method === "GET") {
-            res.send({
+            return res.send({
                 status: "success",
                 groupAuthList: await GroupAuthService.findByGroupId(groupId),
                 users: await UserService.findAll()
@@ -24,21 +24,21 @@ async function groups(req, res) {
         } else if (req.method === "POST") {
             const userIds = JSON.parse(req.body)["userIds"]
             console.log(userIds)
-            res.send({
+            return res.send({
                 status: "success",
                 result: await GroupAuthService.addGroupAuthList({id, admin, groupId, userIds})
             });
         } else if (req.method === "DELETE") {
             const userIds = JSON.parse(req.body)["userIds"]
             console.log(userIds)
-            res.send({
+            return res.send({
                 status: "success",
                 result: await GroupAuthService.removeGroupAuthList({id, admin, groupId, userIds})
             });
         }
     } catch (error) {
         console.error(error);
-        res.send({
+        return res.send({
             status: "error",
             message: "에러가 발생하였습니다."
         })
