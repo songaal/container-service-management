@@ -4,7 +4,7 @@ ENV NODE_ENV=production
 
 ENV PORT 3000
 
-RUN apt update && apt install -y docker-compose
+RUN apt update && apt install -y docker-compose vim
 
 WORKDIR /app
 
@@ -28,7 +28,11 @@ RUN mkdir -p public/tempFiles
 
 #COPY docker-compose-Linux-x86_64 /usr/bin/docker-compose
 #
-#RUN chmod +x /usr/bin/docker-compose
+
+
+RUN mkdir -p /root/.docker
+COPY config.json /root/.docker
+
 #
 #RUN echo 'alias docker-compose="/usr/bin/docker-compose"' >> ~/.bashrc
 #

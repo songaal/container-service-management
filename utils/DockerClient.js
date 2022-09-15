@@ -1,6 +1,7 @@
 // const compose = require('docker-compose')
 const compose = require('./docker-compose')
-const Docker = require('dockerode')
+const axios = require('axios');
+// const Docker = require('dockerode')
 
 const _exec = async ({cmd, ip, port, path, log=false, commandOptions, composeOptions}) => {
     return await compose[cmd]({
@@ -27,25 +28,33 @@ class DockerClient {
         }
     }
     async inspect(containerId) {
-        const docker = new Docker({host: this.ip, port: this.port});
-        const container = docker.getContainer(containerId);
-        return new Promise((resolve, reject) => {
-            container.inspect((err, data) => {
-                if (err) reject(err)
-                resolve(data)
-            })
-        })
+        let result = await axios.get(`http://${this.ip}:${this.port}/containers/${containerId}/json`, this.config );
+        return result['data']
     }
     async stats(containerId) {
-        const docker = new Docker({host: this.ip, port: this.port});
-        const container = docker.getContainer(containerId);
-        return new Promise((resolve, reject) => {
-            container.stats({stream: false}, (err, data) => {
-                if (err) reject(err)
-                resolve(data)
-            })
-        })
+        let result = await axios.get(`http://${this.ip}:${this.port}/containers/${containerId}/stats?stream=false`, this.config);
+        return result['data']
     }
+    // async inspect(containerId) {
+    //     const docker = new Docker({host: this.ip, port: this.port});
+    //     const container = docker.getContainer(containerId);
+    //     return new Promise((resolve, reject) => {
+    //         container.inspect((err, data) => {
+    //             if (err) reject(err)
+    //             resolve(data)
+    //         })
+    //     })
+    // }
+    // async stats(containerId) {
+    //     const docker = new Docker({host: this.ip, port: this.port});
+    //     const container = docker.getContainer(containerId);
+    //     return new Promise((resolve, reject) => {
+    //         container.stats({stream: false}, (err, data) => {
+    //             if (err) reject(err)
+    //             resolve(data)
+    //         })
+    //     })
+    // }
     async dockerCompose(cmd, {log, commandOptions, composeOptions}={}) {
         if(!cmd) {
             return {}
