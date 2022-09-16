@@ -18,6 +18,11 @@ class DockerClient {
         this.ip = ip
         this.port = port
         this.composePath = composePath
+        this.config = {
+            "headers": {
+                "Authz-User": "danawa"
+            }
+        }
     }
     async getContainerIds() {
         let result = await this.dockerCompose("ps", {commandOptions: ["-q"]})
