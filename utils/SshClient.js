@@ -34,6 +34,7 @@ class SshClient {
                     });
                 });
             }).on("error", function(err) {
+                console.log("!!!!!!!!!!!!!!!!! this is error : ", cmd);
                 reject({
                     status: "error",
                     message: err['message']||err
