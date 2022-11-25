@@ -173,9 +173,9 @@ const processToRemote = async (req, res, userId) => {
         
         return res;
       });
-
+    console.log(`checkExist >>>> ${req}`)
     if(req.query["type"] === "checkExist"){
-      console.log(`cd ${req.query["path"]} && file ${req.query["filename"]}`);
+      console.log(`await >>>>> cd ${req.query["path"]} && file ${req.query["filename"]}`);
       await sshClient.exec(`cd ${req.query["path"]} && file ${req.query["filename"]}` , {})
         .then((data) => {
           let checkResult = data[0].split(" ");
