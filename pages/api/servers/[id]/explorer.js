@@ -173,7 +173,8 @@ const processToRemote = async (req, res, userId) => {
         
         return res;
       });
-    console.log(`checkExist >>>> ${JSON.stringify(req)}`)
+    const rip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+    console.log(`checkExist >>>> ${rip}`)
     if(req.query["type"] === "checkExist"){
       console.log(`await >>>>> cd ${req.query["path"]} && file ${req.query["filename"]}`);
       await sshClient.exec(`cd ${req.query["path"]} && file ${req.query["filename"]}` , {})
