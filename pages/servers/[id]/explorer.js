@@ -415,11 +415,14 @@ const ServerExplorer = () => {
         ...files
         ])
     });
+    
+    console.log("bbbbbbbbbbbbbb")
 
     await fetch(apiUrl + `?type=download&&filekey=${filekey}&&filename=${filename}&&path=${path}`, {
       method: "GET",
     })
       .then((res) => {
+        console.log("qqqqqqqqqqqqqqqqqqqqq")
         setFiles(files => {          
           files[files.length-1]['phase'] = 'F';
           files[files.length-1]['updatedAt'] =  getTransferTime('updatedAt');
@@ -430,7 +433,10 @@ const ServerExplorer = () => {
         return res.json();
       })
       .then((res) => {
+        console.log("kkkkkkkkkkkkkkkkkkk")
+      
         if(!res.status) {
+          console.log("nnnnnnnnnnnnnnnnnnn")
           res.forEach(ele => {
             if(ele.startsWith("{\"status\":\"500\"")){
               enqueueSnackbar(ele, {variant: "error"})
@@ -444,6 +450,8 @@ const ServerExplorer = () => {
             }
           })
         } else {
+           console.log("zzzzzzzzzzzzzzzzzz")
+          
           setFiles(files => {          
             files[files.length-1]['phase'] = 'L';
             files[files.length-1]['updatedAt'] =  getTransferTime('updatedAt');
@@ -453,11 +461,20 @@ const ServerExplorer = () => {
           }); 
       
           updateFileData(res.fileKey, 'L', path);
+          
+          console.log("aaaaaaaaaaaaaaaaaa")
+          
           const a = document.createElement("a")          
           a.href = `/api${location.pathname.replace("/explorer", `/download/${res.fileKey}`)}?fileName=${res.fileName}`
           a.download = filename;
           a.click();
           a.remove();
+
+          
+          
+          console.log("cccccccccccccccccc")
+          
+          
           setTimeout(() => {
             deleteFileData(filekey, false);
           }, 3000)
