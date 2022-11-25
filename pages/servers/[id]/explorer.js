@@ -436,7 +436,7 @@ const ServerExplorer = () => {
         console.log("kkkkkkkkkkkkkkkkkkk")
       
         if(!res.status) {
-          console.log("nnnnnnnnnnnnnnnnnnn")
+          console.log(res)
           res.forEach(ele => {
             if(ele.startsWith("{\"status\":\"500\"")){
               enqueueSnackbar(ele, {variant: "error"})
