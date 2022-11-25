@@ -135,6 +135,8 @@ const processToRemote = async (req, res, userId) => {
   try {
     let result;
 
+    logger.error("aaaaaaaaaa");
+
     await sshClient
       .exec(
         process_cmd(
@@ -149,6 +151,8 @@ const processToRemote = async (req, res, userId) => {
       .then((res) => { // 업로드 및 다운로드 curl 결과 리턴
         result = res;
 
+        logger.error("bbbbbbbbbbbbbbb");
+
         if(req.query["type"] === "upload" || req.query["type"] === "download"){
           logger.info(
             `success ${req.query["type"]} at remote server : ${res}`
@@ -158,6 +162,7 @@ const processToRemote = async (req, res, userId) => {
             if (ele.indexOf("fileKey") != -1) {
               result = ele;
             }
+            logger.error("CCCCCCCCCCC");
           });
         }
 
@@ -168,11 +173,13 @@ const processToRemote = async (req, res, userId) => {
             updateFileDb(userId, req.query["filekey"], phase, req.query["path"]);
           } 
         } catch (e) {
+          logger.error("DDDDDDDDDDDDDDD");
+
           logger.error(e);
         }
         
         return res;
-       }).catch((err) => {
+      }).catch((err) => {
         logger.error("Catch Error")
         logger.error(process_cmd(
           req.query["id"],
@@ -184,10 +191,7 @@ const processToRemote = async (req, res, userId) => {
         logger.error(err)
       });
 
-    const rip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-    console.log(`checkExist >>>> ${rip}`)
-    if(req.query["type"] === "checkExist"){
-      console.log(`await >>>>> cd ${req.query["path"]} && file ${req.query["filename"]}`);
+    if(req.query["type"] === "checkExist"){      
       await sshClient.exec(`cd ${req.query["path"]} && file ${req.query["filename"]}` , {})
         .then((data) => {
           let checkResult = data[0].split(" ");
@@ -211,7 +215,10 @@ const processToRemote = async (req, res, userId) => {
               result[0] = "error : " + checkMsg
             }
           }
-        })      
+        }).catch((err) => {
+          logger.error("Catch Error 222222222222")
+          logger.error(err)
+        });      
     }
 
     if (req.query["type"] === "upload") {
@@ -220,6 +227,8 @@ const processToRemote = async (req, res, userId) => {
       });
     }
 
+    logger.error("Catch Error 33333333333")
+
     return res.status(201).send(result);
   } catch (e) {
     logger.error(e);
@@ -227,6 +236,7 @@ const processToRemote = async (req, res, userId) => {
     return res.send(e);
   }
 };
+
 
 export default withSession(async (req, res) => {
   let userId = "";
