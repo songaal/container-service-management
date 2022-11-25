@@ -172,7 +172,18 @@ const processToRemote = async (req, res, userId) => {
         }
         
         return res;
+       }).catch((err) => {
+        logger.error("Catch Error")
+        logger.error(process_cmd(
+          req.query["id"],
+          req.query["type"],
+          req.query["filename"],
+          req.query["path"] + "/",
+          req.query["filekey"]
+        ))
+        logger.error(err)
       });
+
     const rip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     console.log(`checkExist >>>> ${rip}`)
     if(req.query["type"] === "checkExist"){
